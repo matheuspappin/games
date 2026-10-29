@@ -11,6 +11,7 @@ extends Node3D
 func _ready() -> void:
 	print("[MapNuketown] Inicializando mapa Nuketown BO1...")
 	_setup_materials_and_collisions()
+	await _create_collisions_sliced()
 	_setup_bot_manager()
 	_setup_player()
 	await _adjust_spawn_heights()
@@ -76,6 +77,26 @@ func _setup_bot_manager() -> void:
 		var bm = BotManagerScript.new()
 		bm.name = "BotManager"
 		add_child(bm)
+
+# Colisões trimesh criadas em fatias de ~6 ms por frame (antes: tudo num frame só, ~7 s de tela congelada)
+var _pending_collisions: Array[MeshInstance3D] = []
+
+func _create_collisions_sliced() -> void:
+	var budget_us := 6000
+	var t := Time.get_ticks_usec()
+	for n in _pending_collisions:
+		if not is_instance_valid(n):
+			continue
+		n.create_trimesh_collision()
+		for child in n.get_children():
+			if child is StaticBody3D:
+				for col_child in child.get_children():
+					if col_child is CollisionShape3D and col_child.shape is ConcavePolygonShape3D:
+						col_child.shape.backface_collision = true
+		if Time.get_ticks_usec() - t > budget_us:
+			await get_tree().process_frame
+			t = Time.get_ticks_usec()
+	_pending_collisions.clear()
 
 func _setup_materials_and_collisions() -> void:
 	var nuketown_model = find_child("NuketownModel", true, false)
@@ -172,12 +193,7 @@ func _setup_materials_and_collisions() -> void:
 						has_col = true
 						break
 				if not has_col and not ("wire" in mname or "text" in mname or "window" in mname or "glass" in mname or "plane_074" in mname or "plane_095" in mname or "plane_102" in mname or "plane_103" in mname or "plane_104" in mname or "plane_105" in mname or "plane_106" in mname or "plane_107" in mname):
-					n.create_trimesh_collision()
-					for child in n.get_children():
-						if child is StaticBody3D:
-							for col_child in child.get_children():
-								if col_child is CollisionShape3D and col_child.shape is ConcavePolygonShape3D:
-									col_child.shape.backface_collision = true
+					_pending_collisions.append(n)
 
 		for c in n.get_children():
 			stack.push_back(c)
