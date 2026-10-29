@@ -123,6 +123,7 @@ var style_diff_normal              : StyleBox
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	_apply_web_menu_profile()
 
 	if card_mode_tdm:
 		style_card_selected = card_mode_tdm.get_theme_stylebox("normal")
@@ -607,6 +608,17 @@ func _open_settings() -> void:
 		if not settings_menu.visibility_changed.is_connected(_refresh_hero_rendering):
 			settings_menu.visibility_changed.connect(_refresh_hero_rendering)
 		settings_menu.open_menu()
+
+# ── PERFORMANCE NO NAVEGADOR: palco 3D a 50% e sem o shader de scanline (lê a tela inteira todo frame) ──
+func _apply_web_menu_profile() -> void:
+	if not OS.has_feature("web"):
+		return
+	var vp := get_node_or_null("HeroViewportContainer/HeroSubViewport") as SubViewport
+	if vp:
+		vp.scaling_3d_scale = 0.5
+	var scan := get_node_or_null("FxLayer/ScanlineOverlay") as CanvasItem
+	if scan:
+		scan.visible = false
 
 # ── PERFORMANCE: pausa o palco 3D do operador quando uma tela cheia o cobre ──
 func _refresh_hero_rendering() -> void:

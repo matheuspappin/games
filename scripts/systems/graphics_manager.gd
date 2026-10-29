@@ -51,6 +51,19 @@ func load_settings() -> void:
 		for key in settings.keys():
 			if cfg.has_section_key("graphics", key):
 				settings[key] = cfg.get_value("graphics", key, settings[key])
+	elif OS.has_feature("web"):
+		# Primeira execução no navegador: perfil leve para WebGL 2 em GPU integrada
+		settings["quality_preset"] = 0
+		settings["resolution_scale"] = 0.70
+		settings["shadow_quality"] = 1
+		settings["aa_mode"] = 0
+		settings["ssao"] = false
+		settings["ssil"] = false
+		settings["ssr"] = false
+		settings["glow"] = false
+		settings["volumetric_fog"] = false
+		settings["max_fps"] = 0
+		save_settings()
 	else:
 		# Primeira execução: detecta tela cheia ou resolução nativa
 		var screen_res = DisplayServer.screen_get_size()
@@ -117,6 +130,10 @@ func apply_all_settings() -> void:
 	settings_changed.emit()
 
 func apply_display_settings() -> void:
+	# Navegador: janela, tela cheia e VSync são do próprio browser (tela cheia só após clique do jogador)
+	if OS.has_feature("web"):
+		Engine.max_fps = 0
+		return
 	# 1. Modo de Janela
 	match settings["window_mode"]:
 		0: # Janela

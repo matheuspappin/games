@@ -63,6 +63,14 @@ func _ready() -> void:
 			print("[LoadingScreen] Cenário encontrado em cache de memória! Deploy ágil.")
 			return
 
+	# Navegador: o BO3 vem num pacote separado (maps_bo3.pck), baixado só quando o mapa é escolhido
+	if OS.has_feature("web") and target_scene_path.contains("bo3"):
+		_waiting_pack = true
+		var ok := await _ensure_web_pack("maps_bo3.pck")
+		_waiting_pack = false
+		if not ok:
+			push_error("[LoadingScreen] Falha ao baixar o pacote do mapa BO3.")
+
 	# Iniciar carregamento via ResourceLoader thread-safe
 	var err = ResourceLoader.load_threaded_request(target_scene_path)
 	if err == OK:
@@ -95,9 +103,47 @@ func _update_ui_headers() -> void:
 			var w_name = gm.primary_weapon_res.get_file().get_basename().to_upper()
 			lbl_weapon_info.text = "CARGA BÉLICA: %s  |  SECUNDÁRIA: PISTOLA C19  |  CORPO A CORPO: FACA" % w_name
 
+# ── PACOTES DE MAPA NO NAVEGADOR ───────────────────────────────────────────────
+var _pack_http: HTTPRequest = null
+var _waiting_pack := false
+static var _loaded_packs := {}
+
+func _ensure_web_pack(file_name: String) -> bool:
+	if _loaded_packs.has(file_name):
+		return true
+	var dst := "user://" + file_name
+	if FileAccess.file_exists(dst) and ProjectSettings.load_resource_pack(dst):
+		_loaded_packs[file_name] = true
+		return true
+	var base := str(JavaScriptBridge.eval("location.href.replace(/[^/]*$/, '')", true))
+	_pack_http = HTTPRequest.new()
+	_pack_http.download_file = dst
+	add_child(_pack_http)
+	if _pack_http.request(base + file_name) != OK:
+		return false
+	var res: Array = await _pack_http.request_completed
+	_pack_http.queue_free()
+	_pack_http = null
+	if res[0] != HTTPRequest.RESULT_SUCCESS or res[1] != 200:
+		return false
+	if ProjectSettings.load_resource_pack(dst):
+		_loaded_packs[file_name] = true
+		return true
+	return false
+
 func _process(delta: float) -> void:
 	var is_loaded: bool = false
 	var real_progress: float = 0.0
+	if _pack_http:
+		var total := _pack_http.get_body_size()
+		if total > 0:
+			real_progress = 0.5 * float(_pack_http.get_downloaded_bytes()) / float(total)
+	if _waiting_pack:
+		display_progress = move_toward(display_progress, real_progress, delta)
+		_update_progress_display()
+		if lbl_status:
+			lbl_status.text = "Baixando o mapa (somente na primeira vez)..."
+		return
 
 	if cached_scene != null:
 		is_loaded = true
