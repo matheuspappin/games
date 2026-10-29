@@ -10,6 +10,8 @@ extends RefCounted
 const XBOT_SOURCE_PATH = "res://assets/models/mixamo/x_bot.glb"
 static var _cached_source_anims: Dictionary = {}
 static var _is_initialized: bool = false
+## Animações já retargetadas por esqueleto: o 2º bot com a mesma skin reaproveita (antes: ~100 ms por bot)
+static var _retarget_cache: Dictionary = {}
 
 ## Posição e rotação calibradas do fuzil no RightHandAttachment para skins CS (Escala 1.0)
 const CS_RIFLE_LOCAL_POS = Vector3(-0.021, -0.011, -0.022)
@@ -57,6 +59,18 @@ static func retarget_model(model_root: Node3D) -> void:
 		lib = AnimationLibrary.new()
 		ap.add_animation_library("", lib)
 
+	var cache_key := "%s|%s|%d|%s" % [model_root.scene_file_path, skel_node_path, skel.get_bone_count(), skel.get_bone_name(0) if skel.get_bone_count() > 0 else ""]
+	if _retarget_cache.has(cache_key):
+		var cached: Dictionary = _retarget_cache[cache_key]
+		for anim_name in cached.keys():
+			if lib.has_animation(anim_name):
+				lib.remove_animation(anim_name)
+			lib.add_animation(anim_name, cached[anim_name])
+		if ap.has_animation("idle"):
+			ap.play("idle")
+		return
+	var produced := {}
+
 	for anim_name in _cached_source_anims.keys():
 		var src_anim = _cached_source_anims[anim_name] as Animation
 		if not src_anim:
@@ -92,6 +106,9 @@ static func retarget_model(model_root: Node3D) -> void:
 		if lib.has_animation(anim_name):
 			lib.remove_animation(anim_name)
 		lib.add_animation(anim_name, retargeted)
+		produced[anim_name] = retargeted
+
+	_retarget_cache[cache_key] = produced
 
 	if ap.has_animation("idle"):
 		ap.play("idle")
