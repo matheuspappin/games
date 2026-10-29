@@ -159,6 +159,9 @@ func spawn_all_bots(total_bots: int = 11, distribution_mode: int = 0, difficulty
 
 			_spawn_single_bot(b_team, b_name, slot, difficulty, b_id)
 			spawned_count += 1
+			await get_tree().process_frame # Um bot por frame: evita travada ao entrar no mapa
+			if not is_inside_tree():
+				return
 
 		print("[BotManager] %d bots IA instanciados a partir do LobbyRoster oficial." % spawned_count)
 		if spawned_count >= total_bots:
@@ -197,6 +200,9 @@ func spawn_all_bots(total_bots: int = 11, distribution_mode: int = 0, difficulty
 
 			_spawn_single_bot(0 if is_alpha else 1, b_name, slot, difficulty, b_id)
 			spawned_count += 1
+			await get_tree().process_frame # Um bot por frame: evita travada ao entrar no mapa
+			if not is_inside_tree():
+				return
 
 func _spawn_single_bot(team: int, bot_name: String, slot_idx: int, difficulty: int, bot_id: int = 0) -> CharacterBody3D:
 	var scene = _get_map_node()
