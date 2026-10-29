@@ -31,3 +31,6 @@ scratch/
 # Segredos
 .env
 *.env
+
+# Prints e relatorios de QA
+_prints/
