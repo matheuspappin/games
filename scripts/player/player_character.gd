@@ -287,12 +287,9 @@ func _setup_multiplayer_view() -> void:
 
 func _set_mesh_shadow_only(root: Node, shadow_only: bool) -> void:
 	if root is VisualInstance3D:
-		if shadow_only:
-			root.layers = 4 # Camada 3: Invisível para a câmera 1P, mas gera sombras no mundo
-			root.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
-		else:
-			root.layers = 1 # Camada 1: Visível no mundo para outros jogadores
-			root.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		root.layers = 4 if shadow_only else 1 # 4: invisível para a câmera 1P, mas gera sombras; 1: visível no mundo
+	if root is GeometryInstance3D: # Luzes (ex.: clarão do cano) não têm cast_shadow
+		root.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY if shadow_only else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	for child in root.get_children():
 		_set_mesh_shadow_only(child, shadow_only)
 
