@@ -50,16 +50,16 @@ function godotLauncherPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), godotLauncherPlugin()],
+  // Sem COOP/COEP: o build web e single-threaded (nao precisa de SharedArrayBuffer),
+  // e esses cabecalhos bloqueiam as janelas das carteiras (Phantom, Solflare, WalletConnect).
   server: {
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
     },
   },
   preview: {
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
     },
   },
 })

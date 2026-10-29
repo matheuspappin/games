@@ -35,6 +35,7 @@ GraphicsManager="*res://scripts/systems/graphics_manager.gd"
 [debug]
 
 file_logging/enable_file_logging=true
+file_logging/enable_file_logging.release=false
 
 [display]
 
