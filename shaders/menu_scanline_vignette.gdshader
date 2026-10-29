@@ -1,7 +1,7 @@
 shader_type canvas_item;
 
 // Efeito de scanlines militares sutis + vinheta para o menu NukeFPS
-uniform sampler2D screen_texture : hint_screen_texture, filter_linear_mipmap;
+uniform sampler2D screen_texture : hint_screen_texture, filter_linear;
 uniform float scanline_opacity : hint_range(0.0, 0.3) = 0.05;
 uniform float scanline_frequency : hint_range(100.0, 800.0) = 320.0;
 uniform float vignette_strength : hint_range(0.0, 1.5) = 0.65;

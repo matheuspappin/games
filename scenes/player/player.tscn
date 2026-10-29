@@ -4,8 +4,6 @@
 [ext_resource type="Script" path="res://addons/fpc/EditorModule.gd" id="2_mod"]
 [ext_resource type="Script" path="res://addons/fpc/debug.gd" id="3_dbg"]
 [ext_resource type="Script" path="res://scripts/weapons/weapon_manager.gd" id="4_wm"]
-[ext_resource type="PackedScene" path="res://scenes/weapons/viewmodel_fps.tscn" id="5_ak47"]
-[ext_resource type="PackedScene" path="res://scenes/weapons/pistol/pistol_viewmodel.tscn" id="6_pistol"]
 [ext_resource type="PackedScene" path="res://assets/models/mixamo/x_bot.glb" id="7_soldier"]
 [ext_resource type="Script" path="res://scripts/characters/health_component.gd" id="8_health"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/fps_hands_viewmodel.tscn" id="9_fpshands"]
@@ -478,12 +476,6 @@ speed_scale = 4.0
 script = ExtResource("4_wm")
 
 [node name="FpsHandsViewModel" parent="Head/Camera/WeaponRig" instance=ExtResource("9_fpshands")]
-
-[node name="ViewModelFPS" parent="Head/Camera/WeaponRig" instance=ExtResource("5_ak47")]
-visible = false
-
-[node name="PistolViewModel" parent="Head/Camera/WeaponRig" instance=ExtResource("6_pistol")]
-visible = false
 
 [node name="UserInterface" type="Control" parent="."]
 layout_mode = 3

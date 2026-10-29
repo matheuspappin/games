@@ -419,6 +419,7 @@ func _open_gunsmith() -> void:
 			choose_class_screen = scr.new()
 			choose_class_screen.class_selected.connect(_on_class_screen_class_selected)
 			add_child(choose_class_screen)
+			choose_class_screen.visibility_changed.connect(_refresh_hero_rendering)
 	if choose_class_screen:
 		choose_class_screen.open_screen(false)
 
@@ -603,7 +604,21 @@ func _update_class_ui() -> void:
 # CONFIGURACOES E SAIDA
 func _open_settings() -> void:
 	if settings_menu:
+		if not settings_menu.visibility_changed.is_connected(_refresh_hero_rendering):
+			settings_menu.visibility_changed.connect(_refresh_hero_rendering)
 		settings_menu.open_menu()
+
+# ── PERFORMANCE: pausa o palco 3D do operador quando uma tela cheia o cobre ──
+func _refresh_hero_rendering() -> void:
+	var covered := false
+	for n in [choose_class_screen, bo3_weapon_browser, settings_menu]:
+		if n and is_instance_valid(n) and n.get("visible") == true:
+			covered = true
+	var vp := get_node_or_null("HeroViewportContainer/HeroSubViewport") as SubViewport
+	if vp:
+		vp.render_target_update_mode = SubViewport.UPDATE_DISABLED if covered else SubViewport.UPDATE_ALWAYS
+	if hero_stage:
+		hero_stage.process_mode = Node.PROCESS_MODE_DISABLED if covered else Node.PROCESS_MODE_INHERIT
 
 func _on_quit() -> void:
 	get_tree().quit()
@@ -618,6 +633,7 @@ func _open_bo3_browser() -> void:
 			bo3_weapon_browser = scr.new()
 			bo3_weapon_browser.weapon_selected.connect(_on_bo3_weapon_selected_main_menu)
 			add_child(bo3_weapon_browser)
+			bo3_weapon_browser.visibility_changed.connect(_refresh_hero_rendering)
 	if bo3_weapon_browser:
 		bo3_weapon_browser.open_screen(0, selected_primary_res)
 

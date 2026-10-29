@@ -291,6 +291,7 @@ func _update_custom_weapon_visual(wid: String) -> void:
 			var vm_pos = cfg.get("vm_offset", Vector3(0.0, 2.2, 3.5))
 			custom_model.position = vm_pos
 			mount_node.add_child(custom_model)
+			WeaponManager.set_viewmodel_layers(custom_model, 2) # Camada 1P: fora da mira PiP e do mundo
 			current_custom_model_instance = custom_model
 		else:
 			# Failsafe: se falhar o carregamento do modelo customizado, mantém a arma original visível
@@ -298,12 +299,14 @@ func _update_custom_weapon_visual(wid: String) -> void:
 				var mesh_inst = child as MeshInstance3D
 				if mesh_inst and not mesh_inst.name.begins_with("Custom"):
 					mesh_inst.visible = true
+					mesh_inst.layers = 2 # Restaura a camada do viewmodel (antes ficava 0 e a arma sumia)
 	else:
 		# Arma padrão Bytez com braços nativos: reexibir as malhas da arma
 		for child in fps_hands.find_children("*", "MeshInstance3D", true, false):
 			var mesh_inst = child as MeshInstance3D
 			if mesh_inst and not mesh_inst.name.begins_with("Custom"):
 				mesh_inst.visible = true
+				mesh_inst.layers = 2 # Restaura a camada do viewmodel (antes ficava 0 e a arma sumia)
 
 	update_ads_alignment.call_deferred()
 
@@ -381,6 +384,7 @@ func _update_weapon_silencer() -> void:
 		var ws = fps_hands.weapon.scale.x if absf(fps_hands.weapon.scale.x) > 0.001 else 0.015
 		inst.scale = Vector3.ONE / absf(ws)
 		muzzle.add_child(inst)
+		WeaponManager.set_viewmodel_layers(inst, 2)
 		current_silencer_instance = inst
 	_update_integrated_sights_visibility()
 
@@ -615,7 +619,7 @@ func play_draw() -> void:
 func play_idle() -> void:
 	if fps_hands and is_instance_valid(fps_hands) and fps_hands.state_machine:
 		var curr = fps_hands.state_machine.get_current_node()
-		if curr != "fire" and curr != "reload" and curr != "reload_full" and curr != "take" and curr != "melee":
+		if curr != "fire" and curr != "reload" and curr != "reload_full" and curr != "take" and curr != "hide" and curr != "melee":
 			fps_hands.state_machine.travel("idle")
 
 func play_walk() -> void:
