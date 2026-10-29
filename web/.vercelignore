@@ -1,0 +1,10 @@
+# Ignore large Godot pack files that exceed Vercel's 100MB static asset limit
+public/game/index.pck
+*.pck
+
+# Dependencies and caches
+node_modules
+.git
+.env*.local
+dist
+.vercel/output

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://fps_hands_viewmodel_main"]
+
+[ext_resource type="Script" path="res://scripts/weapons/fps_hands_viewmodel.gd" id="1_vm"]
+
+[node name="FpsHandsViewModel" type="Node3D"]
+script = ExtResource("1_vm")

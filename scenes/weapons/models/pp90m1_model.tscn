@@ -1,0 +1,107 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qoqrh"]
+albedo_color = Color(0.08, 0.09, 0.11, 1)
+metallic = 0.65
+roughness = 0.4
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_v42jx"]
+material = SubResource("StandardMaterial3D_qoqrh")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.34
+radial_segments = 20
+
+[sub_resource type="BoxMesh" id="BoxMesh_7voan"]
+material = SubResource("StandardMaterial3D_qoqrh")
+size = Vector3(0.044, 0.045, 0.32)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rq54q"]
+albedo_color = Color(0.14, 0.15, 0.17, 1)
+metallic = 0.6
+roughness = 0.45
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ag88f"]
+material = SubResource("StandardMaterial3D_rq54q")
+top_radius = 0.009
+bottom_radius = 0.009
+height = 0.14
+radial_segments = 20
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_oaojc"]
+material = SubResource("StandardMaterial3D_rq54q")
+top_radius = 0.032
+bottom_radius = 0.032
+height = 0.26
+radial_segments = 20
+
+[sub_resource type="BoxMesh" id="BoxMesh_18xuk"]
+material = SubResource("StandardMaterial3D_qoqrh")
+size = Vector3(0.038, 0.025, 0.025)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ek7p2"]
+albedo_color = Color(0.06, 0.07, 0.08, 1)
+metallic = 0.05
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="BoxMesh_dkon0"]
+material = SubResource("StandardMaterial3D_ek7p2")
+size = Vector3(0.032, 0.11, 0.048)
+
+[sub_resource type="BoxMesh" id="BoxMesh_n3vyg"]
+material = SubResource("StandardMaterial3D_rq54q")
+size = Vector3(0.038, 0.01, 0.22)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s21xm"]
+material = SubResource("StandardMaterial3D_rq54q")
+size = Vector3(0.042, 0.08, 0.015)
+
+[node name="PP90M1_Model" type="Node3D" unique_id=795920837]
+
+[node name="ReceiverUpper" type="MeshInstance3D" parent="." unique_id=1386444032]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0.025, 0)
+material_override = SubResource("StandardMaterial3D_qoqrh")
+mesh = SubResource("CylinderMesh_v42jx")
+
+[node name="ReceiverBox" type="MeshInstance3D" parent="." unique_id=38286504]
+material_override = SubResource("StandardMaterial3D_qoqrh")
+mesh = SubResource("BoxMesh_7voan")
+
+[node name="Barrel" type="MeshInstance3D" parent="." unique_id=480958375]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0.025, -0.23)
+material_override = SubResource("StandardMaterial3D_rq54q")
+mesh = SubResource("CylinderMesh_ag88f")
+
+[node name="HelicalMagDrum" type="MeshInstance3D" parent="." unique_id=622475101]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, -0.028, -0.12)
+material_override = SubResource("StandardMaterial3D_rq54q")
+mesh = SubResource("CylinderMesh_oaojc")
+
+[node name="MagLatchFront" type="MeshInstance3D" parent="." unique_id=2098040065]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.015, -0.25)
+material_override = SubResource("StandardMaterial3D_qoqrh")
+mesh = SubResource("BoxMesh_18xuk")
+
+[node name="Grip" type="MeshInstance3D" parent="." unique_id=1457910915]
+transform = Transform3D(1, 0, 0, 0, 0.95105654, 0.309017, 0, -0.309017, 0.95105654, 0, -0.07, 0.08)
+material_override = SubResource("StandardMaterial3D_ek7p2")
+mesh = SubResource("BoxMesh_dkon0")
+
+[node name="WireStockArm" type="MeshInstance3D" parent="." unique_id=1604036094]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0.18)
+material_override = SubResource("StandardMaterial3D_rq54q")
+mesh = SubResource("BoxMesh_n3vyg")
+
+[node name="WireStockPlate" type="MeshInstance3D" parent="." unique_id=1163740945]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0.29)
+material_override = SubResource("StandardMaterial3D_rq54q")
+mesh = SubResource("BoxMesh_s21xm")
+
+[node name="SocketOptic" type="Marker3D" parent="." unique_id=1693991391]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.055, -0.04)
+
+[node name="SocketMuzzle" type="Marker3D" parent="." unique_id=1190876971]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025, -0.31)
+
+[node name="SocketMag" type="Marker3D" parent="." unique_id=546555529]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.06, -0.12)

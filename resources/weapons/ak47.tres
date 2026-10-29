@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/ak47_shot.wav" id="2_shot"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/reload.wav" id="3_reload"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/dry_fire.wav" id="4_dry"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/attachments/optic_red_dot.tscn" id="5_optic"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_name = "ACR 6.8"
+weapon_id = "acr68"
+category = 0
+fire_mode = 0
+damage_close = 55
+damage_medium = 38
+damage_long = 28
+damage_falloff_start = 15.0
+damage_falloff_end = 40.0
+headshot_multiplier = 2.0
+chest_multiplier = 1.0
+limb_multiplier = 0.75
+max_range = 1000.0
+fire_rate_rpm = 750.0
+burst_count = 3
+burst_delay = 0.05
+magazine_capacity = 30
+reserve_ammo_max = 120
+reload_tactical_time = 1.65
+reload_empty_time = 1.65
+can_cancel_reload = true
+recoil_kick = Vector3(0.3, 1.8, 0.12)
+recoil_snappiness = 6.0
+recoil_return_speed = 5.0
+bloom_per_shot = 0.02
+bloom_max = 0.14
+bloom_recovery_rate = 8.0
+ads_bloom_mult = 0.3
+crouch_bloom_mult = 0.6
+prone_bloom_mult = 0.4
+sprint_bloom_mult = 3.5
+ads_position = Vector3(0.0064, 0.1820, 0.1832)
+ads_time = 0.22
+ads_fov_delta = -20.0
+ads_sens_mult = 0.65
+optic_type = 1
+has_optic = true
+optic_scene = ExtResource("5_optic")
+optic_mount_offset = Vector3(0.0064, 0.065, -0.05)
+is_hitscan = true
+penetration_power = 1
+penetration_damage_mult = 0.65
+sound_fire = ExtResource("2_shot")
+sound_reload_tact = ExtResource("3_reload")
+sound_reload_empty = ExtResource("3_reload")
+sound_dry_fire = ExtResource("4_dry")
+xp_per_kill = 100
+unlock_level = 1
+weapon_level_max = 50

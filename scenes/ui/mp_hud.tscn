@@ -1,0 +1,261 @@
+[gd_scene load_steps=4 format=3 uid="uid://mp_hud_1v1"]
+
+[ext_resource type="Script" path="res://scripts/ui/mp_hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="2_pause"]
+[ext_resource type="PackedScene" uid="uid://minimap_hud_cod" path="res://scenes/ui/minimap_hud.tscn" id="3_minimap"]
+
+[node name="MPHud" type="CanvasLayer" node_paths=PackedStringArray("score_label", "status_label", "health_bar", "health_label", "ammo_label", "hitmarker_ctrl", "hitmarker_label", "connection_panel", "winner_panel", "winner_title", "ip_input")]
+script = ExtResource("1_hud")
+score_label = NodePath("TopBar/VBox/ScoreLabel")
+status_label = NodePath("TopBar/VBox/StatusLabel")
+health_bar = NodePath("BottomLeft/VBox/HealthBar")
+health_label = NodePath("BottomLeft/VBox/HealthLabel")
+ammo_label = NodePath("BottomRight/AmmoLabel")
+hitmarker_ctrl = NodePath("Hitmarker")
+hitmarker_label = NodePath("Hitmarker/HitmarkerLabel")
+connection_panel = NodePath("ConnectionPanel")
+winner_panel = NodePath("WinnerPanel")
+winner_title = NodePath("WinnerPanel/VBox/WinnerTitle")
+ip_input = NodePath("ConnectionPanel/VBox/HBoxJoin/IPInput")
+
+[node name="TopBar" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 70.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 10.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+
+[node name="ScoreLabel" type="Label" parent="TopBar/VBox"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+text = "🛡️ ALPHA: 0   |   💣 BRAVO: 0"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="TopBar/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.85)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 13
+text = "MATA-MATA EM EQUIPE — META: 50 KILLS"
+horizontal_alignment = 1
+
+[node name="Crosshair" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Dot" type="ColorRect" parent="Crosshair"]
+layout_mode = 0
+offset_left = -1.5
+offset_top = -1.5
+offset_right = 1.5
+offset_bottom = 1.5
+color = Color(1, 1, 1, 0.85)
+
+[node name="Hitmarker" type="Control" parent="."]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HitmarkerLabel" type="Label" parent="Hitmarker"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 30
+text = "✕"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomLeft" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -80.0
+offset_right = 260.0
+offset_bottom = -20.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="BottomLeft"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HealthLabel" type="Label" parent="BottomLeft/VBox"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "HP: 100"
+
+[node name="HealthBar" type="ProgressBar" parent="BottomLeft/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="BottomRight" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -80.0
+offset_right = -30.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="AmmoLabel" type="Label" parent="BottomRight"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 36
+text = "30 / 120"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="ConnectionPanel" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -140.0
+offset_right = 220.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="ConnectionPanel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="ConnectionPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "TacticalFPS 1v1 — Sala LAN"
+horizontal_alignment = 1
+
+[node name="HostBtn" type="Button" parent="ConnectionPanel/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "CRIAR PARTIDA (HOST - TECLA H)"
+
+[node name="HBoxJoin" type="HBoxContainer" parent="ConnectionPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="IPInput" type="LineEdit" parent="ConnectionPanel/VBox/HBoxJoin"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "127.0.0.1"
+text = "127.0.0.1"
+
+[node name="JoinBtn" type="Button" parent="ConnectionPanel/VBox/HBoxJoin"]
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "ENTRAR (J)"
+
+[node name="Help" type="Label" parent="ConnectionPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Host cria o servidor (P1). O segundo jogador clica Entrar no IP 127.0.0.1 (P2)."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="WinnerPanel" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -100.0
+offset_right = 180.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="WinnerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="WinnerTitle" type="Label" parent="WinnerPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "FIM DE PARTIDA"
+horizontal_alignment = 1
+
+[node name="RestartBtn" type="Button" parent="WinnerPanel/VBox"]
+custom_minimum_size = Vector2(0, 45)
+layout_mode = 2
+text = "REINICIAR PARTIDA"
+
+[connection signal="pressed" from="ConnectionPanel/VBox/HostBtn" to="." method="_on_host_pressed"]
+[connection signal="pressed" from="ConnectionPanel/VBox/HBoxJoin/JoinBtn" to="." method="_on_join_pressed"]
+[connection signal="pressed" from="WinnerPanel/VBox/RestartBtn" to="." method="_on_restart_pressed"]
+
+[node name="MinimapHUD" parent="." instance=ExtResource("3_minimap")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 240.0
+offset_bottom = 264.0
+
+[node name="PauseMenu" parent="." instance=ExtResource("2_pause")]
+visible = false
+

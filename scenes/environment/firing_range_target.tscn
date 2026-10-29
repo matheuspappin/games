@@ -1,0 +1,137 @@
+[gd_scene load_steps=13 format=3 uid="uid://firing_range_target"]
+
+[ext_resource type="Script" path="res://scripts/world/firing_range_target.gd" id="1_target"]
+[ext_resource type="Script" path="res://scripts/characters/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/characters/hitbox_component.gd" id="3_hitbox"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_Base"]
+albedo_color = Color(0.12, 0.14, 0.18, 1)
+metallic = 0.8
+roughness = 0.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_base"]
+material = SubResource("Mat_Base")
+size = Vector3(0.8, 0.1, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Torso"]
+albedo_color = Color(0.2, 0.25, 0.32, 1)
+roughness = 0.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_chest"]
+material = SubResource("Mat_Torso")
+size = Vector3(0.5, 0.65, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Head"]
+albedo_color = Color(0.85, 0.2, 0.2, 1)
+roughness = 0.4
+
+[sub_resource type="SphereMesh" id="SphereMesh_head"]
+material = SubResource("Mat_Head")
+radius = 0.18
+height = 0.36
+
+[sub_resource type="BoxMesh" id="BoxMesh_plate"]
+size = Vector3(0.42, 0.38, 0.08)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pole"]
+material = SubResource("Mat_Base")
+top_radius = 0.05
+bottom_radius = 0.05
+height = 0.9
+
+[sub_resource type="SphereShape3D" id="Shape_Head"]
+radius = 0.22
+
+[sub_resource type="BoxShape3D" id="Shape_Chest"]
+size = Vector3(0.55, 0.7, 0.3)
+
+[sub_resource type="BoxShape3D" id="Shape_Limbs"]
+size = Vector3(0.35, 0.9, 0.3)
+
+[node name="FiringRangeTarget" type="Node3D"]
+script = ExtResource("1_target")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+max_health = 100
+
+[node name="BaseStand" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("BoxMesh_base")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="SwivelPivot" type="Node3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+
+[node name="PoleMesh" type="MeshInstance3D" parent="VisualRoot/SwivelPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("CylinderMesh_pole")
+
+[node name="ChestMesh" type="MeshInstance3D" parent="VisualRoot/SwivelPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+mesh = SubResource("BoxMesh_chest")
+
+[node name="PlateMesh" type="MeshInstance3D" parent="VisualRoot/SwivelPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.28, 0.08)
+visible = false
+mesh = SubResource("BoxMesh_plate")
+
+[node name="HeadMesh" type="MeshInstance3D" parent="VisualRoot/SwivelPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+mesh = SubResource("SphereMesh_head")
+
+[node name="Hitbox_Head" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 0
+bone_name = "Head"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox_Head"]
+shape = SubResource("Shape_Head")
+
+[node name="Hitbox_Chest" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 1
+bone_name = "Chest"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox_Chest"]
+shape = SubResource("Shape_Chest")
+
+[node name="Hitbox_Limbs" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 5
+bone_name = "Limbs"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox_Limbs"]
+shape = SubResource("Shape_Limbs")
+
+[node name="LabelDamage" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.15, 0)
+billboard = 1
+double_sided = false
+no_depth_test = true
+modulate = Color(1, 0.85, 0.2, 1)
+outline_modulate = Color(0, 0, 0, 0.8)
+text = ""
+font_size = 28
+outline_size = 8
+
+[node name="LabelStats" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+billboard = 1
+double_sided = false
+modulate = Color(0.9, 0.95, 1, 0.95)
+outline_modulate = Color(0, 0, 0, 0.75)
+text = "ALVO • 10m
+HP: 100 / 100"
+font_size = 18
+outline_size = 6

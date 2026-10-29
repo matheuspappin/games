@@ -1,0 +1,117 @@
+[gd_scene load_steps=10 format=3 uid="uid://soldier_bot"]
+
+[ext_resource type="Script" path="res://scripts/ai/enemy_ai.gd" id="1_ai"]
+[ext_resource type="Script" path="res://scripts/characters/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/characters/hitbox_component.gd" id="3_hitbox"]
+[ext_resource type="PackedScene" path="res://assets/models/mixamo/x_bot.glb" id="4_soldier"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/ak47_shot.wav" id="5_shot_audio"]
+[ext_resource type="PackedScene" uid="uid://bot_rifle_3d_main" path="res://scenes/weapons/bot_rifle_3d.tscn" id="6_rifle"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_bot"]
+radius = 0.42
+height = 1.82
+
+[sub_resource type="SphereShape3D" id="SphereShape_head"]
+radius = 0.26
+
+[sub_resource type="BoxShape3D" id="BoxShape_chest"]
+size = Vector3(0.65, 0.75, 0.45)
+
+[sub_resource type="BoxShape3D" id="BoxShape_legs"]
+size = Vector3(0.55, 0.9, 0.45)
+
+[node name="SoldierBot" type="CharacterBody3D" groups=["combatants", "enemies"]]
+collision_layer = 4
+collision_mask = 7
+floor_stop_on_slope = true
+floor_constant_speed = true
+floor_max_angle = 0.872665
+floor_snap_length = 0.35
+safe_margin = 0.08
+script = ExtResource("1_ai")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.91, 0)
+shape = SubResource("CapsuleShape3D_bot")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 1.0
+target_desired_distance = 1.5
+
+[node name="EyesPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+
+[node name="GunMuzzle" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 1.25, -0.65)
+
+[node name="GunAudio" type="AudioStreamPlayer3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 1.25, -0.65)
+stream = ExtResource("5_shot_audio")
+max_distance = 75.0
+unit_size = 7.0
+bus = &"SFX"
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+max_health = 100
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="SoldierModel" parent="VisualRoot" instance=ExtResource("4_soldier")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="GunHolder" type="Node3D" parent="VisualRoot"]
+visible = false
+transform = Transform3D(0.99863, 0, -0.052336, 0, 1, 0, 0.052336, 0, 0.99863, 0.08, 1.18, -0.22)
+
+[node name="BotRifle3D" parent="VisualRoot/GunHolder" instance=ExtResource("6_rifle")]
+visible = false
+
+[node name="Hitbox_Head" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 0
+bone_name = "Head"
+
+[node name="Collision" type="CollisionShape3D" parent="Hitbox_Head"]
+shape = SubResource("SphereShape_head")
+
+[node name="Hitbox_Chest" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 1
+bone_name = "Chest"
+
+[node name="Collision" type="CollisionShape3D" parent="Hitbox_Chest"]
+shape = SubResource("BoxShape_chest")
+
+[node name="Hitbox_Legs" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 5
+bone_name = "Legs"
+
+[node name="Collision" type="CollisionShape3D" parent="Hitbox_Legs"]
+shape = SubResource("BoxShape_legs")
+
+[node name="DamageLabel3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
+billboard = 1
+text = ""
+font_size = 28
+outline_size = 6
+modulate = Color(1, 0.2, 0.2, 1)
+
+[node name="NameplateLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+billboard = 1
+text = "SoldierBot"
+font_size = 22
+outline_size = 4
+modulate = Color(1, 0.45, 0.25, 0.95)

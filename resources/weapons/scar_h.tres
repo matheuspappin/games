@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/ak47_shot.wav" id="2_fire"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/reload.wav" id="3_reload"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/dry_fire.wav" id="4_dry"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_name = "SCAR-H"
+weapon_id = "scar_h"
+category = 0
+fire_mode = 0
+damage_close = 58
+damage_medium = 42
+damage_long = 34
+damage_falloff_start = 20.0
+damage_falloff_end = 50.0
+headshot_multiplier = 2.0
+chest_multiplier = 1.05
+limb_multiplier = 0.75
+max_range = 1000.0
+fire_rate_rpm = 600.0
+burst_count = 1
+burst_delay = 0.05
+magazine_capacity = 20
+reserve_ammo_max = 100
+reload_tactical_time = 2.1
+reload_empty_time = 2.6
+can_cancel_reload = true
+recoil_kick = Vector3(0.4, 2.2, 0.15)
+recoil_snappiness = 5.8
+recoil_return_speed = 4.8
+bloom_per_shot = 0.024
+bloom_max = 0.15
+bloom_recovery_rate = 7.5
+ads_bloom_mult = 0.25
+crouch_bloom_mult = 0.6
+prone_bloom_mult = 0.4
+sprint_bloom_mult = 3.5
+ads_position = Vector3(-0.233, 0.099, -0.05)
+ads_time = 0.24
+ads_fov_delta = -18.0
+ads_sens_mult = 0.65
+optic_type = 1
+has_optic = true
+is_hitscan = true
+penetration_power = 2
+penetration_damage_mult = 0.75
+sound_fire = ExtResource("2_fire")
+sound_reload_tact = ExtResource("3_reload")
+sound_reload_empty = ExtResource("3_reload")
+sound_dry_fire = ExtResource("4_dry")
+xp_per_kill = 100
+unlock_level = 1
+weapon_level_max = 50

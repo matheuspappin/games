@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://addons/fps-hands/fps-sawnoff/resources/sounds/fire.wav" id="2_fire"]
+[ext_resource type="AudioStream" path="res://addons/fps-hands/fps-sawnoff/resources/sounds/reload.wav" id="3_reload"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/dry_fire.wav" id="4_dry"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_name = "Sawnoff Shotgun"
+weapon_id = "sawnoff"
+category = 4
+fire_mode = 1
+damage_close = 120
+damage_medium = 50
+damage_long = 15
+damage_falloff_start = 6.0
+damage_falloff_end = 18.0
+headshot_multiplier = 1.5
+chest_multiplier = 1.0
+limb_multiplier = 0.8
+max_range = 100.0
+fire_rate_rpm = 200.0
+burst_count = 1
+burst_delay = 0.05
+magazine_capacity = 2
+reserve_ammo_max = 24
+reload_tactical_time = 1.9
+reload_empty_time = 2.4
+can_cancel_reload = true
+recoil_kick = Vector3(0.5, 3.0, 0.2)
+recoil_snappiness = 9.0
+recoil_return_speed = 6.0
+bloom_per_shot = 0.08
+bloom_max = 0.25
+bloom_recovery_rate = 10.0
+ads_bloom_mult = 0.4
+crouch_bloom_mult = 0.7
+prone_bloom_mult = 0.5
+sprint_bloom_mult = 3.0
+ads_position = Vector3(0.0, -0.20, 0.1)
+ads_time = 0.16
+ads_fov_delta = -10.0
+ads_sens_mult = 0.75
+optic_type = 0
+has_optic = false
+is_hitscan = true
+penetration_power = 1
+penetration_damage_mult = 0.5
+sound_fire = ExtResource("2_fire")
+sound_reload_tact = ExtResource("3_reload")
+sound_reload_empty = ExtResource("3_reload")
+sound_dry_fire = ExtResource("4_dry")
+xp_per_kill = 100
+unlock_level = 1
+weapon_level_max = 50

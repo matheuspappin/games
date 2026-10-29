@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://red_dot_sight_optic"]
+
+[ext_resource type="Script" path="res://scripts/weapons/optics/optic_sight.gd" id="1_optic"]
+
+[node name="RedDotSight" type="Node3D"]
+script = ExtResource("1_optic")
+optic_type = 0
+reticle_color = Color(1, 0.15, 0.15, 1)
+reticle_size = 0.008
+lens_radius = 0.028

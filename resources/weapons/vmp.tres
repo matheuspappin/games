@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://addons/fps-hands/fps-smg45/resources/sounds/fire.wav" id="2_fire"]
+[ext_resource type="AudioStream" path="res://addons/fps-hands/fps-smg45/resources/sounds/reload.wav" id="3_reload"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/dry_fire.wav" id="4_dry"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_name = "VMP"
+weapon_id = "vmp"
+category = 1
+fire_mode = 0
+damage_close = 36
+damage_medium = 25
+damage_long = 17
+damage_falloff_start = 12.0
+damage_falloff_end = 30.0
+headshot_multiplier = 1.8
+chest_multiplier = 1.0
+limb_multiplier = 0.8
+max_range = 600.0
+fire_rate_rpm = 900.0
+burst_count = 1
+burst_delay = 0.05
+magazine_capacity = 32
+reserve_ammo_max = 128
+reload_tactical_time = 1.7
+reload_empty_time = 2.1
+can_cancel_reload = true
+recoil_kick = Vector3(0.2, 1.3, 0.08)
+recoil_snappiness = 7.2
+recoil_return_speed = 6.5
+bloom_per_shot = 0.017
+bloom_max = 0.11
+bloom_recovery_rate = 9.0
+ads_bloom_mult = 0.24
+crouch_bloom_mult = 0.6
+prone_bloom_mult = 0.4
+sprint_bloom_mult = 2.8
+ads_position = Vector3(0.0, -0.22, 0.1)
+ads_time = 0.17
+ads_fov_delta = -12.0
+ads_sens_mult = 0.70
+optic_type = 0
+has_optic = false
+is_hitscan = true
+penetration_power = 1
+penetration_damage_mult = 0.5
+sound_fire = ExtResource("2_fire")
+sound_reload_tact = ExtResource("3_reload")
+sound_reload_empty = ExtResource("3_reload")
+sound_dry_fire = ExtResource("4_dry")
+xp_per_kill = 100
+unlock_level = 1
+weapon_level_max = 50

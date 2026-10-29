@@ -1,0 +1,95 @@
+[gd_scene load_steps=12 format=3 uid="uid://target_dummy"]
+
+[ext_resource type="Script" path="res://scripts/characters/target_dummy.gd" id="1_dummy"]
+[ext_resource type="Script" path="res://scripts/characters/health_component.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/characters/hitbox_component.gd" id="3_hitbox"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_head"]
+albedo_color = Color(0.85, 0.2, 0.2, 1)
+roughness = 0.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_head"]
+material = SubResource("Mat_head")
+radius = 0.18
+height = 0.36
+
+[sub_resource type="StandardMaterial3D" id="Mat_body"]
+albedo_color = Color(0.2, 0.4, 0.7, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="BoxMesh_chest"]
+material = SubResource("Mat_body")
+size = Vector3(0.5, 0.65, 0.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stand"]
+size = Vector3(0.12, 0.9, 0.12)
+
+[sub_resource type="SphereShape3D" id="SphereShape_head"]
+radius = 0.22
+
+[sub_resource type="BoxShape3D" id="BoxShape_chest"]
+size = Vector3(0.55, 0.7, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape_legs"]
+size = Vector3(0.35, 0.9, 0.3)
+
+[node name="TargetDummy" type="Node3D"]
+script = ExtResource("1_dummy")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+max_health = 100
+
+[node name="VisualMesh" type="Node3D" parent="."]
+
+[node name="HeadMesh" type="MeshInstance3D" parent="VisualMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+mesh = SubResource("SphereMesh_head")
+
+[node name="ChestMesh" type="MeshInstance3D" parent="VisualMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+mesh = SubResource("BoxMesh_chest")
+
+[node name="StandMesh" type="MeshInstance3D" parent="VisualMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("BoxMesh_stand")
+
+[node name="Hitbox_Head" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 0
+bone_name = "Head"
+
+[node name="Collision" type="CollisionShape3D" parent="Hitbox_Head"]
+shape = SubResource("SphereShape_head")
+
+[node name="Hitbox_Chest" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 1
+bone_name = "Chest"
+
+[node name="Collision" type="CollisionShape3D" parent="Hitbox_Chest"]
+shape = SubResource("BoxShape_chest")
+
+[node name="Hitbox_Legs" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("3_hitbox")
+region = 5
+bone_name = "Legs"
+
+[node name="Collision" type="CollisionShape3D" parent="Hitbox_Legs"]
+shape = SubResource("BoxShape_legs")
+
+[node name="DamageLabel3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+billboard = 1
+text = ""
+font_size = 28
+outline_size = 6

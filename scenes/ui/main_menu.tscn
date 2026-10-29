@@ -1,0 +1,1435 @@
+[gd_scene format=3 uid="uid://doyirblf1dlx4"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="2_settings"]
+[ext_resource type="PackedScene" path="res://scenes/ui/social_modal.tscn" id="3_social"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_hero_stage.tscn" id="4_hero_stage"]
+[ext_resource type="FontFile" path="res://assets/fonts/teko.tres" id="10_teko"]
+[ext_resource type="FontFile" path="res://assets/fonts/rajdhani.tres" id="11_rajdhani"]
+[ext_resource type="FontFile" path="res://assets/fonts/mono.tres" id="12_mono"]
+[ext_resource type="FontFile" path="res://assets/fonts/inter.tres" id="13_inter"]
+[ext_resource type="Shader" path="res://shaders/menu_scanline_vignette.gdshader" id="20_scanline"]
+[ext_resource type="Shader" path="res://shaders/deploy_pulse.gdshader" id="21_deploy_pulse"]
+
+; ═══════════════════════════════════════════════════════════════════
+; SUB RESOURCES & SHADER MATERIALS
+; ═══════════════════════════════════════════════════════════════════
+
+[sub_resource type="ShaderMaterial" id="Mat_scanline"]
+shader = ExtResource("20_scanline")
+shader_parameter/scanline_opacity = 0.03
+shader_parameter/scanline_frequency = 320.0
+shader_parameter/vignette_strength = 0.48
+shader_parameter/vignette_radius = 1.05
+shader_parameter/vignette_color = Color(0.015, 0.02, 0.028, 1)
+shader_parameter/chromatic_shift = 0.45
+
+[sub_resource type="ShaderMaterial" id="Mat_deploy_pulse"]
+shader = ExtResource("21_deploy_pulse")
+shader_parameter/pulse_speed = 1.6
+shader_parameter/glow_intensity = 0.7
+shader_parameter/glow_color_inner = Color(1, 0.8, 0.2, 1)
+shader_parameter/glow_color_outer = Color(1, 0.45, 0.05, 1)
+shader_parameter/edge_width = 0.08
+shader_parameter/radiation_bands = 3.0
+
+; --- Left tactical panel background ---
+[sub_resource type="StyleBoxFlat" id="Style_left_panel"]
+bg_color = Color(0.03, 0.038, 0.055, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.74, 0.22, 0.45)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 24
+
+; --- Mode button styles ---
+[sub_resource type="StyleBoxFlat" id="Style_mode_selected"]
+bg_color = Color(1, 0.72, 0.15, 0.14)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.75, 0.2, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 2
+shadow_color = Color(1, 0.65, 0.1, 0.22)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_mode_hover"]
+bg_color = Color(0.14, 0.18, 0.24, 0.92)
+border_width_left = 4
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.85, 1, 0.8)
+corner_radius_top_left = 2
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="Style_mode_unselected"]
+bg_color = Color(0.07, 0.088, 0.125, 0.78)
+border_width_left = 3
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.35, 0.48, 0.65)
+corner_radius_top_left = 2
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 2
+
+; --- Pill toggles (Bots / Online) ---
+[sub_resource type="StyleBoxFlat" id="Style_pill_active"]
+bg_color = Color(1, 0.7, 0.15, 0.22)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.78, 0.25, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_pill_inactive"]
+bg_color = Color(0.09, 0.115, 0.16, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.26, 0.32, 0.42, 0.65)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; --- Buttons general ---
+[sub_resource type="StyleBoxFlat" id="Style_btn_normal"]
+bg_color = Color(0.095, 0.12, 0.17, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.40, 0.52, 0.75)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_hover"]
+bg_color = Color(0.14, 0.19, 0.28, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.85, 1, 0.85)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+; --- Deploy button styles ---
+[sub_resource type="StyleBoxFlat" id="Style_btn_deploy"]
+bg_color = Color(1, 0.68, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.88, 0.45, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(1, 0.55, 0.08, 0.6)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_deploy_hover"]
+bg_color = Color(1, 0.78, 0.22, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 0.75, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(1, 0.65, 0.15, 0.8)
+shadow_size = 26
+
+; --- Badges ---
+[sub_resource type="StyleBoxFlat" id="Style_badge_cyan"]
+bg_color = Color(0, 0.85, 1, 0.15)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.85, 1, 0.75)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="Style_badge_amber"]
+bg_color = Color(1, 0.65, 0.1, 0.15)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.65, 0.1, 0.75)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="Style_badge_emerald"]
+bg_color = Color(0, 0.9, 0.45, 0.15)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.9, 0.45, 0.75)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+; --- Bottom bar panel ---
+[sub_resource type="StyleBoxFlat" id="Style_bottom_bar"]
+bg_color = Color(0.025, 0.032, 0.046, 0.92)
+border_width_top = 1
+border_color = Color(1, 0.72, 0.2, 0.35)
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 14
+
+; --- Gunsmith modal panel ---
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.04, 0.05, 0.075, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.68, 0.15, 0.65)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1, 0.5, 0.05, 0.18)
+shadow_size = 32
+
+[sub_resource type="StyleBoxFlat" id="Style_slot_panel"]
+bg_color = Color(0.07, 0.09, 0.13, 0.9)
+border_width_left = 3
+border_color = Color(0.85, 0.6, 0.12, 0.75)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+; --- DISPLAY HOLOGRÁFICO ÂMBAR (Solana PDA) ---
+[sub_resource type="StyleBoxFlat" id="Style_pda_amber"]
+bg_color = Color(0.10, 0.068, 0.022, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.78, 0.24, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(1, 0.5, 0.05, 0.3)
+shadow_size = 14
+
+; --- Embers procedural particles ---
+[sub_resource type="CanvasItemMaterial" id="SparkMaterial"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="EmberGradient"]
+offsets = PackedFloat32Array(0, 0.2, 0.7, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.85, 0.35, 1, 1, 0.45, 0.05, 0.85, 0.8, 0.1, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="EmberTexture"]
+gradient = SubResource("EmberGradient")
+width = 10
+height = 20
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="ParticleProcessMaterial" id="EmberProcessMaterial"]
+particle_flag_align_y = true
+emission_shape = 3
+emission_box_extents = Vector3(980, 540, 0)
+direction = Vector3(0.1, -1, 0)
+spread = 24.0
+initial_velocity_min = 35.0
+initial_velocity_max = 130.0
+gravity = Vector3(0, -15, 0)
+scale_min = 0.5
+scale_max = 2.0
+color = Color(1, 0.85, 0.4, 0.95)
+turbulence_enabled = true
+turbulence_noise_strength = 2.5
+turbulence_noise_scale = 4.0
+
+; ═══════════════════════════════════════════════════════════════════
+; SCENE TREE
+; ═══════════════════════════════════════════════════════════════════
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+; ─── 1. HERO VIEWPORT 3D (O OPERADOR) ─────────────────────────────
+[node name="HeroViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="HeroSubViewport" type="SubViewport" parent="HeroViewportContainer"]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 4
+
+[node name="MenuHeroStage" parent="HeroViewportContainer/HeroSubViewport" instance=ExtResource("4_hero_stage")]
+
+; ─── 2. LEFT SHADOW GRADIENT (Protects readability of left panel) ─
+[node name="BgGradientLeft" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 0.44
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.015, 0.02, 0.03, 0.52)
+
+; ─── 3. FX LAYER (Brasas, Scanline, Vinheta) ──────────────────────
+[node name="FxLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="EmbersParticles" type="GPUParticles2D" parent="FxLayer"]
+material = SubResource("SparkMaterial")
+position = Vector2(960, 540)
+emitting = true
+amount = 140
+lifetime = 4.5
+preprocess = 3.0
+visibility_rect = Rect2(-1000, -600, 2000, 1200)
+process_material = SubResource("EmberProcessMaterial")
+texture = SubResource("EmberTexture")
+
+[node name="ScanlineOverlay" type="ColorRect" parent="FxLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("Mat_scanline")
+
+; ─── 4. TOP BAR (Engine Badge + Display Holográfico Âmbar Solana) ──
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 36.0
+offset_top = 18.0
+offset_right = -36.0
+offset_bottom = 74.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="EngineBadgeCol" type="VBoxContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LblEngine" type="Label" parent="TopBar/EngineBadgeCol"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.1, 0.92, 1, 0.88)
+theme_override_font_sizes/font_size = 13
+text = "ENGINE: GODOT 4.7.2 VULKAN FORWARD+"
+
+[node name="LblModeTag" type="Label" parent="TopBar/EngineBadgeCol"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.70, 0.78, 0.88, 0.82)
+theme_override_font_sizes/font_size = 12
+text = "BOTS IA INTELIGENTES • DUELOS MULTIPLAYER • PLAY TO EARN"
+
+[node name="TopSpacer" type="Control" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+; --- DISPLAY HOLOGRÁFICO ÂMBAR (Solana PDA) ---
+[node name="SolanaPDA" type="PanelContainer" parent="TopBar"]
+custom_minimum_size = Vector2(285, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_pda_amber")
+
+[node name="PDAMargin" type="MarginContainer" parent="TopBar/SolanaPDA"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 6
+
+[node name="PDAVBox" type="VBoxContainer" parent="TopBar/SolanaPDA/PDAMargin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="PDAHeader" type="HBoxContainer" parent="TopBar/SolanaPDA/PDAMargin/PDAVBox"]
+layout_mode = 2
+
+[node name="LblPDATitle" type="Label" parent="TopBar/SolanaPDA/PDAMargin/PDAVBox/PDAHeader"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(1, 0.82, 0.25, 1)
+theme_override_font_sizes/font_size = 13
+text = "◎ SOLANA TACTICAL PDA"
+
+[node name="PDASpacer" type="Control" parent="TopBar/SolanaPDA/PDAMargin/PDAVBox/PDAHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LblPDAStatus" type="Label" parent="TopBar/SolanaPDA/PDAMargin/PDAVBox/PDAHeader"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.25, 0.95, 0.45, 0.95)
+theme_override_font_sizes/font_size = 11
+text = "● ATIVO"
+
+[node name="LblPDABalance" type="Label" parent="TopBar/SolanaPDA/PDAMargin/PDAVBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "$NUKE: 1,450.00 | SOL: 4.25 ◎"
+
+[node name="LblPDAWallet" type="Label" parent="TopBar/SolanaPDA/PDAMargin/PDAVBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.92, 0.76, 0.35, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "CARTEIRA: 7xK9...3bF4 [VERIFICADA]"
+
+; ─── 5. MAIN LAYOUT (Split Panel: Left Tactical + Right Hero) ─────
+[node name="MainLayout" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 82
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 84
+
+[node name="VBox" type="HBoxContainer" parent="MainLayout"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+; ─── LEFT TACTICAL PANEL ─────────────────────────────────────────
+[node name="LeftPanel" type="PanelContainer" parent="MainLayout/VBox"]
+custom_minimum_size = Vector2(470, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_left_panel")
+
+[node name="LeftMargin" type="MarginContainer" parent="MainLayout/VBox/LeftPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 16
+
+[node name="LeftVBox" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+; --- LOGO NUKETACTICAL ---
+[node name="LogoSection" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="LblLogoBadge" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/LogoSection"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(1, 0.7, 0.2, 0.95)
+theme_override_font_sizes/font_size = 11
+text = "[ ☣ PROTOCOLO FALLOUT // ZONE 01 ]"
+
+[node name="LblGameTitle" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/LogoSection"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("10_teko")
+theme_override_colors/font_color = Color(1, 0.76, 0.16, 1)
+theme_override_colors/font_shadow_color = Color(0.8, 0.15, 0.02, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 67
+text = "NUKEFPS"
+
+[node name="LblGameSubtitle" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/LogoSection"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(0.78, 0.85, 0.94, 0.92)
+theme_override_font_sizes/font_size = 14
+text = "TACTICAL WARFARE // FALLOUT ZONE"
+
+; --- COMBAT EXPERIENCE (Bots vs Online) ---
+[node name="Divider1" type="HSeparator" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+modulate = Color(1, 0.7, 0.2, 0.2)
+layout_mode = 2
+
+[node name="LblExperience" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(0.70, 0.78, 0.88, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "EXPERIÊNCIA DE COMBATE"
+
+[node name="CategorySection" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnModeBots" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CategorySection"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_pill_active")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "🤖  BOTS (SOLO)"
+
+[node name="BtnModeOnline" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CategorySection"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_pill_inactive")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "🌐  MULTIPLAYER"
+
+; --- LISTA TÁTICA VERTICAL DE OPERAÇÕES ---
+[node name="Divider2" type="HSeparator" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+modulate = Color(1, 0.7, 0.2, 0.2)
+layout_mode = 2
+
+[node name="LblModes" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(0.70, 0.78, 0.88, 0.95)
+theme_override_font_sizes/font_size = 14
+text = "SELECIONE A OPERAÇÃO"
+
+[node name="CardsHBox" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+; --- Card TDM ---
+[node name="CardModeTDM" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_mode_selected")
+theme_override_styles/pressed = SubResource("Style_mode_selected")
+theme_override_styles/hover = SubResource("Style_mode_hover")
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="HeaderBox" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM/Margin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "⚔  MATA-MATA EM EQUIPE"
+
+[node name="Spacer" type="Control" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM/Margin/VBox/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Badge" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.1, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_badge_cyan")
+text = " 6v6 TDM "
+
+[node name="Desc" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.70, 0.76, 0.86, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Alpha (CT) vs Bravo (T) • 50 baixas • Nuketown"
+
+[node name="LblStatusTDM" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTDM/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+theme_override_font_sizes/font_size = 11
+text = "▸ SELECIONADO"
+
+; --- Card Duel ---
+[node name="CardModeDuel" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_mode_unselected")
+theme_override_styles/pressed = SubResource("Style_mode_selected")
+theme_override_styles/hover = SubResource("Style_mode_hover")
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="HeaderBox" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel/Margin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "🎯  DUELO TÁTICO (1v1)"
+
+[node name="Spacer" type="Control" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel/Margin/VBox/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Badge" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(1, 0.75, 0.25, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_badge_amber")
+text = " 1v1 COMBAT "
+
+[node name="Desc" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.70, 0.76, 0.86, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Mano a mano • 10 baixas • Sudden Death"
+
+[node name="LblStatusDuel" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeDuel/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.55, 0.62, 0.72, 0.75)
+theme_override_font_sizes/font_size = 11
+text = "  SELECIONAR"
+
+; --- Card PVE ---
+[node name="CardModePVE" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_mode_unselected")
+theme_override_styles/pressed = SubResource("Style_mode_selected")
+theme_override_styles/hover = SubResource("Style_mode_hover")
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="HeaderBox" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE/Margin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "💀  HORDA SOBREVIVÊNCIA"
+
+[node name="Spacer" type="Control" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE/Margin/VBox/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Badge" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.1, 0.95, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_badge_emerald")
+text = " PVE HORDE "
+
+[node name="Desc" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.70, 0.76, 0.86, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Ondas crescentes de SoldierBots IA"
+
+[node name="LblStatusPVE" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModePVE/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.55, 0.62, 0.72, 0.75)
+theme_override_font_sizes/font_size = 11
+text = "  SELECIONAR"
+
+; --- Card Torneio Solana ---
+[node name="CardModeTournament" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_mode_unselected")
+theme_override_styles/pressed = SubResource("Style_mode_selected")
+theme_override_styles/hover = SubResource("Style_mode_hover")
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="HeaderBox" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament/Margin/VBox"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "🏆  TORNEIO $NUKE SOLANA"
+
+[node name="Spacer" type="Control" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament/Margin/VBox/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Badge" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament/Margin/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(1, 0.82, 0.25, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_badge_amber")
+text = " WAGER ◎ "
+
+[node name="Desc" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.85, 0.80, 0.65, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "Apostas em SOL e $NUKE • Winner Takes All"
+
+[node name="LblStatusTourn" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/CardsHBox/CardModeTournament/Margin/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.92, 0.74, 0.32, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "  POOL: 25.5 SOL DISPONÍVEL"
+
+; --- CONFIGURAÇÃO DE BOTS ---
+[node name="Divider3" type="HSeparator" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+modulate = Color(1, 0.7, 0.2, 0.2)
+layout_mode = 2
+
+[node name="BoxBotsConfig" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="PresetsRow" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LblPresets" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/PresetsRow"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.65, 0.74, 0.84, 0.85)
+theme_override_font_sizes/font_size = 12
+text = "SQUAD:"
+
+[node name="BtnPreset1v1" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/PresetsRow"]
+custom_minimum_size = Vector2(44, 28)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "1v1"
+
+[node name="BtnPreset2v2" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/PresetsRow"]
+custom_minimum_size = Vector2(44, 28)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "2v2"
+
+[node name="BtnPreset3v3" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/PresetsRow"]
+custom_minimum_size = Vector2(44, 28)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "3v3"
+
+[node name="BtnPreset4v4" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/PresetsRow"]
+custom_minimum_size = Vector2(44, 28)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "4v4"
+
+[node name="BtnPreset5v5" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/PresetsRow"]
+custom_minimum_size = Vector2(44, 28)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "5v5"
+
+[node name="BtnPreset6v6" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/PresetsRow"]
+custom_minimum_size = Vector2(44, 28)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("Style_pill_active")
+text = "6v6"
+
+[node name="StepperRow" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="BtnBotMinus" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(30, 28)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "−"
+
+[node name="LblBotCount" type="Label" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(115, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(1, 0.85, 0.28, 1)
+theme_override_font_sizes/font_size = 13
+text = "11 BOTS (6v6)"
+horizontal_alignment = 1
+
+[node name="BtnBotPlus" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(30, 28)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "+"
+
+[node name="DiffSep" type="VSeparator" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+layout_mode = 2
+
+[node name="BtnDiffRecruit" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+tooltip_text = "Dificuldade: Recruta"
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "REC"
+
+[node name="BtnDiffNovice" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+tooltip_text = "Dificuldade: Iniciante"
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "INI"
+
+[node name="BtnDiffRegular" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+tooltip_text = "Dificuldade: Regular"
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_pill_active")
+text = "REG"
+
+[node name="BtnDiffVeteran" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+tooltip_text = "Dificuldade: Veterano"
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "VET"
+
+[node name="BtnDiffExpert" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxBotsConfig/StepperRow"]
+custom_minimum_size = Vector2(34, 28)
+layout_mode = 2
+tooltip_text = "Dificuldade: Especialista"
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "ESP"
+
+; --- CONFIGURAÇÃO ONLINE ---
+[node name="BoxOnlineConfig" type="VBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="OnlineRow1" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnOnlineHost" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig/OnlineRow1"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_pill_active")
+text = "👑 CRIAR SALA"
+
+[node name="BtnOnlineJoin" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig/OnlineRow1"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_pill_inactive")
+text = "🔗 ENTRAR"
+
+[node name="OnlineRow2" type="HBoxContainer" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="InputOnlineIP" type="LineEdit" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig/OnlineRow2"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 13
+placeholder_text = "Código de Sala ou IP..."
+
+[node name="BtnPasteCode" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig/OnlineRow2"]
+custom_minimum_size = Vector2(50, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "📋"
+
+[node name="BtnDedicatedServer" type="Button" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "🌐 SERVIDOR DEDICADO NEUTRO"
+
+[node name="InputOnlinePort" type="LineEdit" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig"]
+visible = false
+layout_mode = 2
+text = "7777"
+
+[node name="CheckFillBots" type="CheckBox" parent="MainLayout/VBox/LeftPanel/LeftMargin/LeftVBox/BoxOnlineConfig"]
+visible = false
+layout_mode = 2
+text = "Completar com Bots"
+
+; --- RIGHT HERO SPACE (O Operador respira aqui!) ---
+[node name="RightHeroSpace" type="Control" parent="MainLayout/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+; ─── 6. BOTTOM ACTION BAR ─────────────────────────────────────────
+[node name="BottomBar" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -78.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("Style_bottom_bar")
+
+[node name="BottomMargin" type="MarginContainer" parent="BottomBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 10
+
+[node name="ActionFooter" type="HBoxContainer" parent="BottomBar/BottomMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BtnGunsmith" type="Button" parent="BottomBar/BottomMargin/ActionFooter"]
+custom_minimum_size = Vector2(230, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "🛠️  GUNSMITH / LOADOUT"
+
+[node name="BtnDeploy" type="Button" parent="BottomBar/BottomMargin/ActionFooter"]
+custom_minimum_size = Vector2(390, 54)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("10_teko")
+theme_override_colors/font_color = Color(0.04, 0.025, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("Style_btn_deploy")
+theme_override_styles/hover = SubResource("Style_btn_deploy_hover")
+material = SubResource("Mat_deploy_pulse")
+text = "▶  ENTRAR EM COMBATE (DEPLOY)"
+
+[node name="BtnSocial" type="Button" parent="BottomBar/BottomMargin/ActionFooter"]
+custom_minimum_size = Vector2(145, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "👥  SOCIAL"
+
+[node name="BtnSettings" type="Button" parent="BottomBar/BottomMargin/ActionFooter"]
+custom_minimum_size = Vector2(165, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "⚙️  CONFIGURAÇÕES"
+
+[node name="BtnQuit" type="Button" parent="BottomBar/BottomMargin/ActionFooter"]
+custom_minimum_size = Vector2(95, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "✕  SAIR"
+
+; ═══════════════════════════════════════════════════════════════════
+; 7. MODAIS (Gunsmith, Settings, Social)
+; ═══════════════════════════════════════════════════════════════════
+
+[node name="PanelClassSelect" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -510.0
+offset_top = -310.0
+offset_right = 510.0
+offset_bottom = 310.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Margin" type="MarginContainer" parent="PanelClassSelect"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="PanelClassSelect/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="VBoxContainer" parent="PanelClassSelect/Margin/VBox"]
+layout_mode = 2
+
+[node name="LblTitle" type="Label" parent="PanelClassSelect/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("10_teko")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 34
+text = "PREPARAÇÃO TÁTICA — CLASSE E ARMAMENTO"
+
+[node name="LblPhaseName" type="Label" parent="PanelClassSelect/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("12_mono")
+theme_override_colors/font_color = Color(0.65, 0.72, 0.80, 0.85)
+theme_override_font_sizes/font_size = 13
+text = "FASE: NUKETOWN 2065"
+
+[node name="HSep1" type="HSeparator" parent="PanelClassSelect/Margin/VBox"]
+layout_mode = 2
+
+[node name="Content" type="HBoxContainer" parent="PanelClassSelect/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Left" type="VBoxContainer" parent="PanelClassSelect/Margin/VBox/Content"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblClassHeader" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 16
+text = "CLASSES PREDEFINIDAS:"
+
+[node name="BtnClassAssault" type="Button" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "🎯  ASSALTO (ACR 6.8 + PISTOLA C19)"
+alignment = 0
+
+[node name="BtnClassCQB" type="Button" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "⚡  CQB (SMG-45 + PISTOLA C19)"
+alignment = 0
+
+[node name="BtnClassSupport" type="Button" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "🛡️  SUPORTE (LMG-63 + PISTOLA C19)"
+alignment = 0
+
+[node name="BtnClassBreacher" type="Button" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "💥  BREACHER (ESCOPETA SAWN-OFF)"
+alignment = 0
+
+[node name="BtnClassSniper" type="Button" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "🔭  SNIPER (EM BREVE + .50 GS)"
+alignment = 0
+
+[node name="HSepClass" type="HSeparator" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+layout_mode = 2
+
+[node name="LblFactionHeader" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 16
+text = "FACÇÃO DO OPERADOR:"
+
+[node name="FactionHBox" type="HBoxContainer" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnFactionCT" type="Button" parent="PanelClassSelect/Margin/VBox/Content/Left/FactionHBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "🛡️ CT"
+
+[node name="BtnFactionT" type="Button" parent="PanelClassSelect/Margin/VBox/Content/Left/FactionHBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "💣 TERRORISTAS"
+
+[node name="LblSkinHeader" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 16
+text = "UNIFORME / SKIN:"
+
+[node name="OptSkin" type="OptionButton" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="LblWeaponHeader" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 16
+text = "ARMA PRIMÁRIA:"
+
+[node name="OptPrimary" type="OptionButton" parent="PanelClassSelect/Margin/VBox/Content/Left"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="Right" type="VBoxContainer" parent="PanelClassSelect/Margin/VBox/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="LblClassTitle" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("10_teko")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 26
+text = "CLASSE: ASSALTO"
+
+[node name="Slot1Panel" type="PanelContainer" parent="PanelClassSelect/Margin/VBox/Content/Right"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_slot_panel")
+
+[node name="Margin1" type="MarginContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot1Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 5
+
+[node name="VBox1" type="VBoxContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot1Panel/Margin1"]
+layout_mode = 2
+
+[node name="Title1" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot1Panel/Margin1/VBox1"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 14
+text = "SLOT 1: ARMA PRIMÁRIA"
+
+[node name="LblPrimaryInfo" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot1Panel/Margin1/VBox1"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "• ACR 6.8\n• Mira Óptica Red Dot\n• 30 / 120"
+
+[node name="Slot2Panel" type="PanelContainer" parent="PanelClassSelect/Margin/VBox/Content/Right"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_slot_panel")
+
+[node name="Margin2" type="MarginContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot2Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 5
+
+[node name="VBox2" type="VBoxContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot2Panel/Margin2"]
+layout_mode = 2
+
+[node name="Title2" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot2Panel/Margin2/VBox2"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 14
+text = "SLOT 2: ARMA SECUNDÁRIA"
+
+[node name="LblSecondaryInfo" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot2Panel/Margin2/VBox2"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "• Pistola Tática C19\n• Miras de Ferro\n• 15 / 60"
+
+[node name="Slot3Panel" type="PanelContainer" parent="PanelClassSelect/Margin/VBox/Content/Right"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_slot_panel")
+
+[node name="Margin3" type="MarginContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot3Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 5
+
+[node name="VBox3" type="VBoxContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot3Panel/Margin3"]
+layout_mode = 2
+
+[node name="Title3" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot3Panel/Margin3/VBox3"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 14
+text = "SLOT 3: CORPO A CORPO"
+
+[node name="LblMeleeInfo" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/Slot3Panel/Margin3/VBox3"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "• Faca de Combate\n• Dano: 100 Instakill"
+
+[node name="SlotSkinPanel" type="PanelContainer" parent="PanelClassSelect/Margin/VBox/Content/Right"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_slot_panel")
+
+[node name="MarginSkin" type="MarginContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/SlotSkinPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxSkin" type="VBoxContainer" parent="PanelClassSelect/Margin/VBox/Content/Right/SlotSkinPanel/MarginSkin"]
+layout_mode = 2
+
+[node name="TitleSkin" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/SlotSkinPanel/MarginSkin/VBoxSkin"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_colors/font_color = Color(1, 0.78, 0.25, 1)
+theme_override_font_sizes/font_size = 14
+text = "SLOT 4: OPERADOR"
+
+[node name="LblSkinInfo" type="Label" parent="PanelClassSelect/Margin/VBox/Content/Right/SlotSkinPanel/MarginSkin/VBoxSkin"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_inter")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "• Operador: SEAL Team 6"
+
+[node name="HSep2" type="HSeparator" parent="PanelClassSelect/Margin/VBox"]
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="PanelClassSelect/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BtnBack" type="Button" parent="PanelClassSelect/Margin/VBox/Footer"]
+custom_minimum_size = Vector2(190, 46)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("11_rajdhani")
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_btn_normal")
+theme_override_styles/hover = SubResource("Style_btn_hover")
+text = "← VOLTAR AO MENU"
+
+[node name="Spacer" type="Control" parent="PanelClassSelect/Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BtnDeploy" type="Button" parent="PanelClassSelect/Margin/VBox/Footer"]
+custom_minimum_size = Vector2(290, 46)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("10_teko")
+theme_override_colors/font_color = Color(0.04, 0.025, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("Style_btn_deploy")
+theme_override_styles/hover = SubResource("Style_btn_deploy_hover")
+text = "▶ INICIAR MISSÃO (DEPLOY)"
+
+; ─── SETTINGS & SOCIAL MODALS ─────────────────────────────────────
+[node name="SettingsMenu" parent="." instance=ExtResource("2_settings")]
+visible = false
+layout_mode = 1
+
+[node name="SocialModal" parent="." instance=ExtResource("3_social")]
+visible = false
+layout_mode = 1

@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://firing_range_hud"]
+
+[ext_resource type="Script" path="res://scripts/ui/firing_range_hud.gd" id="1_hud"]
+
+[node name="FiringRangeHUD" type="CanvasLayer"]
+layer = 15
+script = ExtResource("1_hud")

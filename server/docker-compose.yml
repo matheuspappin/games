@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  nuke-dedicated-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nuke_dedicated_server
+    restart: unless-stopped
+    ports:
+      # Protocolo ENet utiliza conexoes UDP
+      - "7777:7777/udp"
+    environment:
+      - PORT=7777
+      - MAX_PLAYERS=12       # Suporta ate 6v6 (12 jogadores)
+      - TARGET_KILLS=50      # Meta padrao TDM 6v6 (Altere para 10 se for 1v1)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://bot_rifle_3d_main"]
+
+[ext_resource type="Script" path="res://scripts/weapons/bot_rifle_3d.gd" id="1_scr"]
+[ext_resource type="PackedScene" path="res://assets/models/fps_hands_rifle/scene.gltf" id="2_gltf"]
+
+[node name="BotRifle3D" type="Node3D"]
+script = ExtResource("1_scr")
+
+[node name="RifleModel" parent="." instance=ExtResource("2_gltf")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
+
+[node name="MuzzleFlash" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, -0.75)
+light_color = Color(1, 0.85, 0.35, 1)
+light_energy = 3.5
+omni_range = 4.5
+omni_attenuation = 1.8

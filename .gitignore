@@ -1,0 +1,33 @@
+# Cache e builds do Godot
+.godot/
+*.import.tmp
+server/bin/*
+!server/bin/.gitkeep
+
+# Web
+web/node_modules/
+web/dist/
+web/public/game/
+web/.vercel/
+web/.env*
+
+# Assets pesados (versionar depois com Git LFS)
+assets/models/
+addons/fps-hands/
+addons/godot-jolt/
+scratch/
+*.glb.bak
+
+# Saidas de teste e prints de depuracao na raiz
+/*.txt
+/*.log
+/test_*.png
+/debug_*.png
+/screenshot_*.png
+/print_*.png
+/solved_*.png
+~$*
+
+# Segredos
+.env
+*.env

@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/weapons/modular/lmg_modular.glb" id="1_model"]
+
+[node name="Weapon_lmg" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_model")]
+
+[node name="SocketOptic" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0024, 0.0942, 0.0000)
+
+[node name="SocketMuzzle" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0024, 0.0605, -0.5673)
+
+[node name="SocketMag" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0454, -0.0227, 0.0227)
+
+[node name="SocketUnderbarrel" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0024, 0.0000, -0.2269)
+
+[node name="SocketStock" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0024, 0.0681, 0.5105)
+
+[node name="SocketRearGrip" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0024, -0.0681, 0.1702)

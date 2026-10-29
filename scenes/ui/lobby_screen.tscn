@@ -1,0 +1,429 @@
+[gd_scene load_steps=12 format=3 uid="uid://lobby_screen"]
+
+[ext_resource type="Script" path="res://scripts/ui/lobby_screen.gd" id="1_lobby"]
+[ext_resource type="Texture2D" path="res://web/public/assets/nuke_tournament.jpg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://web/public/assets/nuketown_2065.jpg" id="3_map"]
+[ext_resource type="PackedScene" path="res://scenes/ui/social_modal.tscn" id="4_social"]
+
+[sub_resource type="StyleBoxFlat" id="Style_menu_btn"]
+bg_color = Color(0.1, 0.13, 0.18, 0.85)
+border_width_left = 2
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.32, 0.42, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_menu_btn_hover"]
+bg_color = Color(0.18, 0.24, 0.35, 0.95)
+border_width_left = 3
+border_color = Color(0, 0.85, 1, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_map_panel"]
+bg_color = Color(0.08, 0.1, 0.14, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.72, 0.15, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1, 0.65, 0.1, 0.25)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_start"]
+bg_color = Color(1, 0.68, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.9, 0.5, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1, 0.6, 0.1, 0.45)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_start_hover"]
+bg_color = Color(1, 0.78, 0.25, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 0.8, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1, 0.7, 0.2, 0.6)
+shadow_size = 20
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_back"]
+bg_color = Color(0.12, 0.15, 0.2, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.35, 0.45, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_back_hover"]
+bg_color = Color(0.2, 0.25, 0.35, 0.95)
+border_width_left = 2
+border_color = Color(1, 0.3, 0.3, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="LobbyScreen" type="Control" node_paths=PackedStringArray("lbl_mode_title", "lbl_status_header", "lbl_player_count", "vbox_players", "img_map_preview", "lbl_map_name", "lbl_map_votes", "btn_vote_map", "btn_force_start", "btn_gunsmith", "btn_callsign", "btn_barracks", "btn_leaderboard", "btn_back", "lbl_bottom_ticker", "modal_layer")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby")
+lbl_mode_title = NodePath("MainLayout/VBox/HeaderHBox/TitleVBox/LblModeTitle")
+lbl_status_header = NodePath("MainLayout/VBox/ContentHBox/RightCol/VBox/HeaderHBox/LblStatusHeader")
+lbl_player_count = NodePath("MainLayout/VBox/ContentHBox/RightCol/VBox/HeaderHBox/LblPlayerCount")
+vbox_players = NodePath("MainLayout/VBox/ContentHBox/RightCol/VBox/PlayersScroll/VBoxPlayers")
+img_map_preview = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox/MapPreview")
+lbl_map_name = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox/HBox/LblMapName")
+lbl_map_votes = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox/HBox/LblMapVotes")
+btn_vote_map = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox/BtnVoteMap")
+btn_force_start = NodePath("MainLayout/VBox/FooterHBox/BtnForceStart")
+btn_gunsmith = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox/BtnGunsmith")
+btn_callsign = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox/BtnCallsign")
+btn_barracks = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox/BtnBarracks")
+btn_leaderboard = NodePath("MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox/BtnLeaderboard")
+btn_back = NodePath("MainLayout/VBox/FooterHBox/BtnBack")
+lbl_bottom_ticker = NodePath("MainLayout/VBox/FooterHBox/LblTicker")
+modal_layer = NodePath("ModalLayer")
+
+[node name="BgSolidColor" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.08, 1)
+
+[node name="BgTexture" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(0.45, 0.5, 0.65, 0.45)
+
+[node name="BgDarkOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.08, 0.85)
+
+[node name="MainLayout" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="HeaderHBox" type="HBoxContainer" parent="MainLayout/VBox"]
+layout_mode = 2
+
+[node name="TitleVBox" type="VBoxContainer" parent="MainLayout/VBox/HeaderHBox"]
+layout_mode = 2
+
+[node name="LblModeTitle" type="Label" parent="MainLayout/VBox/HeaderHBox/TitleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.72, 0.15, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 34
+text = "MATA-MATA EM EQUIPE (TDM)"
+
+[node name="LblSubtitle" type="Label" parent="MainLayout/VBox/HeaderHBox/TitleVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "SALA DE ESPERA OPERACIONAL // MATCHMAKING PRE-COMBATE"
+
+[node name="Spacer" type="Control" parent="MainLayout/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BadgeVBox" type="VBoxContainer" parent="MainLayout/VBox/HeaderHBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="LblVersion" type="Label" parent="MainLayout/VBox/HeaderHBox/BadgeVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.75, 0.88, 1)
+theme_override_font_sizes/font_size = 12
+text = "SISTEMA TÁTICO v4.7.2"
+horizontal_alignment = 2
+
+[node name="LblLobbyStatus" type="Label" parent="MainLayout/VBox/HeaderHBox/BadgeVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "● LOBBY SINCRONIZADO"
+horizontal_alignment = 2
+
+[node name="RoomCodeHBox" type="HBoxContainer" parent="MainLayout/VBox/HeaderHBox/BadgeVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="LblRoomCode" type="Label" parent="MainLayout/VBox/HeaderHBox/BadgeVBox/RoomCodeHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.2, 1)
+theme_override_font_sizes/font_size = 13
+text = "🏷️ SALA: NK-LOCAL"
+
+[node name="BtnCopyCode" type="Button" parent="MainLayout/VBox/HeaderHBox/BadgeVBox/RoomCodeHBox"]
+custom_minimum_size = Vector2(90, 26)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "📋 COPIAR"
+
+[node name="BtnSocial" type="Button" parent="MainLayout/VBox/HeaderHBox/BadgeVBox/RoomCodeHBox"]
+custom_minimum_size = Vector2(110, 26)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "👥 SOCIAL (F2)"
+
+[node name="Divider" type="HSeparator" parent="MainLayout/VBox"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.2)
+
+[node name="ContentHBox" type="HBoxContainer" parent="MainLayout/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 36
+
+[node name="LeftCol" type="VBoxContainer" parent="MainLayout/VBox/ContentHBox"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/VBox/ContentHBox/LeftCol"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="TacticalMenuVBox" type="VBoxContainer" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnGunsmith" type="Button" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_menu_btn")
+theme_override_styles/hover = SubResource("Style_menu_btn_hover")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "🛠️  CRIAR UMA CLASSE (GUNSMITH)"
+alignment = 0
+
+[node name="BtnCallsign" type="Button" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_menu_btn")
+theme_override_styles/hover = SubResource("Style_menu_btn_hover")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "🎖️  CALLSIGN & EMBLEMA"
+alignment = 0
+
+[node name="BtnBarracks" type="Button" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_menu_btn")
+theme_override_styles/hover = SubResource("Style_menu_btn_hover")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "🏛️  QUARTEL / BARRACKS"
+alignment = 0
+
+[node name="BtnLeaderboard" type="Button" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/TacticalMenuVBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_menu_btn")
+theme_override_styles/hover = SubResource("Style_menu_btn_hover")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "📊  PLACAR DO LOBBY"
+alignment = 0
+
+[node name="SpacerLeft" type="Control" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MapVotePanel" type="PanelContainer" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_map_panel")
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblVoteHeader" type="Label" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.2, 1)
+theme_override_font_sizes/font_size = 12
+text = "MAPA EM VOTAÇÃO:"
+
+[node name="MapPreview" type="TextureRect" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+texture = ExtResource("3_map")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="HBox" type="HBoxContainer" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="LblMapName" type="Label" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "NUKETOWN 2065"
+
+[node name="LblMapVotes" type="Label" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Votos: 4"
+
+[node name="BtnVoteMap" type="Button" parent="MainLayout/VBox/ContentHBox/LeftCol/VBox/MapVotePanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_menu_btn")
+theme_override_styles/hover = SubResource("Style_menu_btn_hover")
+theme_override_font_sizes/font_size = 12
+text = "✔ VOTAR NESTE MAPA"
+
+[node name="RightCol" type="VBoxContainer" parent="MainLayout/VBox/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/VBox/ContentHBox/RightCol"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="HeaderHBox" type="HBoxContainer" parent="MainLayout/VBox/ContentHBox/RightCol/VBox"]
+layout_mode = 2
+
+[node name="LblStatusHeader" type="Label" parent="MainLayout/VBox/ContentHBox/RightCol/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.2, 1)
+theme_override_font_sizes/font_size = 17
+text = "A PARTIDA COMEÇA EM: 6"
+
+[node name="Spacer" type="Control" parent="MainLayout/VBox/ContentHBox/RightCol/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LblPlayerCount" type="Label" parent="MainLayout/VBox/ContentHBox/RightCol/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "6/12 JOGADORES"
+
+[node name="PlayersScroll" type="ScrollContainer" parent="MainLayout/VBox/ContentHBox/RightCol/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxPlayers" type="VBoxContainer" parent="MainLayout/VBox/ContentHBox/RightCol/VBox/PlayersScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="FooterHBox" type="HBoxContainer" parent="MainLayout/VBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="LblTicker" type="Label" parent="MainLayout/VBox/FooterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 13
+text = "Operador conectado ao Lobby • Pressione [ESPAÇO] para iniciar imediatamente"
+
+[node name="BtnForceStart" type="Button" parent="MainLayout/VBox/FooterHBox"]
+custom_minimum_size = Vector2(300, 46)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_btn_start")
+theme_override_styles/hover = SubResource("Style_btn_start_hover")
+theme_override_styles/pressed = SubResource("Style_btn_start")
+theme_override_colors/font_color = Color(0.08, 0.08, 0.1, 1)
+theme_override_font_sizes/font_size = 15
+text = "▶ INICIAR IMEDIATAMENTE (ESPAÇO)"
+
+[node name="BtnBack" type="Button" parent="MainLayout/VBox/FooterHBox"]
+custom_minimum_size = Vector2(170, 46)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_btn_back")
+theme_override_styles/hover = SubResource("Style_btn_back_hover")
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "✕ SAIR DO LOBBY (ESC)"
+
+[node name="ModalLayer" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SocialModal" parent="." instance=ExtResource("4_social")]
+visible = false
+layout_mode = 1

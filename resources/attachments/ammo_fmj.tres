@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AttachmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/attachment_data.gd" id="1_att"]
+
+[resource]
+script = ExtResource("1_att")
+attachment_name = "Projéteis Perfurantes FMJ"
+attachment_id = "ammo_fmj"
+slot = 5
+unlock_level = 1
+delta_damage = 3
+delta_recoil = 0.05
+delta_ads_time = 0.0
+delta_bloom = 0.0
+delta_movement_speed = 0.0
+delta_magazine = 0
+delta_damage_range = 0.05
+optic_zoom_fov = 0.0
+suppressed = false
+penetration_bonus = 1

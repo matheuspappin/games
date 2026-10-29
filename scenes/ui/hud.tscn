@@ -1,0 +1,202 @@
+[gd_scene load_steps=3 format=3 uid="uid://game_hud"]
+
+[ext_resource type="Script" path="res://scripts/ui/hud_controller.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="2_pause"]
+
+[node name="HUD" type="CanvasLayer" node_paths=PackedStringArray("crosshair_root", "hitmarker_root", "hitmarker_label", "ammo_label", "weapon_label", "stance_label", "crosshair_top", "crosshair_bottom", "crosshair_left", "crosshair_right")]
+script = ExtResource("1_hud")
+crosshair_root = NodePath("CrosshairRoot")
+hitmarker_root = NodePath("HitmarkerRoot")
+hitmarker_label = NodePath("HitmarkerRoot/HitmarkerLabel")
+ammo_label = NodePath("BottomRight/VBox/AmmoCount")
+weapon_label = NodePath("BottomRight/VBox/WeaponName")
+stance_label = NodePath("BottomLeft/VBox/StanceStatus")
+crosshair_top = NodePath("CrosshairRoot/LineTop")
+crosshair_bottom = NodePath("CrosshairRoot/LineBottom")
+crosshair_left = NodePath("CrosshairRoot/LineLeft")
+crosshair_right = NodePath("CrosshairRoot/LineRight")
+
+[node name="CrosshairRoot" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterDot" type="ColorRect" parent="CrosshairRoot"]
+layout_mode = 0
+offset_left = -1.0
+offset_top = -1.0
+offset_right = 1.0
+offset_bottom = 1.0
+color = Color(1, 1, 1, 0.75)
+
+[node name="LineTop" type="ColorRect" parent="CrosshairRoot"]
+layout_mode = 0
+offset_left = -1.0
+offset_top = -16.0
+offset_right = 1.0
+offset_bottom = -8.0
+color = Color(1, 1, 1, 0.9)
+
+[node name="LineBottom" type="ColorRect" parent="CrosshairRoot"]
+layout_mode = 0
+offset_left = -1.0
+offset_top = 8.0
+offset_right = 1.0
+offset_bottom = 16.0
+color = Color(1, 1, 1, 0.9)
+
+[node name="LineLeft" type="ColorRect" parent="CrosshairRoot"]
+layout_mode = 0
+offset_left = -16.0
+offset_top = -1.0
+offset_right = -8.0
+offset_bottom = 1.0
+color = Color(1, 1, 1, 0.9)
+
+[node name="LineRight" type="ColorRect" parent="CrosshairRoot"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = -1.0
+offset_right = 16.0
+offset_bottom = 1.0
+color = Color(1, 1, 1, 0.9)
+
+[node name="HitmarkerRoot" type="Control" parent="."]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HitmarkerLabel" type="Label" parent="HitmarkerRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 26
+text = "✕"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomRight" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -110.0
+offset_right = -30.0
+offset_bottom = -25.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="BottomRight"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="WeaponName" type="Label" parent="BottomRight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
+theme_override_font_sizes/font_size = 18
+text = "ACR 6.8"
+horizontal_alignment = 2
+
+[node name="AmmoCount" type="Label" parent="BottomRight/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 36
+text = "30 / 120"
+horizontal_alignment = 2
+
+[node name="BottomLeft" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -110.0
+offset_right = 280.0
+offset_bottom = -25.0
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="BottomLeft"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StanceTitle" type="Label" parent="BottomLeft/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.75, 0.7)
+theme_override_font_sizes/font_size = 14
+text = "POSTURA"
+
+[node name="StanceStatus" type="Label" parent="BottomLeft/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 22
+text = "EM PÉ"
+
+[node name="TopLeft" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 340.0
+offset_bottom = 240.0
+
+[node name="ControlsPanel" type="PanelContainer" parent="TopLeft"]
+modulate = Color(1, 1, 1, 0.75)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="TopLeft/ControlsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="ControlsText" type="Label" parent="TopLeft/ControlsPanel/Margin"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "🎮 CONTROLES (Estilo CoD):
+• WASD: Mover-se
+• Shift: Sprint (Duplo-toque: Tact Sprint)
+• C: Agachar / Deslizar (Slide em sprint)
+• Z ou Segurar C: Deitar (Prone)
+• Espaço: Pular / Escalar (Mantle)
+• Botão Direito: Mirar (ADS)
+• Botão Esquerdo: Disparar
+• 1 / 2: Trocar Armas (ACR 6.8 / Pistol)
+• R: Recarregar | Q / E: Lean
+• Esc: Menu de Pausa"
+
+[node name="PauseMenu" parent="." instance=ExtResource("2_pause")]

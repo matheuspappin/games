@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/ak47_shot.wav" id="2_fire"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/reload.wav" id="3_reload"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/dry_fire.wav" id="4_dry"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_name = "Man-O-War"
+weapon_id = "man_o_war"
+category = 0
+fire_mode = 0
+damage_close = 62
+damage_medium = 46
+damage_long = 38
+damage_falloff_start = 22.0
+damage_falloff_end = 55.0
+headshot_multiplier = 2.0
+chest_multiplier = 1.1
+limb_multiplier = 0.75
+max_range = 1000.0
+fire_rate_rpm = 517.0
+burst_count = 1
+burst_delay = 0.05
+magazine_capacity = 30
+reserve_ammo_max = 120
+reload_tactical_time = 2.3
+reload_empty_time = 2.8
+can_cancel_reload = true
+recoil_kick = Vector3(0.45, 2.4, 0.14)
+recoil_snappiness = 5.5
+recoil_return_speed = 4.5
+bloom_per_shot = 0.026
+bloom_max = 0.16
+bloom_recovery_rate = 7.0
+ads_bloom_mult = 0.22
+crouch_bloom_mult = 0.6
+prone_bloom_mult = 0.4
+sprint_bloom_mult = 3.6
+ads_position = Vector3(-0.233, 0.099, -0.05)
+ads_time = 0.26
+ads_fov_delta = -20.0
+ads_sens_mult = 0.65
+optic_type = 1
+has_optic = true
+is_hitscan = true
+penetration_power = 2
+penetration_damage_mult = 0.75
+sound_fire = ExtResource("2_fire")
+sound_reload_tact = ExtResource("3_reload")
+sound_reload_empty = ExtResource("3_reload")
+sound_dry_fire = ExtResource("4_dry")
+xp_per_kill = 100
+unlock_level = 1
+weapon_level_max = 50

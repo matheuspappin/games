@@ -1,0 +1,115 @@
+[gd_scene load_steps=6 format=3 uid="uid://pause_menu"]
+
+[ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="1_pause"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="2_set"]
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.08, 0.1, 0.14, 0.95)
+border_width_left = 3
+border_color = Color(1, 0.7, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_normal"]
+bg_color = Color(0.14, 0.17, 0.22, 0.9)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_hover"]
+bg_color = Color(0.24, 0.3, 0.42, 1)
+border_width_left = 4
+border_color = Color(1, 0.75, 0.2, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="PauseMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_pause")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -220.0
+offset_right = 210.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.2, 1)
+theme_override_font_sizes/font_size = 26
+text = "JOGO PAUSADO"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="BtnResume" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_styles/hover = SubResource("Style_btn_hover")
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "RETOMAR JOGO"
+
+[node name="BtnSettings" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_styles/hover = SubResource("Style_btn_hover")
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "CONFIGURAÇÕES"
+
+[node name="BtnRestart" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_styles/hover = SubResource("Style_btn_hover")
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "REINICIAR PARTIDA"
+
+[node name="BtnMainMenu" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_styles/hover = SubResource("Style_btn_hover")
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "MENU PRINCIPAL"
+
+[node name="BtnQuit" type="Button" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_styles/hover = SubResource("Style_btn_hover")
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "SAIR PARA O DESKTOP"
+
+[node name="SettingsMenu" parent="." instance=ExtResource("2_set")]
+visible = false

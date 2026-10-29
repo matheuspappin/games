@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cinspectmenu123"]
+
+[ext_resource type="Script" path="res://test_menu_inspect.gd" id="1_test"]
+
+[node name="TestRunner" type="Node"]
+script = ExtResource("1_test")

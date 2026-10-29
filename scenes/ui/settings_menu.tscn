@@ -1,0 +1,388 @@
+[gd_scene load_steps=6 format=3 uid="uid://settings_menu_full"]
+
+[ext_resource type="Script" path="res://scripts/ui/settings_menu.gd" id="1_set"]
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.07, 0.09, 0.12, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.72, 0.2, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_normal"]
+bg_color = Color(0.14, 0.17, 0.22, 0.95)
+border_width_left = 3
+border_color = Color(0.7, 0.5, 0.15, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_btn_hover"]
+bg_color = Color(0.24, 0.3, 0.42, 1)
+border_width_left = 5
+border_color = Color(1, 0.75, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="Style_tab_bg"]
+bg_color = Color(0.1, 0.12, 0.16, 0.8)
+
+[node name="SettingsMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_set")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -460.0
+offset_top = -320.0
+offset_right = 460.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxMain" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="HBoxContainer" parent="Panel/Margin/VBoxMain"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Panel/Margin/VBoxMain/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.75, 0.2, 1)
+theme_override_font_sizes/font_size = 24
+text = "CONFIGURAÇÕES DE VÍDEO & DESEMPENHO"
+
+[node name="HSeparator" type="HSeparator" parent="Panel/Margin/VBoxMain"]
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="Panel/Margin/VBoxMain"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("Style_tab_bg")
+current_tab = 0
+
+[node name="🖥️ VÍDEO & GRÁFICOS" type="ScrollContainer" parent="Panel/Margin/VBoxMain/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Grid" type="GridContainer" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="LblPreset" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Preset de Qualidade:"
+
+[node name="OptPreset" type="OptionButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+
+[node name="LblWindow" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Modo de Janela:"
+
+[node name="OptWindowMode" type="OptionButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+
+[node name="LblRes" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Resolução de Tela:"
+
+[node name="OptResolution" type="OptionButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+
+[node name="LblVsync" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "V-Sync (Sincronização):"
+
+[node name="OptVsync" type="OptionButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+
+[node name="LblFPS" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Limite de Taxa de Quadros (FPS):"
+
+[node name="OptFPS" type="OptionButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+
+[node name="LblScale" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Escala de Renderização 3D (FSR):"
+
+[node name="ScaleBox" type="HBoxContainer" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+
+[node name="SliderScale" type="HSlider" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid/ScaleBox"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 4
+min_value = 50.0
+value = 100.0
+
+[node name="LblScaleVal" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid/ScaleBox"]
+layout_mode = 2
+text = "100%"
+
+[node name="LblShadow" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Qualidade de Sombras:"
+
+[node name="OptShadow" type="OptionButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+
+[node name="LblAA" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Anti-Aliasing (Suavização):"
+
+[node name="OptAA" type="OptionButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+custom_minimum_size = Vector2(280, 36)
+layout_mode = 2
+
+[node name="LblSSAO" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Oclusão de Ambiente (SSAO):"
+
+[node name="ChkSSAO" type="CheckButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+
+[node name="LblSSR" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Reflexos de Tela (SSR):"
+
+[node name="ChkSSR" type="CheckButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+
+[node name="LblSSIL" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Iluminação Indireta (SSIL):"
+
+[node name="ChkSSIL" type="CheckButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+
+[node name="LblGlow" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Efeito de Brilho (Glow / Bloom):"
+
+[node name="ChkGlow" type="CheckButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+
+[node name="LblFog" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+text = "Névoa Volumétrica 3D:"
+
+[node name="ChkFog" type="CheckButton" parent="Panel/Margin/VBoxMain/TabContainer/🖥️ VÍDEO & GRÁFICOS/Grid"]
+layout_mode = 2
+
+[node name="🔊 ÁUDIO" type="ScrollContainer" parent="Panel/Margin/VBoxMain/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="AudioVBox" type="VBoxContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="LblMaster" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+text = "Volume Geral (Master):"
+
+[node name="MasterBox" type="HBoxContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SliderMaster" type="HSlider" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/MasterBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 100.0
+
+[node name="LblMasterVal" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/MasterBox"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+text = "100%"
+
+[node name="LblSFX" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+text = "Volume dos Disparos / Efeitos Sonoros (SFX):"
+
+[node name="SFXBox" type="HBoxContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SliderSFX" type="HSlider" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/SFXBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 100.0
+
+[node name="LblSFXVal" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/SFXBox"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+text = "100%"
+
+[node name="LblMusic" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+text = "Volume da Trilha Sonora / Playlist de Músicas:"
+
+[node name="MusicBox" type="HBoxContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SliderMusic" type="HSlider" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/MusicBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 70.0
+
+[node name="LblMusicVal" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/MusicBox"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+text = "70%"
+
+[node name="HSepAudio" type="HSeparator" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+
+[node name="LblPlaylistHeader" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "📻 CENTRAL DE PLAYLIST & TRILHA SONORA DO JOGO"
+
+[node name="NowPlayingPanel" type="PanelContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+
+[node name="MarginNP" type="MarginContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/NowPlayingPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="LblNowPlaying" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/NowPlayingPanel/MarginNP"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "🎵 TOCANDO: Nenhuma música selecionada"
+
+[node name="ControlsHBox" type="HBoxContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BtnMusicPrev" type="Button" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/ControlsHBox"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "⏮ ANTERIOR"
+
+[node name="BtnMusicPlay" type="Button" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/ControlsHBox"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+text = "⏸ PAUSAR"
+
+[node name="BtnMusicNext" type="Button" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/ControlsHBox"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "⏭ PRÓXIMA"
+
+[node name="BtnMusicShuffle" type="Button" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/ControlsHBox"]
+custom_minimum_size = Vector2(160, 36)
+layout_mode = 2
+text = "🔀 ALEATÓRIO: NÃO"
+
+[node name="LblTrackList" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+text = "Faixas Disponíveis na Playlist (Clique duas vezes para tocar):"
+
+[node name="ListMusicTracks" type="ItemList" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+
+[node name="ActionsHBox" type="HBoxContainer" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnOpenMusicFolder" type="Button" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/ActionsHBox"]
+custom_minimum_size = Vector2(240, 36)
+layout_mode = 2
+text = "📁 ABRIR PASTA DE MÚSICAS"
+
+[node name="BtnRefreshPlaylist" type="Button" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox/ActionsHBox"]
+custom_minimum_size = Vector2(180, 36)
+layout_mode = 2
+text = "🔄 ATUALIZAR LISTA"
+
+[node name="LblMusicHint" type="Label" parent="Panel/Margin/VBoxMain/TabContainer/🔊 ÁUDIO/AudioVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "💡 Dica: Coloque seus arquivos .mp3, .ogg ou .wav na pasta de músicas! Durante o combate use: F3 (Anterior), F4 (Play/Pausa) e F5 (Próxima)."
+
+[node name="ButtonsBar" type="HBoxContainer" parent="Panel/Margin/VBoxMain"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="BtnClose" type="Button" parent="Panel/Margin/VBoxMain/ButtonsBar"]
+custom_minimum_size = Vector2(160, 42)
+layout_mode = 2
+theme_override_styles/hover = SubResource("Style_btn_hover")
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "VOLTAR"
+
+[node name="BtnApply" type="Button" parent="Panel/Margin/VBoxMain/ButtonsBar"]
+custom_minimum_size = Vector2(220, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_styles/hover = SubResource("Style_btn_hover")
+theme_override_styles/normal = SubResource("Style_btn_normal")
+text = "✓  APLICAR & SALVAR"

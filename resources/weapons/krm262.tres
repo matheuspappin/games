@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/ak47_shot.wav" id="2_fire"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/reload.wav" id="3_reload"]
+[ext_resource type="AudioStream" path="res://assets/audio/weapons/dry_fire.wav" id="4_dry"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_name = "KRM-262"
+weapon_id = "krm262"
+category = 4
+fire_mode = 1
+damage_close = 130
+damage_medium = 55
+damage_long = 18
+damage_falloff_start = 7.0
+damage_falloff_end = 20.0
+headshot_multiplier = 1.5
+chest_multiplier = 1.05
+limb_multiplier = 0.8
+max_range = 100.0
+fire_rate_rpm = 160.0
+burst_count = 1
+burst_delay = 0.05
+magazine_capacity = 8
+reserve_ammo_max = 32
+reload_tactical_time = 2.3
+reload_empty_time = 2.8
+can_cancel_reload = true
+recoil_kick = Vector3(0.65, 3.0, 0.18)
+recoil_snappiness = 7.2
+recoil_return_speed = 5.2
+bloom_per_shot = 0.055
+bloom_max = 0.24
+bloom_recovery_rate = 6.5
+ads_bloom_mult = 0.40
+crouch_bloom_mult = 0.7
+prone_bloom_mult = 0.5
+sprint_bloom_mult = 2.4
+ads_position = Vector3(-0.233, 0.099, -0.05)
+ads_time = 0.21
+ads_fov_delta = -12.0
+ads_sens_mult = 0.70
+optic_type = 0
+has_optic = false
+is_hitscan = true
+penetration_power = 1
+penetration_damage_mult = 0.45
+sound_fire = ExtResource("2_fire")
+sound_reload_tact = ExtResource("3_reload")
+sound_reload_empty = ExtResource("3_reload")
+sound_dry_fire = ExtResource("4_dry")
+xp_per_kill = 100
+unlock_level = 1
+weapon_level_max = 50
