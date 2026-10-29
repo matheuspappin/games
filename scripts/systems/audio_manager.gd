@@ -141,7 +141,10 @@ func _scan_directory(dir_path: String, seen: Dictionary) -> void:
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	while file_name != "":
-		if not dir.current_is_dir() and not file_name.ends_with(".import") and not file_name.ends_with(".uid"):
+		# No jogo exportado (inclusive navegador) a pasta lista "faixa.mp3.import" no lugar de "faixa.mp3"
+		if file_name.ends_with(".import") or file_name.ends_with(".remap"):
+			file_name = file_name.get_basename()
+		if not dir.current_is_dir() and not file_name.ends_with(".uid"):
 			var ext = file_name.get_extension().to_lower()
 			if ext in ["mp3", "ogg", "wav"]:
 				var full_path = dir_path.path_join(file_name)

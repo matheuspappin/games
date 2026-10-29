@@ -347,7 +347,9 @@ func _process(delta: float) -> void:
 			if spawn_shield_banner:
 				spawn_shield_banner.visible = true
 				if spawn_shield_label:
-					spawn_shield_label.text = "🛡️ ESCUDO DE SPAWN: %.1fs" % rem
+					var shield_txt := "🛡️ ESCUDO DE SPAWN: %.1fs" % rem
+					if spawn_shield_label.text != shield_txt: # só refaz o layout quando o texto muda
+						spawn_shield_label.text = shield_txt
 		else:
 			if spawn_shield_banner and spawn_shield_banner.visible:
 				spawn_shield_banner.visible = false
