@@ -1,0 +1,4 @@
+# Defina GAME_DOMAIN (ex.: play.seudominio.com) apontando o DNS para este servidor.
+{$GAME_DOMAIN} {
+	reverse_proxy nuke-dedicated-server:7777
+}

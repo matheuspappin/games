@@ -7,7 +7,7 @@ TARGET_KILLS=${TARGET_KILLS:-50}
 
 echo "=========================================================="
 echo "  INICIANDO SERVIDOR DEDICADO GODOT 4"
-echo "  PORTA: ${PORT} (UDP)"
+echo "  PORTA: ${PORT} (WebSocket/TCP)"
 echo "  MAX JOGADORES: ${MAX_PLAYERS} (Suporta 1v1 até 6v6)"
 echo "  META DE KILLS: ${TARGET_KILLS}"
 echo "=========================================================="

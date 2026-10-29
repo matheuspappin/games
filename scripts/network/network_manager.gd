@@ -85,9 +85,9 @@ func _ready() -> void:
 	if not multiplayer.server_disconnected.is_connected(_on_server_disconnected):
 		multiplayer.server_disconnected.connect(_on_server_disconnected)
 
-	# Suporte a WebAssembly / Navegador
+	# Navegador: rede liberada via WebSocket (cliente). Argumentos de linha de comando não existem no web.
 	if OS.has_feature("web"):
-		print("[NetworkManager] Plataforma Web detectada. Modo offline/bots ativado.")
+		print("[NetworkManager] Plataforma Web detectada. Multiplayer via WebSocket disponível.")
 		return
 
 	# Suporte a argumentos de linha de comando
@@ -269,13 +269,39 @@ func _build_local_player_data(is_host_flag: bool = false) -> Dictionary:
 		"team_name": "ALPHA" if is_host_flag else "BRAVO"
 	}
 
+# ── TRANSPORTE DE REDE ─────────────────────────────────────────────────────────
+## WebSocket em todas as plataformas: navegador não abre UDP (ENet), então desktop,
+## navegador e servidor dedicado usam o mesmo transporte para jogar juntos.
+## Em produção o servidor fica atrás de um proxy TLS (Caddy/Nginx) e o cliente web usa wss://.
+const USE_WEBSOCKET := true
+
+func _make_peer() -> MultiplayerPeer:
+	if USE_WEBSOCKET:
+		return WebSocketMultiplayerPeer.new()
+	return ENetMultiplayerPeer.new()
+
+func _peer_create_server(peer: MultiplayerPeer, port: int) -> Error:
+	if peer is WebSocketMultiplayerPeer:
+		return (peer as WebSocketMultiplayerPeer).create_server(port)
+	return (peer as ENetMultiplayerPeer).create_server(port, max_players)
+
+func _peer_create_client(peer: MultiplayerPeer, address: String, port: int) -> Error:
+	if peer is WebSocketMultiplayerPeer:
+		var url := address
+		if not (address.begins_with("ws://") or address.begins_with("wss://")):
+			# Página servida por https exige wss://; em LAN/desktop, ws:// direto na porta
+			var secure := OS.has_feature("web") and str(JavaScriptBridge.eval("location.protocol", true)) == "https:"
+			url = ("wss://%s" % address) if secure else ("ws://%s:%d" % [address, port])
+		return (peer as WebSocketMultiplayerPeer).create_client(url)
+	return (peer as ENetMultiplayerPeer).create_client(address, port)
+
 # ── INICIALIZAÇÃO DE SERVIDOR / CLIENTE ────────────────────────────────────────
 ## Inicia o Servidor Dedicado Neutro (Headless / Nuvem / Docker - Opção A)
 func start_dedicated_server(port: int = DEFAULT_PORT) -> bool:
 	_cleanup_network()
 
-	var peer = ENetMultiplayerPeer.new()
-	var err = peer.create_server(port, max_players)
+	var peer = _make_peer()
+	var err = _peer_create_server(peer, port)
 	if err != OK:
 		push_error("[NetworkManager] Falha ao criar servidor dedicado na porta %d (Código: %d)" % [port, err])
 		return false
@@ -293,7 +319,7 @@ func start_dedicated_server(port: int = DEFAULT_PORT) -> bool:
 	_setup_spawns()
 
 	print("==================================================================")
-	print("[NetworkManager] SERVIDOR DEDICADO ONLINE NA PORTA %d (UDP)" % port)
+	print("[NetworkManager] SERVIDOR DEDICADO ONLINE NA PORTA %d (WebSocket/TCP)" % port)
 	print("[NetworkManager] Capacidade Máxima: %d jogadores (Suporta até 6v6)" % max_players)
 	print("[NetworkManager] Meta da Partida: %d Kills" % target_kills)
 	print("==================================================================")
@@ -330,21 +356,22 @@ func start_host(port: int = DEFAULT_PORT) -> int:
 	_cleanup_network()
 	cleanup_lingering_players()
 
-	var peer = ENetMultiplayerPeer.new()
+	var peer = _make_peer()
 	var target_port = port
-	var err = peer.create_server(target_port, max_players)
+	var err = _peer_create_server(peer, target_port)
 
 	# Se a porta estiver em uso, buscar portas subsequentes (port+1 até port+10)
 	if err != OK:
 		for p in range(port + 1, port + 11):
-			err = peer.create_server(p, max_players)
+			peer = _make_peer()
+			err = _peer_create_server(peer, p)
 			if err == OK:
 				target_port = p
 				print("[NetworkManager] Porta %d ocupada. Servidor iniciado com sucesso na porta alternativa: %d" % [port, target_port])
 				break
 
 	if err != OK:
-		push_error("[NetworkManager] Falha ao criar servidor ENet (Código: %d). Nenhuma porta disponível." % err)
+		push_error("[NetworkManager] Falha ao criar servidor (Código: %d). Nenhuma porta disponível." % err)
 		return 0
 
 	multiplayer.multiplayer_peer = peer
@@ -365,8 +392,8 @@ func join_game(ip: String = "127.0.0.1", port: int = DEFAULT_PORT) -> bool:
 	_cleanup_network()
 	cleanup_lingering_players()
 
-	var peer = ENetMultiplayerPeer.new()
-	var err = peer.create_client(ip, port)
+	var peer = _make_peer()
+	var err = _peer_create_client(peer, ip, port)
 	if err != OK:
 		push_warning("[NetworkManager] Falha ao conectar a %s:%d (Código: %d)." % [ip, port, err])
 		return false

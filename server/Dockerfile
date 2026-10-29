@@ -26,8 +26,8 @@ COPY bin/ /app/bin/
 RUN chmod +x /app/entrypoint.sh && \
     if [ -f /app/bin/server.x86_64 ]; then chmod +x /app/bin/server.x86_64; fi
 
-# Porta de rede do ENet (UDP)
-EXPOSE 7777/udp
+# Porta do WebSocket (TCP) - o Caddy faz o TLS (wss://) na frente
+EXPOSE 7777/tcp
 
 # Executar script de inicialização
 ENTRYPOINT ["/app/entrypoint.sh"]

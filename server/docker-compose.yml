@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   nuke-dedicated-server:
     build:
@@ -7,15 +5,33 @@ services:
       dockerfile: Dockerfile
     container_name: nuke_dedicated_server
     restart: unless-stopped
-    ports:
-      # Protocolo ENet utiliza conexoes UDP
-      - "7777:7777/udp"
+    expose:
+      - "7777"            # WebSocket (so acessivel pelo Caddy na rede interna)
     environment:
       - PORT=7777
-      - MAX_PLAYERS=12       # Suporta ate 6v6 (12 jogadores)
-      - TARGET_KILLS=50      # Meta padrao TDM 6v6 (Altere para 10 se for 1v1)
+      - MAX_PLAYERS=12    # Ate 6v6
+      - TARGET_KILLS=50
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
+  # Proxy com HTTPS automatico (Let's Encrypt): navegadores em https:// exigem wss://
+  caddy:
+    image: caddy:2
+    container_name: nuke_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - GAME_DOMAIN=${GAME_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - nuke-dedicated-server
+
+volumes:
+  caddy_data:
