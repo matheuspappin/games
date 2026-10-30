@@ -99,7 +99,12 @@ func _ready() -> void:
 	_parse_game_rules(all_args)
 
 	var is_script_run = "-s" in all_args or "--script" in all_args
-	if ("--server" in all_args or "--dedicated" in all_args or (is_headless and not is_script_run)):
+	# --client tem prioridade: permite clientes sem tela (testes automáticos / bots de carga)
+	if "--client" in all_args:
+		var c_ip = _get_target_ip_from_args(all_args)
+		var c_port = _get_port_from_args(all_args)
+		call_deferred("join_game", c_ip, c_port)
+	elif ("--server" in all_args or "--dedicated" in all_args or (is_headless and not is_script_run)):
 		var port = _get_port_from_args(all_args)
 		call_deferred("start_dedicated_server", port)
 	elif "--host" in all_args:
@@ -117,7 +122,27 @@ func _ready() -> void:
 			print("[NetworkManager] Autoload global ativo. Aguardando seleção do operador no menu.")
 			return
 
+func _process(delta: float) -> void:
+	_dedicated_heartbeat(delta)
+
+# Pulso do servidor dedicado no log (a cada 5 s): estado da rede e jogadores conectados
+var _heartbeat_t: float = 0.0
+func _dedicated_heartbeat(delta: float) -> void:
+	if not is_dedicated:
+		return
+	_heartbeat_t += delta
+	if _heartbeat_t < 5.0:
+		return
+	_heartbeat_t = 0.0
+	var mp_peer = multiplayer.multiplayer_peer
+	var st := "sem peer" if mp_peer == null else ("%s status=%d" % [mp_peer.get_class(), mp_peer.get_connection_status()])
+	print("[Servidor] pulso | rede: %s | conectados: %d | alpha=%d bravo=%d" % [st, multiplayer.get_peers().size(), team_alpha_peers.size(), team_bravo_peers.size()])
+
 func _exit_tree() -> void:
+	# Só a instância global (/root/NetworkManager) pode fechar a rede.
+	# Antes, a cópia que vem dentro da cena do mapa se apagava e derrubava o servidor/cliente.
+	if get_tree() and get_tree().root.get_node_or_null("NetworkManager") != self:
+		return
 	_cleanup_network()
 
 func _cleanup_network() -> void:
@@ -297,8 +322,28 @@ func _peer_create_client(peer: MultiplayerPeer, address: String, port: int) -> E
 
 # ── INICIALIZAÇÃO DE SERVIDOR / CLIENTE ────────────────────────────────────────
 ## Inicia o Servidor Dedicado Neutro (Headless / Nuvem / Docker - Opção A)
+# ── MAPA DO SERVIDOR DEDICADO ──────────────────────────────────────────────────
+const DEDICATED_MAPS := {
+	"nuketown_2065": "res://scenes/_world/map_nuketown_1v1.tscn",
+	"nuketown_1v1": "res://scenes/_world/map_nuketown_1v1.tscn",
+	"nuk3town_bo3": "res://scenes/_world/map_nuk3town_bo3.tscn",
+	"bo3": "res://scenes/_world/map_nuk3town_bo3.tscn",
+	"firing_range": "res://scenes/_world/map_firing_range.tscn",
+}
+var dedicated_map_path: String = "res://scenes/_world/map_nuketown_1v1.tscn"
+
+func _map_from_args(args: Array) -> String:
+	for a in args:
+		var arg := str(a)
+		if arg.begins_with("--map="):
+			var key := arg.trim_prefix("--map=").strip_edges().to_lower()
+			if DEDICATED_MAPS.has(key):
+				return DEDICATED_MAPS[key]
+	return dedicated_map_path
+
 func start_dedicated_server(port: int = DEFAULT_PORT) -> bool:
 	_cleanup_network()
+	dedicated_map_path = _map_from_args(OS.get_cmdline_args() + OS.get_cmdline_user_args())
 
 	var peer = _make_peer()
 	var err = _peer_create_server(peer, port)
@@ -322,7 +367,10 @@ func start_dedicated_server(port: int = DEFAULT_PORT) -> bool:
 	print("[NetworkManager] SERVIDOR DEDICADO ONLINE NA PORTA %d (WebSocket/TCP)" % port)
 	print("[NetworkManager] Capacidade Máxima: %d jogadores (Suporta até 6v6)" % max_players)
 	print("[NetworkManager] Meta da Partida: %d Kills" % target_kills)
+	print("[NetworkManager] Mapa: %s" % dedicated_map_path)
 	print("==================================================================")
+	# O servidor carrega o mapa na hora; quem entra recebe o mapa e só é admitido depois de carregar
+	get_tree().change_scene_to_file.call_deferred(dedicated_map_path)
 	return true
 
 ## Inicia uma partida local offline (Solo / Web)
@@ -418,6 +466,68 @@ func _on_peer_connected(id: int) -> void:
 	var is_alpha = false
 
 	if is_dedicated:
+		print("[NetworkManager] Peer %d recebendo o mapa %s" % [id, dedicated_map_path])
+		rpc_id(id, "rpc_load_match_map", dedicated_map_path)
+		return
+
+	_server_admit_peer_legacy(id, max_team_size)
+
+func _server_admit_peer_legacy(id: int, max_team_size: int) -> void:
+	var is_alpha = false
+	# Listen Server em jogo ativo
+	if team_alpha_peers.size() <= team_bravo_peers.size() and team_alpha_peers.size() < max_team_size:
+		team_alpha_peers.append(id)
+		is_alpha = true
+	else:
+		team_bravo_peers.append(id)
+		is_alpha = false
+
+	_register_player_stat(id, is_alpha)
+
+	for p_id in team_alpha_peers:
+		if p_id != id: rpc_id(id, "rpc_spawn_player", p_id, true)
+	for p_id in team_bravo_peers:
+		if p_id != id: rpc_id(id, "rpc_spawn_player", p_id, false)
+
+	rpc("rpc_spawn_player", id, is_alpha)
+	rpc("sync_player_stats", player_stats)
+	rpc("sync_match_state", score_alpha, score_bravo)
+	match_active = true
+	match_started.emit()
+
+## Servidor -> cliente: carregar o mapa da partida antes de entrar
+@rpc("authority", "call_remote", "reliable")
+func rpc_load_match_map(map_path: String) -> void:
+	print("[NetworkManager] Servidor pediu o mapa: %s" % map_path)
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		gm.target_map_path = map_path
+	get_tree().change_scene_to_file("res://scenes/ui/loading_screen.tscn")
+	# Espera o mapa terminar de carregar e avisa o servidor
+	while is_inside_tree():
+		await get_tree().process_frame
+		var cs = get_tree().current_scene
+		if cs and cs is Node3D and cs.scene_file_path == map_path:
+			break
+	await get_tree().create_timer(0.5).timeout
+	if multiplayer.has_multiplayer_peer():
+		rpc_id(1, "rpc_client_ready_in_map")
+
+## Cliente -> servidor: mapa carregado, pode entrar na partida
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_client_ready_in_map() -> void:
+	if not multiplayer.is_server() or not is_dedicated:
+		return
+	var sender := multiplayer.get_remote_sender_id()
+	if sender in team_alpha_peers or sender in team_bravo_peers:
+		return
+	print("[NetworkManager] Peer %d carregou o mapa e foi admitido na partida." % sender)
+	_server_admit_dedicated(sender)
+
+func _server_admit_dedicated(id: int) -> void:
+	var max_team_size = max(1, max_players / 2)
+	var is_alpha = false
+	if true: # servidor dedicado
 		if team_alpha_peers.size() <= team_bravo_peers.size() and team_alpha_peers.size() < max_team_size:
 			team_alpha_peers.append(id)
 			is_alpha = true
@@ -442,27 +552,6 @@ func _on_peer_connected(id: int) -> void:
 		if team_alpha_peers.size() >= 1 and team_bravo_peers.size() >= 1:
 			match_active = true
 			rpc("rpc_match_started")
-	else:
-		# Listen Server em jogo ativo
-		if team_alpha_peers.size() <= team_bravo_peers.size() and team_alpha_peers.size() < max_team_size:
-			team_alpha_peers.append(id)
-			is_alpha = true
-		else:
-			team_bravo_peers.append(id)
-			is_alpha = false
-
-		_register_player_stat(id, is_alpha)
-
-		for p_id in team_alpha_peers:
-			if p_id != id: rpc_id(id, "rpc_spawn_player", p_id, true)
-		for p_id in team_bravo_peers:
-			if p_id != id: rpc_id(id, "rpc_spawn_player", p_id, false)
-
-		rpc("rpc_spawn_player", id, is_alpha)
-		rpc("sync_player_stats", player_stats)
-		rpc("sync_match_state", score_alpha, score_bravo)
-		match_active = true
-		match_started.emit()
 
 func _on_peer_disconnected(id: int) -> void:
 	print("[NetworkManager] Peer desconectado: %d" % id)
@@ -640,6 +729,9 @@ func on_map_scene_ready() -> void:
 ## Garante que o jogador local esteja sempre instanciado no mapa atual
 func ensure_local_player_spawned(target_map: Node = null) -> Node:
 	if is_in_lobby:
+		return null
+	# Servidor dedicado só arbitra a partida: não tem jogador próprio
+	if is_dedicated:
 		return null
 
 	var cur_scn = get_tree().current_scene if get_tree() else null

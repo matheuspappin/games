@@ -24,6 +24,8 @@ func _solve() -> void:
 	var skel := get_skeleton()
 	if not skel or root_idx < 0 or mid_idx < 0 or end_idx < 0 or not is_instance_valid(target):
 		return
+	if not skel.is_inside_tree() or not target.is_inside_tree():
+		return
 	var ra := skel.get_bone_global_pose(root_idx)
 	var rb := skel.get_bone_global_pose(mid_idx)
 	var rc := skel.get_bone_global_pose(end_idx)
