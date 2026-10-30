@@ -499,6 +499,9 @@ func _server_admit_peer_legacy(id: int, max_team_size: int) -> void:
 @rpc("authority", "call_remote", "reliable")
 func rpc_load_match_map(map_path: String) -> void:
 	print("[NetworkManager] Servidor pediu o mapa: %s" % map_path)
+	# Servidor dedicado não tem sala de espera: sai do modo lobby e entra direto na partida
+	is_in_lobby = false
+	is_room_host = false
 	var gm = get_node_or_null("/root/GameManager")
 	if gm:
 		gm.target_map_path = map_path
@@ -606,6 +609,8 @@ func _on_server_disconnected() -> void:
 func rpc_client_request_lobby_join(client_info: Dictionary) -> void:
 	if not multiplayer.is_server():
 		return
+	if is_dedicated:
+		return # o dedicado já mandou o mapa na conexão (rpc_load_match_map)
 
 	var sender_id = multiplayer.get_remote_sender_id()
 	if sender_id == 0:
