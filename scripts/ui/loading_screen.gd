@@ -104,45 +104,82 @@ func _update_ui_headers() -> void:
 			lbl_weapon_info.text = "CARGA BÉLICA: %s  |  SECUNDÁRIA: PISTOLA C19  |  CORPO A CORPO: FACA" % w_name
 
 # ── PACOTES DE MAPA NO NAVEGADOR ───────────────────────────────────────────────
-var _pack_http: HTTPRequest = null
+var _pack_downloading := false
+var _pack_progress := 0.0
 var _waiting_pack := false
 static var _loaded_packs := {}
 
 func _ensure_web_pack(file_name: String) -> bool:
 	if _loaded_packs.has(file_name):
 		return true
-	var dst := "user://" + file_name
+	var dst := "/tmp/" + file_name
 	if FileAccess.file_exists(dst) and ProjectSettings.load_resource_pack(dst):
 		_loaded_packs[file_name] = true
 		return true
-	var base := str(JavaScriptBridge.eval("location.href.replace(/[^/]*$/, '')", true))
-	_pack_http = HTTPRequest.new()
-	_pack_http.download_file = dst
-	add_child(_pack_http)
-	if _pack_http.request(base + file_name) != OK:
-		return false
-	var res: Array = await _pack_http.request_completed
-	_pack_http.queue_free()
-	_pack_http = null
-	if res[0] != HTTPRequest.RESULT_SUCCESS or res[1] != 200:
-		return false
+	# Download feito pelo próprio navegador (fetch): chega em pedaços, informa o progresso
+	# e é copiado para o disco virtual do Godot com engine.copyToFS. O HTTPRequest guardava
+	# tudo na memória, não mostrava progresso e falhava sem dizer o motivo.
+	var js := """
+	window.__packDL = {state: 'baixando', loaded: 0, total: 0, err: ''};
+	(async () => {
+		try {
+			const url = location.href.replace(/[^/]*$/, '') + '%s';
+			const r = await fetch(url);
+			if (!r.ok) throw new Error('HTTP ' + r.status);
+			const total = +r.headers.get('Content-Length') || 0;
+			window.__packDL.total = total;
+			const reader = r.body.getReader();
+			let data = total ? new Uint8Array(total) : null;
+			const chunks = [];
+			let off = 0;
+			while (true) {
+				const {done, value} = await reader.read();
+				if (done) break;
+				if (data) { data.set(value, off); } else { chunks.push(value); }
+				off += value.length;
+				window.__packDL.loaded = off;
+			}
+			if (!data) { data = new Uint8Array(off); let o = 0; for (const c of chunks) { data.set(c, o); o += c.length; } }
+			engine.copyToFS('%s', data.buffer);
+			window.__packDL.state = 'ok';
+		} catch (e) {
+			window.__packDL.state = 'erro';
+			window.__packDL.err = String(e);
+		}
+	})();
+	""" % [file_name, dst]
+	JavaScriptBridge.eval(js, true)
+	_pack_downloading = true
+	while is_inside_tree():
+		await get_tree().process_frame
+		var st = JSON.parse_string(str(JavaScriptBridge.eval("JSON.stringify(window.__packDL)", true)))
+		if typeof(st) != TYPE_DICTIONARY:
+			continue
+		if float(st.get("total", 0)) > 0:
+			_pack_progress = float(st.get("loaded", 0)) / float(st.get("total", 1))
+		if st.get("state") == "ok":
+			break
+		if st.get("state") == "erro":
+			push_error("[LoadingScreen] Download do mapa falhou: %s" % st.get("err", ""))
+			_pack_downloading = false
+			return false
+	_pack_downloading = false
 	if ProjectSettings.load_resource_pack(dst):
 		_loaded_packs[file_name] = true
 		return true
+	push_error("[LoadingScreen] Pacote baixado, mas não abriu: " + dst)
 	return false
 
 func _process(delta: float) -> void:
 	var is_loaded: bool = false
 	var real_progress: float = 0.0
-	if _pack_http:
-		var total := _pack_http.get_body_size()
-		if total > 0:
-			real_progress = 0.5 * float(_pack_http.get_downloaded_bytes()) / float(total)
+	if _pack_downloading:
+		real_progress = 0.5 * _pack_progress
 	if _waiting_pack:
 		display_progress = move_toward(display_progress, real_progress, delta)
 		_update_progress_display()
 		if lbl_status:
-			lbl_status.text = "Baixando o mapa (somente na primeira vez)..."
+			lbl_status.text = "Baixando o mapa... %d%%" % int(_pack_progress * 100.0)
 		return
 
 	if cached_scene != null:
