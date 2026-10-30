@@ -293,6 +293,7 @@ func _update_custom_weapon_visual(wid: String) -> void:
 			mount_node.add_child(custom_model)
 			WeaponManager.set_viewmodel_layers(custom_model, 2) # Camada 1P: fora da mira PiP e do mundo
 			current_custom_model_instance = custom_model
+			_setup_left_hand_ik(cfg)
 		else:
 			# Failsafe: se falhar o carregamento do modelo customizado, mantém a arma original visível
 			for child in fps_hands.find_children("*", "MeshInstance3D", true, false):
@@ -301,6 +302,7 @@ func _update_custom_weapon_visual(wid: String) -> void:
 					mesh_inst.visible = true
 					mesh_inst.layers = 2 # Restaura a camada do viewmodel (antes ficava 0 e a arma sumia)
 	else:
+		_setup_left_hand_ik({})
 		# Arma padrão Bytez com braços nativos: reexibir as malhas da arma
 		for child in fps_hands.find_children("*", "MeshInstance3D", true, false):
 			var mesh_inst = child as MeshInstance3D
@@ -309,6 +311,63 @@ func _update_custom_weapon_visual(wid: String) -> void:
 				mesh_inst.layers = 2 # Restaura a camada do viewmodel (antes ficava 0 e a arma sumia)
 
 	update_ads_alignment.call_deferred()
+
+# ── MÃO ESQUERDA: IK DE DOIS OSSOS (braço → antebraço → punho) ATÉ O PONTO GripL DA ARMA ──
+# A animação base é da arma nativa da família; o IK leva o punho esquerdo até o guarda-mão
+# do modelo customizado. Desliga suavemente em recarga, troca de arma e golpe de faca.
+const LEFT_HAND_IK_SCRIPT = preload("res://scripts/weapons/left_hand_ik.gd")
+const LEFT_IK_OFF_STATES := ["reload", "reload_full", "take", "hide", "melee"]
+var left_hand_ik: SkeletonModifier3D = null
+var left_hand_ik_weight: float = 0.0
+
+func _find_bone_prefix(skel: Skeleton3D, prefix: String) -> String:
+	for i in skel.get_bone_count():
+		if skel.get_bone_name(i).begins_with(prefix):
+			return skel.get_bone_name(i)
+	return ""
+
+func _setup_left_hand_ik(cfg: Dictionary) -> void:
+	if left_hand_ik and is_instance_valid(left_hand_ik):
+		left_hand_ik.queue_free()
+	left_hand_ik = null
+	left_hand_ik_weight = 0.0
+	if not cfg.has("grip_l") or not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
+		return
+	var pivot: Node3D = current_custom_model_instance.get_node_or_null("Pivot")
+	if not pivot or not fps_hands or not is_instance_valid(fps_hands.weapon):
+		return
+	var sk_list = fps_hands.weapon.find_children("*", "Skeleton3D", true, false)
+	if sk_list.is_empty():
+		return
+	var skel: Skeleton3D = sk_list.front()
+	var root_bone := _find_bone_prefix(skel, "L_arm")
+	var mid_bone := _find_bone_prefix(skel, "L_elbow")
+	var end_bone := _find_bone_prefix(skel, "L_wrist")
+	if root_bone == "" or mid_bone == "" or end_bone == "":
+		return
+	var marker := pivot.get_node_or_null("GripL") as Marker3D
+	if not marker:
+		marker = Marker3D.new()
+		marker.name = "GripL"
+		pivot.add_child(marker)
+	marker.position = cfg["grip_l"]
+	var ik = LEFT_HAND_IK_SCRIPT.new()
+	ik.name = "LeftHandIK"
+	skel.add_child(ik)
+	ik.setup(skel, root_bone, mid_bone, end_bone, marker)
+	ik.influence = 0.0
+	left_hand_ik = ik
+
+func _update_left_hand_ik(delta: float) -> void:
+	if not left_hand_ik or not is_instance_valid(left_hand_ik):
+		return
+	var want := 1.0
+	if fps_hands and fps_hands.state_machine:
+		var st := str(fps_hands.state_machine.get_current_node())
+		if st in LEFT_IK_OFF_STATES:
+			want = 0.0
+	left_hand_ik_weight = move_toward(left_hand_ik_weight, want, delta * 6.0)
+	left_hand_ik.influence = left_hand_ik_weight
 
 func _get_optic_mount_node() -> Node3D:
 	if not fps_hands or not is_instance_valid(fps_hands.weapon):
@@ -402,6 +461,7 @@ func _update_weapon_silencer() -> void:
 func _process(_delta: float) -> void:
 	if fps_hands and is_instance_valid(fps_hands):
 		fps_hands.rotation = Vector3(0, PI, 0)
+	_update_left_hand_ik(_delta)
 
 	# ── SINCRONIZAÇÃO E ALINHAMENTO COAXIAL DE MIRA ADS ESTILO CALL OF DUTY ───
 	if fps_hands and is_instance_valid(fps_hands.weapon):
