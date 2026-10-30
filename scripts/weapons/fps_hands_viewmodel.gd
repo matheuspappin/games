@@ -322,7 +322,8 @@ func _apply_camo() -> void:
 	if not fps_hands or not is_instance_valid(fps_hands.weapon):
 		return
 	var camo_info = CamoRegistry.get_camo(current_camo_id)
-	
+	var is_factory: bool = camo_info.get("id", "default") == "default"
+
 	# Se temos modelo customizado, aplicar camo nele prioritariamente
 	var target_root: Node = fps_hands.weapon
 	if current_custom_model_instance and is_instance_valid(current_custom_model_instance):
@@ -334,7 +335,16 @@ func _apply_camo() -> void:
 		if mesh_inst and mesh_inst.mesh and not mesh_inst.name.to_lower().contains("arm") and not mesh_inst.name.to_lower().contains("hand") and mesh_inst.name != "Object_7":
 			var surf_count = mesh_inst.mesh.get_surface_count()
 			for s in range(surf_count):
-				var mat = mesh_inst.get_active_material(s)
+				# Padrão de fábrica: mantém o material original (cor, metal e rugosidade do modelo).
+				# Antes a cor era trocada por branco e armas sem textura (M4A1, RPK) ficavam brancas.
+				var meta_key := "_orig_override_%d" % s
+				if not mesh_inst.has_meta(meta_key):
+					mesh_inst.set_meta(meta_key, mesh_inst.get_surface_override_material(s))
+				var orig_ovr = mesh_inst.get_meta(meta_key)
+				if is_factory:
+					mesh_inst.set_surface_override_material(s, orig_ovr)
+					continue
+				var mat = orig_ovr if orig_ovr else mesh_inst.mesh.surface_get_material(s)
 				if mat is ShaderMaterial:
 					var m_dup = mat.duplicate() as ShaderMaterial
 					m_dup.set_shader_parameter("albedo", camo_info["albedo"])
@@ -343,6 +353,7 @@ func _apply_camo() -> void:
 					mesh_inst.set_surface_override_material(s, m_dup)
 				elif mat is StandardMaterial3D:
 					var m_dup = mat.duplicate() as StandardMaterial3D
+					# Com textura a cor multiplica a textura; sem textura a cor da camo substitui a do material
 					m_dup.albedo_color = camo_info["albedo"]
 					m_dup.metallic = camo_info["metallic"]
 					m_dup.roughness = camo_info["roughness"]
