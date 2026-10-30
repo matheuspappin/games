@@ -2138,8 +2138,16 @@ func _on_back_pressed() -> void:
 
 func _on_confirm_pressed() -> void:
 	var cur_class = classes[selected_class_index]
+	var was_initial := is_initial_spawn or not has_chosen_initial_class
 	has_chosen_initial_class = true
 	class_selected.emit(cur_class)
+	# Escolha inicial (ao entrar no mapa): a classe vale na hora, como no CoD.
+	# Trocas no meio da partida continuam valendo no próximo renascimento.
+	if was_initial:
+		var p = _find_local_player()
+		if p and is_instance_valid(p) and "weapon_manager" in p and p.weapon_manager and p.weapon_manager.has_method("reset_on_respawn"):
+			p.weapon_manager.reset_on_respawn()
+	is_initial_spawn = false
 	close_screen()
 
 func _on_firing_range_pressed() -> void:
@@ -2267,6 +2275,10 @@ func _set_faction(fac: int) -> void:
 func _find_local_player() -> Node:
 	if not is_inside_tree() or not get_tree(): return null
 	var players = get_tree().get_nodes_in_group("player")
+	# Multiplayer: o grupo "player" tem também os jogadores remotos; o local é o que controlamos
+	for p in players:
+		if p is Node and p.has_method("is_local_player") and p.is_local_player():
+			return p
 	for p in players:
 		if p is Node and not (p.get("is_bot") if "is_bot" in p else false):
 			return p
