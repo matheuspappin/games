@@ -28,7 +28,7 @@ func _run() -> void:
 			skel.skeleton_updated.connect(_on_skel_updated.bind(skel, marker), CONNECT_ONE_SHOT)
 			await get_tree().process_frame
 			await get_tree().process_frame
-			out.append("%s ik=sim influence=%.2f ativo=%s alvo_ok=%s dist_cm=%.1f" % [wid, ik.influence, ik.active, ik.get_target_node(0) != NodePath(), dist])
+			out.append("%s ik=sim influence=%.2f ativo=%s alvo_ok=%s dist_cm=%.1f" % [wid, ik.influence, ik.active, ik.target != null, dist])
 		else:
 			out.append("%s ik=%s marker=%s" % [wid, ik != null, marker != null])
 	FileAccess.open("res://_prints/ik_probe.txt", FileAccess.WRITE).store_string("\n".join(out))
