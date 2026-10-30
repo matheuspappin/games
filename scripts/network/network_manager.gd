@@ -99,6 +99,10 @@ func _ready() -> void:
 	_parse_game_rules(all_args)
 
 	var is_script_run = "-s" in all_args or "--script" in all_args
+	# Modo de teste (QA): --qa-shot=caminho.png salva prints da partida e fecha o jogo
+	for a in all_args:
+		if str(a).begins_with("--qa-shot="):
+			_qa_capture.call_deferred(str(a).trim_prefix("--qa-shot="))
 	# --client tem prioridade: permite clientes sem tela (testes automáticos / bots de carga)
 	if "--client" in all_args:
 		var c_ip = _get_target_ip_from_args(all_args)
@@ -121,6 +125,38 @@ func _ready() -> void:
 		if scene_name == "MainMenu" or scene_name == "LobbyScreen" or scene_name == "LoadingScreen" or scene_name == "":
 			print("[NetworkManager] Autoload global ativo. Aguardando seleção do operador no menu.")
 			return
+
+## QA: espera o jogador local nascer, salva prints (cintura e após 4 s) e um relatório do viewmodel, depois fecha
+func _qa_capture(path: String) -> void:
+	var t0 := Time.get_ticks_msec()
+	var me: Node = null
+	while Time.get_ticks_msec() - t0 < 90000:
+		await get_tree().create_timer(0.5).timeout
+		if multiplayer.has_multiplayer_peer():
+			me = get_tree().root.find_child("Player_%d" % multiplayer.get_unique_id(), true, false)
+		if me:
+			break
+	var lines := ["jogador_encontrado=%s" % (me != null)]
+	await get_tree().create_timer(6.0).timeout
+	get_viewport().get_texture().get_image().save_png(path)
+	if me:
+		var vm = me.find_child("FpsHandsViewModel", true, false)
+		var wm = me.find_child("WeaponManager", true, false)
+		lines.append("viewmodel=%s visivel=%s" % [vm != null, vm.is_visible_in_tree() if vm else false])
+		if vm:
+			lines.append("arma_custom=%s fps_hands=%s" % [vm.get("current_custom_model_instance") != null, vm.get("fps_hands") != null])
+		lines.append("weapon_manager=%s" % (wm != null))
+		var cam := get_viewport().get_camera_3d()
+		lines.append("camera=%s cull_mask=%s" % [cam.get_path() if cam else "nenhuma", cam.cull_mask if cam else 0])
+		var hud = get_tree().root.find_child("MPHud", true, false)
+		lines.append("hud=%s visivel=%s" % [hud != null, hud.visible if hud and "visible" in hud else "?"])
+		var ccs = get_tree().root.find_child("ChooseClassScreen", true, false)
+		lines.append("tela_classe=%s aberta=%s" % [ccs != null, ccs.get("is_open") if ccs else "?"])
+	var f := FileAccess.open(path.get_basename() + ".txt", FileAccess.WRITE)
+	if f:
+		f.store_string("\n".join(lines))
+		f.close()
+	get_tree().quit()
 
 func _process(delta: float) -> void:
 	_dedicated_heartbeat(delta)
@@ -505,6 +541,11 @@ func rpc_load_match_map(map_path: String) -> void:
 	var gm = get_node_or_null("/root/GameManager")
 	if gm:
 		gm.target_map_path = map_path
+		# Partida ativa no cliente: libera captura do mouse (câmera), HUD e fluxo de classe,
+		# como no modo solo. Sem isso o clique não prendia o mouse e a câmera não girava.
+		gm.is_match_active = true
+		gm.match_time_elapsed = 0.0
+	match_active = true
 	get_tree().change_scene_to_file("res://scenes/ui/loading_screen.tscn")
 	# Espera o mapa terminar de carregar e avisa o servidor
 	while is_inside_tree():

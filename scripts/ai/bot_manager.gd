@@ -63,6 +63,12 @@ func _ready() -> void:
 	call_deferred("_initialize_match_bots")
 
 func _initialize_match_bots() -> void:
+	# Bots são do modo solo (e do futuro modo jogador x bots). No servidor dedicado online
+	# eles não são transmitidos aos jogadores, então ficam desligados.
+	var nm = get_node_or_null("/root/NetworkManager")
+	if nm and nm.get("is_dedicated") == true:
+		print("[BotManager] Servidor dedicado: bots desligados (somente modo solo).")
+		return
 	var gm = get_node_or_null("/root/GameManager")
 	var play_with_bots = true
 	var bot_count = 5
@@ -74,8 +80,9 @@ func _initialize_match_bots() -> void:
 			# Cliente online não spawna bots localmente (o servidor os gerencia)
 			return
 		elif gm.play_mode == gm.PlayMode.ONLINE_HOST:
-			play_with_bots = gm.online_fill_bots
-			bot_count = gm.bot_count if gm.bot_count > 0 else 5
+			# Bots só no modo solo: online eles não são transmitidos aos outros jogadores
+			print("[BotManager] Partida online: bots desligados (somente modo solo).")
+			return
 		else:
 			play_with_bots = true
 			bot_count = gm.bot_count if gm.bot_count > 0 else 5
