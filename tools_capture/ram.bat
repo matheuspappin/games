@@ -1,0 +1,2 @@
+@echo off
+powershell -NoProfile -Command "$os=Get-CimInstance Win32_OperatingSystem; 'RAM livre: {0:N1} GB de {1:N1} GB' -f ($os.FreePhysicalMemory/1MB),($os.TotalVisibleMemorySize/1MB); 'Memoria virtual livre: {0:N1} GB de {1:N1} GB' -f ($os.FreeVirtualMemory/1MB),($os.TotalVirtualMemorySize/1MB); Get-Process | Sort-Object PrivateMemorySize64 -Descending | Select-Object -First 12 | ForEach-Object { '{0,-28} {1,7:N0} MB' -f $_.ProcessName, ($_.PrivateMemorySize64/1MB) }" > "C:\gemini cli\games\_prints\ram.log" 2>&1

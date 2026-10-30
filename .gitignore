@@ -34,3 +34,6 @@ scratch/
 
 # Prints e relatorios de QA
 _prints/
+
+# Backup do mapa original (ignorado pelo Godot via .gdignore)
+assets/_backup_original/
