@@ -359,14 +359,18 @@ func _peer_create_client(peer: MultiplayerPeer, address: String, port: int) -> E
 # ── INICIALIZAÇÃO DE SERVIDOR / CLIENTE ────────────────────────────────────────
 ## Inicia o Servidor Dedicado Neutro (Headless / Nuvem / Docker - Opção A)
 # ── MAPA DO SERVIDOR DEDICADO ──────────────────────────────────────────────────
+# Mesmos nomes do GameManager: "nuketown_2065" é o BO3 futurista; o clássico (1960) é o do BO1
 const DEDICATED_MAPS := {
-	"nuketown_2065": "res://scenes/_world/map_nuketown_1v1.tscn",
+	"nuketown_2065": "res://scenes/_world/map_nuk3town_bo3.tscn",
+	"nuketown_classic": "res://scenes/_world/map_nuketown_1v1.tscn",
+	"nuketown_bo1": "res://scenes/_world/map_nuketown_1v1.tscn",
+	"bo1": "res://scenes/_world/map_nuketown_1v1.tscn",
 	"nuketown_1v1": "res://scenes/_world/map_nuketown_1v1.tscn",
 	"nuk3town_bo3": "res://scenes/_world/map_nuk3town_bo3.tscn",
 	"bo3": "res://scenes/_world/map_nuk3town_bo3.tscn",
 	"firing_range": "res://scenes/_world/map_firing_range.tscn",
 }
-var dedicated_map_path: String = "res://scenes/_world/map_nuketown_1v1.tscn"
+var dedicated_map_path: String = "res://scenes/_world/map_nuk3town_bo3.tscn" # padrão: Nuketown 2065
 
 func _map_from_args(args: Array) -> String:
 	for a in args:
