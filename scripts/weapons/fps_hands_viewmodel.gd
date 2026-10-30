@@ -285,7 +285,7 @@ func _update_custom_weapon_visual(wid: String) -> void:
 			# Compensar a escala de 0.015 do nó raiz do Bytez
 			var ws = fps_hands.weapon.scale.x if absf(fps_hands.weapon.scale.x) > 0.001 else 0.015
 			var inv_ws = 1.0 / absf(ws)
-			custom_model.scale = Vector3.ONE * inv_ws
+			custom_model.scale = Vector3.ONE * inv_ws * float(cfg.get("vm_fit_scale", 1.0))
 			
 			# Posicionamento perfeitamente calibrado nas palmas das mãos
 			var vm_pos = cfg.get("vm_offset", Vector3(0.0, 2.2, 3.5))

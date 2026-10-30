@@ -335,7 +335,8 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/rpk.tscn",
 		"scale": 0.58,
 		"vm_scale": 1.04,
-		"vm_offset": Vector3(0.0, 2.2, 3.8),
+		"vm_offset": Vector3(1.6147, -5.0873, 10.0260), # calibrado pelo tools_capture/weapon_fit (referência: pegada da AK)
+		"vm_fit_scale": 0.9519,
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.095, -0.315, 0.370),
 		"ads_depth": -0.36,
@@ -347,13 +348,13 @@ static var REGISTRY: Dictionary = {
 			"545_20", "casing_545_17", "Object_44", "Object_45",
 			"Object_52", "Object_53", "Object_54"
 		],
-		"socket_optic": Vector3(0, 0.1061, 0.0290),
+		"socket_optic": Vector3(0.0, 0.3059, 0.1000), # topo real do receptor (antes ficava dentro do corpo)
 		"socket_muzzle": Vector3(0, 0.0473, -0.3050),
 		"socket_mag": Vector3(0, -0.0255, -0.0290),
 		"socket_underbarrel": Vector3(0, -0.0073, -0.1450),
 		"socket_stock": Vector3(0, 0.0473, 0.2600),
 		"socket_rear_grip": Vector3(0, -0.0383, 0.0870),
-		"socket_iron_ads": Vector3(0.0409, 0.0632, -0.0259)
+		"socket_iron_ads": Vector3(0.0, 0.3099, 0.1560) # topo do modelo, 35% a partir da traseira
 	},
 	"lmg": {
 		"name": "LMG-63",
