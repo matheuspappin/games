@@ -109,6 +109,13 @@ var minimap_hud : Control = null
 var choose_class_screen: Node = null
 
 func _ready() -> void:
+	# Servidor dedicado não tem jogador: sem HUD, sem escolha de classe, sem "voltar ao lobby".
+	# Antes a HUD rodava no servidor e, ao fim da partida ou quando um jogador caía, levava o
+	# servidor para o lobby e fechava a rede de todos.
+	var nm_check = get_node_or_null("/root/NetworkManager")
+	if nm_check and nm_check.get("is_dedicated") == true:
+		queue_free()
+		return
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_create_dynamic_hud_elements()
 	call_deferred("_check_initial_class_selection")
@@ -2136,6 +2143,9 @@ func _on_play_again_pressed() -> void:
 	get_tree().reload_current_scene()
 
 func _on_return_to_lobby_pressed() -> void:
+	var nm_ded = get_node_or_null("/root/NetworkManager")
+	if nm_ded and nm_ded.get("is_dedicated") == true:
+		return
 	aar_auto_timer_active = false
 	if btn_return_lobby:
 		btn_return_lobby.disabled = true
@@ -2153,6 +2163,9 @@ func _on_return_to_lobby_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/ui/lobby_screen.tscn")
 
 func _on_main_menu_pressed() -> void:
+	var nm_ded = get_node_or_null("/root/NetworkManager")
+	if nm_ded and nm_ded.get("is_dedicated") == true:
+		return
 	aar_auto_timer_active = false
 	if btn_main_menu:
 		btn_main_menu.disabled = true
