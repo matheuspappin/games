@@ -1,0 +1,6 @@
+# Teste local (sem dominio/HTTPS): publica o WebSocket direto na porta 7777 do PC.
+# Uso: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build nuke-dedicated-server
+services:
+  nuke-dedicated-server:
+    ports:
+      - "7777:7777"
