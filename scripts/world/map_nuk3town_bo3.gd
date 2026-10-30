@@ -57,7 +57,8 @@ func _setup_complete_collisions() -> void:
 	
 	for c in model.get_children():
 		if c is MeshInstance3D and c.mesh:
-			var c_lower = c.name.to_lower()
+			# Se os blocos forem divididos em setores no import ("Nome__s2"), a regra de colisão usa o nome original
+			var c_lower = c.name.to_lower().get_slice("__s", 0)
 			
 			# Malhas com superfícies híbridas ou pisos especiais:
 			if c_lower == "bo3_miscstructures_6":
