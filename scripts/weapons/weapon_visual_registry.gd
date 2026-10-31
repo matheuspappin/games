@@ -778,52 +778,44 @@ static func update_attachments(
 			break
 	var target_parent: Node3D = inst if inst else pivot
 
-	# Nó container para anexar acessórios
-	var att_container = target_parent.get_node_or_null("AttachmentContainer")
+	# MONTADOR ÚNICO (arma na mão, Gunsmith e seleção usam este mesmo código):
+	# acessórios ficam no Pivot (em metros, escala 1); a posição de cada encaixe vem do marcador
+	# do modelo (SocketX) convertido para o espaço do Pivot, ou do registro quando não há marcador.
+	var att_container = pivot.get_node_or_null("AttachmentContainer")
+	var old_container = target_parent.get_node_or_null("AttachmentContainer") if target_parent != pivot else null
+	if old_container:
+		old_container.free()
 	if not att_container:
 		att_container = Node3D.new()
 		att_container.name = "AttachmentContainer"
-		target_parent.add_child(att_container)
+		pivot.add_child(att_container)
 	else:
 		for c in att_container.get_children():
-			if c.is_inside_tree(): c.queue_free()
-			else: c.free()
+			c.free()
 
-	# Se container estiver dentro da instância da arma, a escala relativa é 1.0 (a arma já aplica a escala apropriada)
-	var att_scale = 1.0 if inst else (cfg.get("scale", 0.52) / 0.85)
-
-	# 1. Mira Óptica (Optic)
-	if optic_id != "none" and optic_id != "optic_iron" and ATTACHMENT_SCENES.has(optic_id):
-		var socket_pos = _find_or_get_socket(target_parent, "SocketOptic", cfg.get("socket_optic", Vector3(0, 0.12, 0)))
-		_spawn_attachment(att_container, ATTACHMENT_SCENES[optic_id], socket_pos, att_scale)
-
-	# 2. Boca / Silenciador / Compensador (Muzzle)
-	if muzzle_id != "none" and ATTACHMENT_SCENES.has(muzzle_id):
-		var socket_pos = _find_or_get_socket(target_parent, "SocketMuzzle", cfg.get("socket_muzzle", Vector3(0, 0.02, -0.28)))
-		_spawn_attachment(att_container, ATTACHMENT_SCENES[muzzle_id], socket_pos, att_scale)
-
-	# 3. Carregador Estendido / Rápido (Mag)
-	if mag_id != "none" and ATTACHMENT_SCENES.has(mag_id):
-		var socket_pos = _find_or_get_socket(target_parent, "SocketMag", cfg.get("socket_mag", Vector3(0, -0.12, 0)))
-		_spawn_attachment(att_container, ATTACHMENT_SCENES[mag_id], socket_pos, att_scale)
-
-	# 4. Empunhadura Frontal / Underbarrel (Grip Vertical / Angled)
-	if underbarrel_id != "none" and ATTACHMENT_SCENES.has(underbarrel_id):
-		var socket_pos = _find_or_get_socket(target_parent, "SocketUnderbarrel", cfg.get("socket_underbarrel", Vector3(0, -0.06, -0.12)))
-		_spawn_attachment(att_container, ATTACHMENT_SCENES[underbarrel_id], socket_pos, att_scale)
-
-	# 5. Coronha Tática / Stock (Light / Heavy)
-	if stock_id != "none" and ATTACHMENT_SCENES.has(stock_id):
-		var socket_pos = _find_or_get_socket(target_parent, "SocketStock", cfg.get("socket_stock", Vector3(0, 0.06, 0.22)))
-		_spawn_attachment(att_container, ATTACHMENT_SCENES[stock_id], socket_pos, att_scale)
-
-	# 6. Cabo Traseiro / Rear Grip (Rubber / Stippled)
-	if grip_id != "none" and ATTACHMENT_SCENES.has(grip_id):
-		var socket_pos = _find_or_get_socket(target_parent, "SocketRearGrip", cfg.get("socket_rear_grip", Vector3(0, -0.10, 0.05)))
-		_spawn_attachment(att_container, ATTACHMENT_SCENES[grip_id], socket_pos, att_scale)
+	var slots := [
+		["optic", optic_id, "SocketOptic", "socket_optic", Vector3(0, 0.12, 0)],
+		["muzzle", muzzle_id, "SocketMuzzle", "socket_muzzle", Vector3(0, 0.02, -0.28)],
+		["mag", mag_id, "SocketMag", "socket_mag", Vector3(0, -0.12, 0)],
+		["underbarrel", underbarrel_id, "SocketUnderbarrel", "socket_underbarrel", Vector3(0, -0.06, -0.12)],
+		["stock", stock_id, "SocketStock", "socket_stock", Vector3(0, 0.06, 0.22)],
+		["grip", grip_id, "SocketRearGrip", "socket_rear_grip", Vector3(0, -0.10, 0.05)],
+	]
+	for sl in slots:
+		var att_id: String = sl[1]
+		if att_id == "none" or att_id == "" or att_id == "optic_iron" or not ATTACHMENT_SCENES.has(att_id):
+			continue
+		var pos := _socket_in_pivot(pivot, target_parent, sl[2], cfg.get(sl[3], sl[4]))
+		var node := _spawn_attachment(att_container, ATTACHMENT_SCENES[att_id], pos, 1.0)
+		if node:
+			node.name = "Att_" + String(sl[0])
+			node.set_meta("slot", sl[0])
+			node.set_meta("attachment_id", att_id)
 
 	# Controle dinâmico unificado: Ocultar peças nativas (miras, magazine, coronha, boca, cabo) quando substituídas
 	update_integrated_weapon_parts(target_parent, optic_id, muzzle_id, mag_id, underbarrel_id, stock_id, grip_id)
+	# Encaixe pela geometria real (depois de esconder as peças originais)
+	_snap_attachments(pivot, att_container, cfg)
 
 # ── CONTROLE DINÂMICO UNIFICADO DE PEÇAS ORIGINAIS DA ARMA ────────────────────
 static func update_integrated_weapon_parts(
@@ -970,6 +962,19 @@ static func update_integrated_weapon_parts(
 static func update_integrated_sights_and_muzzle(root: Node3D, optic_id: String, muzzle_id: String) -> void:
 	update_integrated_weapon_parts(root, optic_id, muzzle_id)
 
+## Posição de um marcador de encaixe do modelo no espaço do Pivot (funciona fora da árvore de cena)
+static func _socket_in_pivot(pivot: Node3D, model_root: Node3D, socket_name: String, fallback_pos: Vector3) -> Vector3:
+	var marker = model_root.find_child(socket_name, true, false) as Node3D
+	if not marker:
+		return fallback_pos
+	var xf := Transform3D.IDENTITY
+	var n: Node = marker
+	while n and n != pivot:
+		if n is Node3D:
+			xf = (n as Node3D).transform * xf
+		n = n.get_parent()
+	return xf.origin
+
 static func _find_or_get_socket(root: Node3D, socket_name: String, fallback_pos: Vector3) -> Vector3:
 	var marker = root.find_child(socket_name, true, false) as Marker3D
 	if marker:
@@ -989,6 +994,121 @@ static func _spawn_attachment(parent: Node3D, scene_path: String, pos: Vector3, 
 		parent.add_child(inst)
 	return inst
 
+# ── ENCAIXE PELA GEOMETRIA ─────────────────────────────────────────────────────
+# Os pontos de encaixe foram marcados com as peças originais no lugar; quando a coronha,
+# o cano ou o pente originais são escondidos, o acessório ficava solto. Aqui cada acessório
+# é encostado na geometria visível da arma (espaço do Pivot).
+static func _visible_in(node: Node, stop: Node) -> bool:
+	var n: Node = node
+	while n and n != stop:
+		if n is Node3D and not (n as Node3D).visible:
+			return false
+		n = n.get_parent()
+	return true
+
+static func _xf_to(node: Node3D, root: Node3D) -> Transform3D:
+	var xf := Transform3D.IDENTITY
+	var n: Node = node
+	while n and n != root:
+		if n is Node3D:
+			xf = (n as Node3D).transform * xf
+		n = n.get_parent()
+	return xf
+
+## Assenta uma mira (luneta, red dot) no topo real da arma, onde ela fica ao longo do cano
+static func snap_optic_to_rail(pivot: Node3D, optic: Node3D) -> void:
+	if not pivot or not optic:
+		return
+	var ob := AABB(); var first := true
+	for m in optic.find_children("*", "MeshInstance3D", true, false):
+		if m.mesh == null: continue
+		var b: AABB = _xf_to(m, pivot) * m.get_aabb()
+		ob = b if first else ob.merge(b); first = false
+	if first:
+		return
+	# altura do trilho: máximo por fatia de 0,5 cm ao longo da mira, e a MEDIANA dessas fatias
+	# (postes de mira de ferro e peças finas e altas ocupam poucas fatias e são ignorados)
+	var step := 0.005
+	var nb := maxi(1, int(ceil(ob.size.z / step)))
+	var bins := []
+	bins.resize(nb)
+	bins.fill(-INF)
+	for m in pivot.find_children("*", "MeshInstance3D", true, false):
+		if optic.is_ancestor_of(m) or m.mesh == null or not _visible_in(m, pivot) or m.layers == 0:
+			continue
+		if m.get_parent() and String(m.get_parent().name) == "AttachmentContainer":
+			continue
+		var xf := _xf_to(m, pivot)
+		for sidx in m.mesh.get_surface_count():
+			for v in m.mesh.surface_get_arrays(sidx)[Mesh.ARRAY_VERTEX]:
+				var p: Vector3 = xf * v
+				if p.z >= ob.position.z and p.z < ob.end.z and absf(p.x - ob.get_center().x) < 0.03:
+					var b := clampi(int((p.z - ob.position.z) / step), 0, nb - 1)
+					if p.y > bins[b]:
+						bins[b] = p.y
+	var filled := bins.filter(func(x): return x != -INF)
+	if filled.size() > 0:
+		filled.sort()
+		var rail: float = filled[filled.size() / 2]
+		optic.position.y += rail - ob.position.y
+
+static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> void:
+	if not cont or cont.get_child_count() == 0:
+		return
+	var front := -1.0 if float(cfg.get("socket_muzzle", Vector3(0, 0, -1)).z) < 0.0 else 1.0
+	var pts := PackedVector3Array()
+	for m in pivot.find_children("*", "MeshInstance3D", true, false):
+		if cont.is_ancestor_of(m) or m.mesh == null or not _visible_in(m, pivot):
+			continue
+		var xf := _xf_to(m, pivot)
+		for sidx in m.mesh.get_surface_count():
+			for v in m.mesh.surface_get_arrays(sidx)[Mesh.ARRAY_VERTEX]:
+				pts.append(xf * v)
+	if pts.is_empty():
+		return
+	var gb := AABB(pts[0], Vector3.ZERO)
+	for p in pts: gb = gb.expand(p)
+	var gun_front: float = gb.position.z if front < 0 else gb.end.z
+	var gun_rear: float = gb.end.z if front < 0 else gb.position.z
+	for a in cont.get_children():
+		if not (a is Node3D): continue
+		var ab := AABB(); var first := true
+		for m in a.find_children("*", "MeshInstance3D", true, false):
+			if m.mesh == null: continue
+			var b: AABB = _xf_to(m, pivot) * m.get_aabb()
+			ab = b if first else ab.merge(b); first = false
+		if first: continue
+		var a_rear: float = ab.end.z if front < 0 else ab.position.z
+		var a_front: float = ab.position.z if front < 0 else ab.end.z
+		match String(a.get_meta("slot", "")):
+			"muzzle":
+				# começa na ponta do cano (0,5 cm de sobreposição para não ver fresta)
+				a.position.z += (gun_front - front * 0.005) - a_rear
+				# e fica no eixo do cano: centro (mediana) dos pontos da ponta do cano
+				var ys := []; var xs := []
+				for p in pts:
+					if absf(p.z - gun_front) < 0.015:
+						ys.append(p.y); xs.append(p.x)
+				if ys.size() > 3:
+					ys.sort(); xs.sort()
+					var c := ab.get_center()
+					a.position.y += float(ys[ys.size() / 2]) - c.y
+					a.position.x += float(xs[xs.size() / 2]) - c.x
+			"stock":
+				# encosta na traseira do corpo (1 cm de sobreposição)
+				a.position.z += (gun_rear + front * 0.01) - a_front
+			"underbarrel", "mag":
+				# topo encosta no fundo da arma naquele ponto (pente entra 2 cm no poço)
+				var zc := ab.get_center().z
+				var half := maxf(ab.size.z * 0.5, 0.015)
+				var bottom := INF
+				for p in pts:
+					# fundo da arma nessa fatia (guarda-mão ou poço do pente, com o pente original já escondido)
+					if absf(p.z - zc) <= half and absf(p.x - ab.get_center().x) < 0.05 and p.y < bottom:
+						bottom = p.y
+				if bottom != INF:
+					var inset := 0.02 if String(a.get_meta("slot", "")) == "mag" else 0.003
+					a.position.y += (bottom + inset) - ab.end.y
 # ── APLICAÇÃO DE CAMUFLAGEM PBR E RESTAURAÇÃO BASE ────────────────────────────
 static func apply_camo(wrapper: Node3D, camo_key: String) -> void:
 	if not wrapper:

@@ -117,7 +117,7 @@ func _setup_player_weapons() -> void:
 			# Aplicar customizações de camuflagem, mira e cano
 			var fps_vm = weapon_manager.weapon_rig.get_node_or_null("FpsHandsViewModel") if weapon_manager.weapon_rig else null
 			if fps_vm and fps_vm.has_method("set_weapon_customization"):
-				fps_vm.set_weapon_customization(gm.primary_camo, gm.primary_optic, gm.primary_muzzle)
+				fps_vm.set_weapon_customization(gm.primary_camo, gm.primary_optic, gm.primary_muzzle, gm.primary_mag, gm.primary_underbarrel, gm.primary_stock, gm.primary_grip)
 
 		# Garantir munição infinita na reserva para testes
 		_ensure_infinite_ammo()

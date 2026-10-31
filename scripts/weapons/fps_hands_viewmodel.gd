@@ -174,13 +174,45 @@ func _on_fps_hands_taking_weapon() -> void:
 		_update_weapon_optic.call_deferred()
 		update_ads_alignment.call_deferred()
 
-func set_weapon_customization(p_camo: String, p_optic: String, p_muzzle: String) -> void:
+func set_weapon_customization(p_camo: String, p_optic: String, p_muzzle: String, p_mag: String = "none", p_underbarrel: String = "none", p_stock: String = "none", p_grip: String = "none") -> void:
 	current_camo_id = p_camo if p_camo != "" else "default"
 	current_optic_id = p_optic if p_optic != "" else "none"
 	current_muzzle_id = p_muzzle if p_muzzle != "" else "none"
+	current_attachments = {"mag": p_mag, "underbarrel": p_underbarrel, "stock": p_stock, "grip": p_grip}
 	_apply_camo()
-	_update_weapon_silencer()
+	if current_custom_model_instance and is_instance_valid(current_custom_model_instance):
+		_apply_attachments()
+	else:
+		_update_weapon_silencer()
 	_update_weapon_optic()
+
+# ── ACESSÓRIOS: MONTADOR ÚNICO (o mesmo da tela de Gunsmith) ──────────────────
+var current_attachments := {"mag": "none", "underbarrel": "none", "stock": "none", "grip": "none"}
+
+func _apply_attachments() -> void:
+	if not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
+		return
+	# cano, pente, empunhadura, coronha e cabo pelo montador único; a mira segue no código de ADS
+	WeaponVisualRegistry.update_attachments(current_custom_model_instance, "none", current_muzzle_id,
+		current_attachments.get("mag", "none"), current_attachments.get("underbarrel", "none"),
+		current_attachments.get("stock", "none"), current_attachments.get("grip", "none"))
+	var cont = current_custom_model_instance.get_node_or_null("Pivot/AttachmentContainer")
+	if cont:
+		WeaponManager.set_viewmodel_layers(cont, 2)
+	if current_silencer_instance and is_instance_valid(current_silencer_instance):
+		current_silencer_instance.queue_free()
+		current_silencer_instance = null
+	_update_integrated_sights_visibility()
+	_setup_mag_follower()
+	# empunhadura vertical: a mão esquerda vai até ela
+	var marker = current_custom_model_instance.get_node_or_null("Pivot/GripL") as Node3D
+	var ub = cont.get_node_or_null("Att_underbarrel") if cont else null
+	if marker:
+		var cfg_l = WeaponVisualRegistry.get_weapon_config(current_equipped_wid)
+		if ub and ub is Node3D:
+			marker.global_position = _mesh_center(ub)
+		elif cfg_l.has("grip_l"):
+			marker.position = cfg_l["grip_l"]
 
 func equip_weapon_data(data: WeaponData) -> void:
 	current_weapon_data = data
@@ -295,6 +327,7 @@ func _update_custom_weapon_visual(wid: String) -> void:
 			current_custom_model_instance = custom_model
 			_setup_left_hand_ik(cfg)
 			_setup_mag_follower()
+			_apply_attachments()
 		else:
 			# Failsafe: se falhar o carregamento do modelo customizado, mantém a arma original visível
 			for child in fps_hands.find_children("*", "MeshInstance3D", true, false):
@@ -422,6 +455,11 @@ func _setup_mag_follower() -> void:
 			break
 	if not _mag_native:
 		return
+	var att_mag = current_custom_model_instance.get_node_or_null("Pivot/AttachmentContainer/Att_mag")
+	if att_mag and att_mag is Node3D:
+		# pente estendido/rápido (acessório) substitui o pente do modelo e segue a recarga
+		_mag_custom.append({"node": att_mag, "rest": att_mag.transform})
+		return
 	for c in current_custom_model_instance.find_children("*", "Node3D", true, false):
 		var low := String(c.name).to_lower()
 		if low.begins_with("magazine") and not (c.get_parent() and String(c.get_parent().name).to_lower().begins_with("magazine")):
@@ -517,6 +555,17 @@ func _update_reload_hand_target(reloading: bool) -> void:
 		_reload_hand_target.name = "ReloadHandTarget"
 		add_child(_reload_hand_target)
 	_reload_hand_target.global_position = wrist + (cus - nat)
+
+func _snap_optic_next_frame(optic: Node3D) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(optic) or optic != current_optic_instance:
+		return
+	var pivot = optic.get_parent() as Node3D
+	if not pivot:
+		return
+	_update_integrated_sights_visibility()
+	WeaponVisualRegistry.snap_optic_to_rail(pivot, optic)
+	update_ads_alignment()
 
 func _get_optic_mount_node() -> Node3D:
 	if not fps_hands or not is_instance_valid(fps_hands.weapon):
@@ -707,6 +756,8 @@ func _update_weapon_optic() -> void:
 			optic.scale = Vector3.ONE
 			optic.rotation = Vector3.ZERO
 			optic.position = cfg.get("socket_optic", Vector3(0, 0.065, 0))
+			# assenta no topo real da arma no frame seguinte (com a mira de ferro original já escondida)
+			_snap_optic_next_frame.call_deferred(optic)
 		else:
 			current_custom_model_instance.add_child(optic)
 			optic.position = cfg.get("socket_optic", Vector3(0, 0.065, 0))
@@ -779,6 +830,9 @@ func update_ads_alignment() -> void:
 		var sight_pivot_pos: Vector3 = Vector3.ZERO
 		if has_optic:
 			var opt_sock = cfg.get("socket_optic", Vector3(0, 0.065, 0))
+			# posição real da mira (depois de assentada no trilho), quando ela está no Pivot
+			if current_optic_instance and is_instance_valid(current_optic_instance) and current_optic_instance.get_parent() == pivot:
+				opt_sock = current_optic_instance.position
 			var ret_off = OPTIC_RETICLE_OFFSETS.get(current_optic_id, Vector3(0.0, 0.027023, -0.010408))
 			sight_pivot_pos = opt_sock + ret_off
 		else:

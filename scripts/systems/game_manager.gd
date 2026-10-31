@@ -84,6 +84,9 @@ var primary_camo   : String = "default"
 var primary_optic  : String = "optic_red_dot"
 var primary_muzzle : String = "none"
 var primary_mag    : String = "none"
+var primary_underbarrel : String = "none"
+var primary_stock  : String = "none"
+var primary_grip   : String = "none"
 
 # ── EQUIPAMENTOS & VANTAGENS (PERKS / BO6) ───────────────────────────────────
 var selected_lethal    : String = "semtex"      # "semtex", "frag", "c4", "molotov"
@@ -444,11 +447,19 @@ func set_loadout(primary_path: String, secondary_path: String, melee_path: Strin
 	melee_weapon_res = melee_path
 	selected_class_name = class_name_str
 
-func set_weapon_customization(camo: String, optic: String, muzzle: String, mag: String) -> void:
+func set_weapon_customization(camo: String, optic: String, muzzle: String, mag: String, underbarrel: String = "none", stock: String = "none", grip: String = "none") -> void:
 	primary_camo = camo if camo != "" else "default"
 	primary_optic = optic if optic != "" else "none"
 	primary_muzzle = muzzle if muzzle != "" else "none"
 	primary_mag = mag if mag != "" else "none"
+	primary_underbarrel = underbarrel if underbarrel != "" else "none"
+	primary_stock = stock if stock != "" else "none"
+	primary_grip = grip if grip != "" else "none"
+
+## Todos os acessórios da arma primária, por encaixe (fonte única para a arma na mão)
+func get_primary_attachment_ids() -> Dictionary:
+	return {"optic": primary_optic, "muzzle": primary_muzzle, "mag": primary_mag,
+		"underbarrel": primary_underbarrel, "stock": primary_stock, "grip": primary_grip}
 
 func get_primary_attachments() -> Array[AttachmentData]:
 	var list: Array[AttachmentData] = []
@@ -461,6 +472,10 @@ func get_primary_attachments() -> Array[AttachmentData]:
 	if primary_mag != "none" and primary_mag != "":
 		var att = WeaponModifier.get_attachment_resource(primary_mag)
 		if att: list.append(att)
+	for extra in [primary_underbarrel, primary_stock, primary_grip]:
+		if extra != "none" and extra != "":
+			var att_x = WeaponModifier.get_attachment_resource(extra)
+			if att_x: list.append(att_x)
 	return list
 
 func set_character_skin(faction: int, skin_id: String) -> void:
