@@ -4,6 +4,10 @@ extends Node3D
 @onready var vm = $Camera/WeaponRig/FpsHandsViewModel
 @onready var cam: Camera3D = $Camera
 var lines := []
+# Cabo medido no Blender (vista lateral) para armas que o detector automático erra:
+# [distância do cabo até a traseira do corpo (glb), comprimento do corpo (glb)]
+const GRIP_REF := {"man_o_war": [0.377, 0.700], "smg": [0.319, 0.754], "vmp": [0.153, 0.550], "pistol": [0.099, 0.315]}
+const ONLY := ["man_o_war", "smg", "vmp", "pistol"]
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -22,6 +26,7 @@ func _run() -> void:
 		var wid := f.get_basename()
 		var cfg = WeaponVisualRegistry.get_weapon_config(wid)
 		if cfg.get("has_arms", true): continue
+		if not ONLY.is_empty() and not (wid in ONLY): continue
 		vm.equip_weapon_data(load("res://resources/weapons/" + f))
 		vm.set_ads(false)
 		await get_tree().create_timer(1.8).timeout
@@ -58,7 +63,19 @@ func _run() -> void:
 			if p.y < bottom[b]: bottom[b] = p.y
 		var grip_z := INF
 		var method := ""
-		if has_rg:
+		var rec := AABB(); var has_rec := false
+		for m in model.find_children("*", "MeshInstance3D", true, false):
+			if not m.is_visible_in_tree() or m.mesh == null: continue
+			if not String(m.name).to_lower().begins_with("receiver"): continue
+			var b: AABB = inv * m.global_transform * m.get_aabb()
+			rec = b if not has_rec else rec.merge(b); has_rec = true
+		if GRIP_REF.has(wid) and has_rec:
+			var ref: Array = GRIP_REF[wid]
+			var s_scale: float = rec.size.z / float(ref[1])
+			var rec_rear: float = rec.end.z if front < 0 else rec.position.z
+			grip_z = rec_rear + front * float(ref[0]) * s_scale
+			method = "medido_no_blender"
+		elif has_rg:
 			grip_z = rg.get_center().z; method = "RearGrip"
 		else:
 			var vals := bottom.filter(func(x): return x != INF)

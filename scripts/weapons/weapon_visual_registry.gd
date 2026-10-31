@@ -110,7 +110,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/man_o_war.tscn",
 		"scale": 0.53,
 		"vm_scale": 0.86,
-		"vm_offset": Vector3(0.0, 2.0, 3.0),
+		"vm_offset": Vector3(-0.0000, 2.0000, 2.4265), # mão no cabo medido no Blender (ajuste 0.9 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.092, -0.315, 0.360),
 		"ads_depth": -0.36,
@@ -182,7 +182,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/vmp.tscn",
 		"scale": 0.46,
 		"vm_scale": 0.60,
-		"vm_offset": Vector3(0.0, 1.4, 3.5),
+		"vm_offset": Vector3(0.0000, 1.4000, 6.8094), # mão no cabo medido no Blender (ajuste -5.0 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.075, -0.280, 0.345),
 		"ads_depth": -0.36,
@@ -206,7 +206,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/smg.tscn",
 		"scale": 0.46,
 		"vm_scale": 0.60,
-		"vm_offset": Vector3(0.0, 1.4, 3.5),
+		"vm_offset": Vector3(-0.0000, 1.4000, 1.0103), # mão no cabo medido no Blender (ajuste 3.7 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.075, -0.280, 0.345),
 		"ads_depth": -0.36,
@@ -449,7 +449,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/pistol.tscn",
 		"scale": 0.34,
 		"vm_scale": 0.28,
-		"vm_offset": Vector3(0.0, 0.5, 1.5),
+		"vm_offset": Vector3(0.0000, 0.5000, 1.8909), # mão no cabo medido no Blender (ajuste -0.6 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.060, -0.250, 0.320),
 		"ads_depth": -0.34,
