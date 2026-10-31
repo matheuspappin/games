@@ -16,7 +16,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/acr68.tscn",
 		"scale": 0.52,
 		"vm_scale": 0.98,
-		"vm_offset": Vector3(1.6, 1.1, 10.2),
+		"vm_offset": Vector3(1.5285, 1.1572, 11.8376), # mão no cabo real (tools_capture/grip_fit, ajuste -2.5 cm)
 		"hip_offset": Vector3(-0.092, -0.315, 0.360),
 		"ads_depth": -0.44,
 		"ads_depth_optic": -0.38,
@@ -40,7 +40,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/acr68.tscn",
 		"scale": 0.52,
 		"vm_scale": 0.98,
-		"vm_offset": Vector3(1.6, 1.1, 10.2),
+		"vm_offset": Vector3(1.5274, 1.1582, 11.8637), # mão no cabo real (tools_capture/grip_fit, ajuste -2.5 cm)
 		"hip_offset": Vector3(-0.092, -0.315, 0.360),
 		"ads_depth": -0.44,
 		"ads_depth_optic": -0.38,
@@ -64,7 +64,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/m4a1.tscn",
 		"scale": 0.52,
 		"vm_scale": 0.84,
-		"vm_offset": Vector3(0.0, 2.2, 3.5),
+		"vm_offset": Vector3(-0.0000, 2.2000, 1.1195), # mão no cabo real (tools_capture/grip_fit, ajuste 3.6 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.092, -0.315, 0.360),
 		"ads_depth": -0.36,
@@ -87,7 +87,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/scar_h.tscn",
 		"scale": 0.53,
 		"vm_scale": 0.88,
-		"vm_offset": Vector3(0.0, 2.2, 3.2),
+		"vm_offset": Vector3(0.0000, 2.2000, 3.5288), # mão no cabo real (tools_capture/grip_fit, ajuste -0.5 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.092, -0.315, 0.360),
 		"ads_depth": -0.36,
@@ -135,7 +135,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/mp7.tscn",
 		"scale": 0.44,
 		"vm_scale": 0.58,
-		"vm_offset": Vector3(0.0, 1.5, 4.0),
+		"vm_offset": Vector3(0.0000, 1.5000, 5.6001), # mão no cabo real (tools_capture/grip_fit, ajuste -2.4 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.075, -0.280, 0.345),
 		"ads_depth": -0.36,
@@ -158,7 +158,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/pp90m1.tscn",
 		"scale": 0.45,
 		"vm_scale": 0.58,
-		"vm_offset": Vector3(0.0, 1.2, 3.5),
+		"vm_offset": Vector3(-0.0000, 1.2000, 2.6001), # mão no cabo real (tools_capture/grip_fit, ajuste 1.3 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.075, -0.280, 0.345),
 		"ads_depth": -0.36,
@@ -252,7 +252,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/spas12.tscn",
 		"scale": 0.54,
 		"vm_scale": 0.84,
-		"vm_offset": Vector3(0.0, 1.8, 3.5),
+		"vm_offset": Vector3(0.0000, 1.8000, 7.2623), # mão no cabo real (tools_capture/grip_fit, ajuste -5.6 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.085, -0.300, 0.365),
 		"ads_depth": -0.36,
@@ -276,7 +276,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/krm262.tscn",
 		"scale": 0.52,
 		"vm_scale": 0.82,
-		"vm_offset": Vector3(0.0, 1.6, 3.5),
+		"vm_offset": Vector3(-0.0000, 1.6000, 2.3874), # mão no cabo real (tools_capture/grip_fit, ajuste 1.7 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.085, -0.300, 0.365),
 		"ads_depth": -0.36,
@@ -300,7 +300,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/shotgun.tscn",
 		"scale": 0.44,
 		"vm_scale": 0.58,
-		"vm_offset": Vector3(0.0, 1.4, 3.5),
+		"vm_offset": Vector3(0.0000, 1.4000, 6.8873), # mão no cabo real (tools_capture/grip_fit, ajuste -5.1 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.085, -0.300, 0.365),
 		"ads_depth": -0.36,
@@ -347,7 +347,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/rpk.tscn",
 		"scale": 0.58,
 		"vm_scale": 1.04,
-		"vm_offset": Vector3(1.6147, -5.0873, 10.0260), # calibrado pelo tools_capture/weapon_fit (referência: pegada da AK)
+		"vm_offset": Vector3(1.6147, -5.0873, 14.1499), # mão no cabo real (tools_capture/grip_fit, ajuste -6.2 cm)
 		"vm_fit_scale": 0.9519,
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.095, -0.315, 0.370),
@@ -375,7 +375,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/lmg.tscn",
 		"scale": 0.58,
 		"vm_scale": 0.95,
-		"vm_offset": Vector3(0.0, 1.8, 3.5),
+		"vm_offset": Vector3(0.0000, 1.8000, 4.2096), # mão no cabo real (tools_capture/grip_fit, ajuste -1.1 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.095, -0.315, 0.370),
 		"ads_depth": -0.36,
@@ -426,7 +426,7 @@ static var REGISTRY: Dictionary = {
 		"scene": "res://scenes/weapons/modular/deagle.tscn",
 		"scale": 0.38,
 		"vm_scale": 0.28,
-		"vm_offset": Vector3(0.0, 0.5, 1.5),
+		"vm_offset": Vector3(0.0000, 0.5000, 2.5718), # mão no cabo real (tools_capture/grip_fit, ajuste -1.6 cm)
 		"vm_rotation": Vector3.ZERO,
 		"hip_offset": Vector3(-0.060, -0.250, 0.320),
 		"ads_depth": -0.34,
