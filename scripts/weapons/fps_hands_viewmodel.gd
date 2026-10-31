@@ -294,6 +294,7 @@ func _update_custom_weapon_visual(wid: String) -> void:
 			WeaponManager.set_viewmodel_layers(custom_model, 2) # Camada 1P: fora da mira PiP e do mundo
 			current_custom_model_instance = custom_model
 			_setup_left_hand_ik(cfg)
+			_setup_mag_follower()
 		else:
 			# Failsafe: se falhar o carregamento do modelo customizado, mantém a arma original visível
 			for child in fps_hands.find_children("*", "MeshInstance3D", true, false):
@@ -303,6 +304,8 @@ func _update_custom_weapon_visual(wid: String) -> void:
 					mesh_inst.layers = 2 # Restaura a camada do viewmodel (antes ficava 0 e a arma sumia)
 	else:
 		_setup_left_hand_ik({})
+		_mag_native = null
+		_mag_custom.clear()
 		# Arma padrão Bytez com braços nativos: reexibir as malhas da arma
 		for child in fps_hands.find_children("*", "MeshInstance3D", true, false):
 			var mesh_inst = child as MeshInstance3D
@@ -330,7 +333,7 @@ func _setup_left_hand_ik(cfg: Dictionary) -> void:
 		left_hand_ik.queue_free()
 	left_hand_ik = null
 	left_hand_ik_weight = 0.0
-	if not cfg.has("grip_l") or not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
+	if not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
 		return
 	var pivot: Node3D = current_custom_model_instance.get_node_or_null("Pivot")
 	if not pivot or not fps_hands or not is_instance_valid(fps_hands.weapon):
@@ -344,12 +347,14 @@ func _setup_left_hand_ik(cfg: Dictionary) -> void:
 	var end_bone := _find_bone_prefix(skel, "L_wrist")
 	if root_bone == "" or mid_bone == "" or end_bone == "":
 		return
+	# Sem "grip_l" (pistolas): o IK existe só para a recarga e fica desligado no resto do tempo
 	var marker := pivot.get_node_or_null("GripL") as Marker3D
-	if not marker:
-		marker = Marker3D.new()
-		marker.name = "GripL"
-		pivot.add_child(marker)
-	marker.position = cfg["grip_l"]
+	if cfg.has("grip_l"):
+		if not marker:
+			marker = Marker3D.new()
+			marker.name = "GripL"
+			pivot.add_child(marker)
+		marker.position = cfg["grip_l"]
 	var ik = LeftHandIK.new()
 	ik.name = "LeftHandIK"
 	skel.add_child(ik)
@@ -361,12 +366,126 @@ func _update_left_hand_ik(delta: float) -> void:
 	if not left_hand_ik or not is_instance_valid(left_hand_ik):
 		return
 	var want := 1.0
+	var st := ""
 	if fps_hands and fps_hands.state_machine:
-		var st := str(fps_hands.state_machine.get_current_node())
+		st = str(fps_hands.state_machine.get_current_node())
 		if st in LEFT_IK_OFF_STATES:
 			want = 0.0
+	var grip_marker = current_custom_model_instance.get_node_or_null("Pivot/GripL") if current_custom_model_instance and is_instance_valid(current_custom_model_instance) else null
+	if st.begins_with("reload") and _reload_ik_weight > 0.0 and _reload_hand_target:
+		# recarga: leva a mão do pente original (invisível) até o pente do modelo
+		left_hand_ik.target = _reload_hand_target
+		left_hand_ik.influence = _reload_ik_weight
+		left_hand_ik_weight = 0.0
+		return
+	if grip_marker:
+		left_hand_ik.target = grip_marker
+	else:
+		want = 0.0
 	left_hand_ik_weight = move_toward(left_hand_ik_weight, want, delta * 6.0)
 	left_hand_ik.influence = left_hand_ik_weight
+
+# ── RECARGA: PENTE DO MODELO CUSTOMIZADO SEGUE O PENTE DA ANIMAÇÃO ORIGINAL ──
+# As animações do addon movem o pente da arma nativa (escondida): "mag" (AK, LMG) ou "clip"
+# (SMG, pistola). Antes, a mão ia até esse pente invisível e "pegava o ar". Agora o pente do
+# modelo customizado copia, a cada frame, o deslocamento do pente nativo em relação ao repouso.
+const NATIVE_MAG_NAMES := ["mag", "clip"]
+var _mag_native: Node3D = null
+var _mag_native_rest := Transform3D()
+var _mag_rest_ok := false
+var _mag_custom: Array = []        # [{node, rest_local}]
+var _reload_hand_target: Node3D = null
+var _reload_ik_weight := 0.0       # 0..1: quanto o IK leva a mão do pente original ao pente do modelo
+
+func _mesh_center(n: Node3D) -> Vector3:
+	var box := AABB()
+	var first := true
+	var list: Array = n.find_children("*", "MeshInstance3D", true, false)
+	if n is MeshInstance3D:
+		list.append(n)
+	for m in list:
+		var b: AABB = m.global_transform * m.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	return box.get_center() if not first else n.global_position
+
+func _setup_mag_follower() -> void:
+	_mag_native = null
+	_mag_rest_ok = false
+	_mag_custom.clear()
+	if not fps_hands or not is_instance_valid(fps_hands.weapon) or not current_custom_model_instance:
+		return
+	for nm in NATIVE_MAG_NAMES:
+		var n = fps_hands.weapon.find_child(nm, true, false)
+		if n is Node3D:
+			_mag_native = n
+			break
+	if not _mag_native:
+		return
+	for c in current_custom_model_instance.find_children("*", "Node3D", true, false):
+		var low := String(c.name).to_lower()
+		if low.begins_with("magazine") and not (c.get_parent() and String(c.get_parent().name).to_lower().begins_with("magazine")):
+			_mag_custom.append({"node": c, "rest": c.transform})
+
+func _update_mag_follower() -> void:
+	if not _mag_native or not is_instance_valid(_mag_native) or _mag_custom.is_empty():
+		return
+	var st := ""
+	if fps_hands and fps_hands.state_machine:
+		st = str(fps_hands.state_machine.get_current_node())
+	# repouso registrado na primeira vez que a arma fica parada (idle)
+	if not _mag_rest_ok:
+		if st == "idle":
+			_mag_native_rest = _mag_native.transform
+			_mag_rest_ok = true
+		return
+	var p_parent := _mag_native.get_parent() as Node3D
+	if not p_parent:
+		return
+	var delta_local: Transform3D = _mag_native.transform * _mag_native_rest.affine_inverse()
+	var reloading := st.begins_with("reload")
+	var pg := p_parent.global_transform
+	var delta_world: Transform3D = pg * delta_local * pg.affine_inverse()
+	for e in _mag_custom:
+		var node: Node3D = e["node"]
+		if not is_instance_valid(node):
+			continue
+		node.transform = e["rest"]
+		if reloading:
+			node.global_transform = delta_world * node.global_transform
+	_update_reload_hand_target(reloading)
+
+func _update_reload_hand_target(reloading: bool) -> void:
+	_reload_ik_weight = 0.0
+	if not reloading or _mag_custom.is_empty() or not left_hand_ik or not is_instance_valid(left_hand_ik):
+		return
+	var skel := left_hand_ik.get_parent() as Skeleton3D
+	if not skel:
+		return
+	var wi := -1
+	for i in skel.get_bone_count():
+		if skel.get_bone_name(i).begins_with("L_wrist"):
+			wi = i
+			break
+	if wi < 0:
+		return
+	var wrist := skel.global_transform * skel.get_bone_global_pose(wi).origin
+	var nat := _mesh_center(_mag_native)
+	var cus := _mesh_center(_mag_custom[0]["node"])
+	# só quando a mão está segurando o pente original; solta suavemente quando ela se afasta.
+	# Pistolas: a mão empurra o pente por baixo do cabo, então o alcance é maior.
+	var d := wrist.distance_to(nat)
+	var is_pistol := current_inventory_idx == INV_INDEX_PISTOL
+	var full_at := 0.18 if is_pistol else 0.10
+	var fade := 0.12 if is_pistol else 0.15
+	_reload_ik_weight = clampf(1.0 - (d - full_at) / fade, 0.0, 1.0)
+	if _reload_ik_weight <= 0.0:
+		return
+	if not _reload_hand_target or not is_instance_valid(_reload_hand_target):
+		_reload_hand_target = Node3D.new()
+		_reload_hand_target.name = "ReloadHandTarget"
+		add_child(_reload_hand_target)
+	_reload_hand_target.global_position = wrist + (cus - nat)
 
 func _get_optic_mount_node() -> Node3D:
 	if not fps_hands or not is_instance_valid(fps_hands.weapon):
@@ -461,6 +580,7 @@ func _process(_delta: float) -> void:
 	if fps_hands and is_instance_valid(fps_hands):
 		fps_hands.rotation = Vector3(0, PI, 0)
 	_update_left_hand_ik(_delta)
+	_update_mag_follower()
 
 	# ── SINCRONIZAÇÃO E ALINHAMENTO COAXIAL DE MIRA ADS ESTILO CALL OF DUTY ───
 	# (sem arma equipada ainda: nada a alinhar; antes isso gerava um aviso por frame)
