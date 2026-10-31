@@ -516,10 +516,10 @@ static var REGISTRY: Dictionary = {
 # Quais encaixes cada arma aceita, pela categoria. A mira óptica também exige has_optic
 # no WeaponData (armas cujo ADS com luneta ainda não foi validado ficam só com mira de ferro).
 const SLOTS_BY_CATEGORY := {
-	"ar": ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"],
-	"lmg": ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"],
-	"smg": ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"],
-	"shotgun": ["optic", "muzzle", "underbarrel", "stock", "grip"],
+	"ar": ["optic", "muzzle", "barrel", "mag", "underbarrel", "stock", "grip"],
+	"lmg": ["optic", "muzzle", "barrel", "mag", "underbarrel", "stock", "grip"],
+	"smg": ["optic", "muzzle", "barrel", "mag", "underbarrel", "stock", "grip"],
+	"shotgun": ["optic", "muzzle", "barrel", "underbarrel", "stock", "grip"],
 	"secondary": ["optic", "muzzle", "mag"],
 }
 
@@ -752,6 +752,8 @@ static func instantiate_weapon_showcase(weapon_path_or_id: String) -> Node3D:
 	var wrapper = Node3D.new()
 	wrapper.name = "ShowcaseWeaponRoot"
 	wrapper.set_meta("config", cfg)
+	# a vitrine reduz a arma para caber na tela; os acessórios acompanham a mesma redução
+	wrapper.set_meta("attachment_scale", float(cfg.get("scale", 0.52)) / float(cfg.get("vm_scale", cfg.get("scale", 0.52))))
 
 	var pivot = Node3D.new()
 	pivot.name = "Pivot"
@@ -834,8 +836,10 @@ static func update_attachments(
 			continue
 		if not (sl[0] in allowed):
 			continue  # encaixe que essa categoria de arma não tem (ex.: pente em escopeta de tubo)
-		var pos := _socket_in_pivot(pivot, target_parent, sl[2], cfg.get(sl[3], sl[4]))
-		var node := _spawn_attachment(att_container, ATTACHMENT_SCENES[att_id], pos, 1.0)
+		var att_scale: float = wrapper.get_meta("attachment_scale", 1.0)
+		var fallback: Vector3 = cfg.get(sl[3], sl[4]) * att_scale
+		var pos := _socket_in_pivot(pivot, target_parent, sl[2], fallback)
+		var node := _spawn_attachment(att_container, ATTACHMENT_SCENES[att_id], pos, att_scale)
 		if node:
 			node.name = "Att_" + String(sl[0])
 			node.set_meta("slot", sl[0])
@@ -1101,6 +1105,8 @@ static func snap_optic_to_rail(pivot: Node3D, optic: Node3D) -> void:
 static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> void:
 	if not cont or cont.get_child_count() == 0:
 		return
+	var wrapper_node: Node = pivot.get_parent()
+	var k: float = wrapper_node.get_meta("attachment_scale", 1.0) if wrapper_node else 1.0
 	var front := -1.0 if float(cfg.get("socket_muzzle", Vector3(0, 0, -1)).z) < 0.0 else 1.0
 	var pts := PackedVector3Array()
 	for m in pivot.find_children("*", "MeshInstance3D", true, false):
@@ -1127,9 +1133,11 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 		var a_rear: float = ab.end.z if front < 0 else ab.position.z
 		var a_front: float = ab.position.z if front < 0 else ab.end.z
 		match String(a.get_meta("slot", "")):
+			"optic":
+				snap_optic_to_rail(pivot, a)
 			"muzzle":
 				# começa na ponta do cano (0,5 cm de sobreposição para não ver fresta)
-				a.position.z += (gun_front - front * 0.005) - a_rear
+				a.position.z += (gun_front - front * 0.005 * k) - a_rear
 				# e fica no eixo do cano: centro (mediana) dos pontos da ponta do cano
 				var ys := []; var xs := []
 				for p in pts:
@@ -1142,7 +1150,7 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 					a.position.x += float(xs[xs.size() / 2]) - c.x
 			"stock":
 				# encosta na traseira do corpo (1 cm de sobreposição)
-				a.position.z += (gun_rear + front * 0.01) - a_front
+				a.position.z += (gun_rear + front * 0.01 * k) - a_front
 			"underbarrel", "mag":
 				# topo encosta no fundo da arma naquele ponto (pente entra 2 cm no poço)
 				var zc := ab.get_center().z
@@ -1153,7 +1161,7 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 					if absf(p.z - zc) <= half and absf(p.x - ab.get_center().x) < 0.05 and p.y < bottom:
 						bottom = p.y
 				if bottom != INF:
-					var inset := 0.02 if String(a.get_meta("slot", "")) == "mag" else 0.003
+					var inset := (0.02 if String(a.get_meta("slot", "")) == "mag" else 0.003) * k
 					a.position.y += (bottom + inset) - ab.end.y
 # ── APLICAÇÃO DE CAMUFLAGEM PBR E RESTAURAÇÃO BASE ────────────────────────────
 static func apply_camo(wrapper: Node3D, camo_key: String) -> void:

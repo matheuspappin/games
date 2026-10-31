@@ -934,7 +934,7 @@ func _build_tactical_loadout_cards() -> void:
 	p_vbox.add_child(p_act_hbox)
 
 	btn_open_gunsmith = Button.new()
-	btn_open_gunsmith.text = "🔒 [G] MONTAR ARMA (EM BREVE)"
+	btn_open_gunsmith.text = "🛠 [G] MONTAR ARMA"
 	btn_open_gunsmith.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_open_gunsmith.custom_minimum_size = Vector2(0, 36)
 	btn_open_gunsmith.add_theme_font_size_override("font_size", 12)
@@ -959,9 +959,7 @@ func _build_tactical_loadout_cards() -> void:
 	gs_st_press.bg_color = Color(0.08, 0.09, 0.12, 0.95)
 	btn_open_gunsmith.add_theme_stylebox_override("pressed", gs_st_press)
 
-	btn_open_gunsmith.mouse_entered.connect(_on_gunsmith_button_mouse_entered)
-	btn_open_gunsmith.mouse_exited.connect(_on_gunsmith_button_mouse_exited)
-	btn_open_gunsmith.pressed.connect(_on_gunsmith_locked_triggered)
+	btn_open_gunsmith.pressed.connect(_switch_to_gunsmith_mode)
 	p_act_hbox.add_child(btn_open_gunsmith)
 
 	btn_swap_primary = Button.new()
@@ -1673,8 +1671,21 @@ func _create_attachment_carousel_card(socket_key: String, opt_data: Dictionary, 
 
 	return pc
 
+const MAX_ATTACHMENTS := 5
+
 func _equip_attachment_from_carousel(socket_key: String, att_id: String) -> void:
 	var cur_class = classes[selected_class_index]
+	# limite de 5 modificações (como mostra a tela): só conta quando o encaixe estava vazio
+	if att_id != "none" and cur_class.get(socket_key, "none") in ["none", ""]:
+		var used := 0
+		for k in ["optic", "muzzle", "barrel", "mag", "underbarrel", "stock", "grip"]:
+			if not (cur_class.get(k, "none") in ["none", ""]):
+				used += 1
+		if used >= MAX_ATTACHMENTS:
+			_play_mechanical_click()
+			if lbl_carousel_socket_title:
+				lbl_carousel_socket_title.text = "LIMITE DE %d MODIFICAÇÕES — REMOVA UM ACESSÓRIO ANTES" % MAX_ATTACHMENTS
+			return
 	cur_class[socket_key] = att_id
 
 	SaveSystem.save_loadout(selected_class_index, cur_class)
@@ -1904,7 +1915,10 @@ func _input(event: InputEvent) -> void:
 				_on_firing_range_pressed()
 				get_viewport().set_input_as_handled()
 			KEY_G:
-				_on_gunsmith_locked_triggered()
+				if current_mode == UIMode.GUNSMITH_3D:
+					_switch_to_workbench_mode()
+				else:
+					_switch_to_gunsmith_mode()
 				get_viewport().set_input_as_handled()
 			KEY_Q:
 				if current_mode == UIMode.GUNSMITH_3D:
@@ -2044,8 +2058,17 @@ func _refresh_layer1_cards() -> void:
 
 func _update_socket_pin_titles() -> void:
 	var cur_class = classes[selected_class_index]
+	var allowed: Array = WeaponVisualRegistry.get_allowed_slots(current_primary_path)
+	if lbl_modifications_counter:
+		var used := 0
+		for k in ["optic", "muzzle", "barrel", "mag", "underbarrel", "stock", "grip"]:
+			if not (cur_class.get(k, "none") in ["none", ""]):
+				used += 1
+		lbl_modifications_counter.text = "MODIFICAÇÕES %d / %d" % [used, MAX_ATTACHMENTS]
 	for s_key in socket_pins:
 		var pin_btn = socket_pins[s_key]
+		# encaixe que essa arma não tem (ex.: pente em escopeta de tubo, luneta sem trilho validado) não aparece
+		pin_btn.visible = s_key in allowed
 		var sub_lbl = pin_btn.find_child("SubTitle", true, false) as Label
 		var val = cur_class.get(s_key, "none")
 
@@ -2067,7 +2090,7 @@ func _update_stats_display(prim_path: String) -> void:
 	lbl_gunsmith_weapon_name.text = "%s  |  NÍVEL 30 / 30" % w.weapon_name.to_upper()
 
 	var attachments: Array[AttachmentData] = []
-	for s_key in ["optic", "muzzle", "mag"]:
+	for s_key in ["optic", "muzzle", "barrel", "mag", "underbarrel", "stock", "grip"]:
 		var a_id = cur_class.get(s_key, "none")
 		if a_id != "none" and a_id != "":
 			var res = WeaponModifier.get_attachment_resource(a_id)
