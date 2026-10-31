@@ -224,9 +224,12 @@ func _apply_character_skin() -> void:
 					rifle.position = CharacterRetargeter.CS_RIFLE_LOCAL_POS
 					rifle.rotation_degrees = CharacterRetargeter.CS_RIFLE_LOCAL_ROT
 					rifle.visible = true
-					if has_node("/root/GameManager") and rifle.has_method("apply_customization"):
-						var gm = get_node("/root/GameManager")
-						rifle.apply_customization(gm.primary_muzzle == "muzzle_suppressor", gm.primary_optic != "none", gm.primary_camo)
+					# a arma em 3ª pessoa mostra a classe DESTE jogador (antes usava a classe do jogador local)
+					var nm_l = get_node_or_null("/root/NetworkManager")
+					if nm_l and nm_l.peer_loadouts.has(peer_id):
+						apply_remote_loadout(nm_l.peer_loadouts[peer_id])
+					elif is_local_player():
+						apply_remote_loadout(nm_l.build_local_loadout() if nm_l else {})
 
 	if is_local_player() and shadow_soldier:
 		_set_mesh_shadow_only(shadow_soldier, true)
@@ -750,3 +753,12 @@ func _on_recon_reveal_triggered(duration: float) -> void:
 	var hud = _find_hud()
 	if hud and hud.has_method("trigger_recon_wallhack_pulse"):
 		hud.trigger_recon_wallhack_pulse(duration)
+
+## Arma em 3ª pessoa com a classe recebida pela rede (arma + acessórios + camuflagem)
+func apply_remote_loadout(d: Dictionary) -> void:
+	if d.is_empty():
+		return
+	var rifle = find_child("PlayerRifle3D", true, false)
+	if rifle and rifle.has_method("set_weapon_loadout"):
+		rifle.set_weapon_loadout(str(d.get("weapon", "")), d, str(d.get("camo", "default")))
+

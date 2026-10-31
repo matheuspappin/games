@@ -358,6 +358,72 @@ func _peer_create_client(peer: MultiplayerPeer, address: String, port: int) -> E
 
 # ── INICIALIZAÇÃO DE SERVIDOR / CLIENTE ────────────────────────────────────────
 ## Inicia o Servidor Dedicado Neutro (Headless / Nuvem / Docker - Opção A)
+# ── CLASSE DOS JOGADORES NA REDE (arma + acessórios visíveis em 3ª pessoa) ─────
+var peer_loadouts := {}  # peer_id -> {weapon, camo, optic, muzzle, mag, underbarrel, stock, grip}
+const LOADOUT_SLOTS := ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"]
+
+## Monta o dicionário da classe local a partir do GameManager
+func build_local_loadout() -> Dictionary:
+	var gm = get_node_or_null("/root/GameManager")
+	if not gm:
+		return {}
+	var d := {"weapon": str(gm.primary_weapon_res), "camo": str(gm.primary_camo)}
+	var att: Dictionary = gm.get_primary_attachment_ids() if gm.has_method("get_primary_attachment_ids") else {}
+	for k in LOADOUT_SLOTS:
+		d[k] = str(att.get(k, "none"))
+	return d
+
+## Cliente: envia a própria classe ao servidor (ao entrar no mapa e ao confirmar uma classe)
+func submit_local_loadout() -> void:
+	if not multiplayer.has_multiplayer_peer() or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		return
+	var d := build_local_loadout()
+	if d.is_empty():
+		return
+	if multiplayer.is_server():
+		_server_accept_loadout(multiplayer.get_unique_id(), d)
+	else:
+		rpc_id(1, "rpc_submit_loadout", d)
+
+func _sanitize_loadout(d: Dictionary) -> Dictionary:
+	var out := {}
+	var w := str(d.get("weapon", ""))
+	if not (w.begins_with("res://resources/weapons/") and w.ends_with(".tres") and ResourceLoader.exists(w)):
+		return {}
+	out["weapon"] = w
+	out["camo"] = str(d.get("camo", "default")).substr(0, 32)
+	for k in LOADOUT_SLOTS:
+		var v := str(d.get(k, "none"))
+		out[k] = v if (v == "none" or WeaponVisualRegistry.ATTACHMENT_SCENES.has(v)) else "none"
+	return out
+
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_submit_loadout(d: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	_server_accept_loadout(multiplayer.get_remote_sender_id(), d)
+
+func _server_accept_loadout(pid: int, d: Dictionary) -> void:
+	var clean := _sanitize_loadout(d)
+	if clean.is_empty():
+		return
+	peer_loadouts[pid] = clean
+	rpc("rpc_apply_peer_loadout", pid, clean)
+	rpc_apply_peer_loadout(pid, clean)
+
+## Servidor -> todos: a classe de um jogador (cada cliente atualiza a arma 3ª pessoa dele)
+@rpc("authority", "call_remote", "reliable")
+func rpc_apply_peer_loadout(pid: int, d: Dictionary) -> void:
+	peer_loadouts[pid] = d
+	var p = get_tree().root.find_child("Player_%d" % pid, true, false)
+	if p and p.has_method("apply_remote_loadout"):
+		p.apply_remote_loadout(d)
+
+## Servidor: manda a quem acabou de entrar as classes de quem já estava na partida
+func _server_send_known_loadouts(to_pid: int) -> void:
+	for pid in peer_loadouts:
+		rpc_id(to_pid, "rpc_apply_peer_loadout", pid, peer_loadouts[pid])
+
 # ── MAPA DO SERVIDOR DEDICADO ──────────────────────────────────────────────────
 # Mesmos nomes do GameManager: "nuketown_2065" é o BO3 futurista; o clássico (1960) é o do BO1
 const DEDICATED_MAPS := {
@@ -560,6 +626,7 @@ func rpc_load_match_map(map_path: String) -> void:
 	await get_tree().create_timer(0.5).timeout
 	if multiplayer.has_multiplayer_peer():
 		rpc_id(1, "rpc_client_ready_in_map")
+		submit_local_loadout()
 
 ## Cliente -> servidor: mapa carregado, pode entrar na partida
 @rpc("any_peer", "call_remote", "reliable")
@@ -571,6 +638,7 @@ func rpc_client_ready_in_map() -> void:
 		return
 	print("[NetworkManager] Peer %d carregou o mapa e foi admitido na partida." % sender)
 	_server_admit_dedicated(sender)
+	_server_send_known_loadouts(sender)
 
 func _server_admit_dedicated(id: int) -> void:
 	var max_team_size = max(1, max_players / 2)
@@ -602,6 +670,7 @@ func _server_admit_dedicated(id: int) -> void:
 			rpc("rpc_match_started")
 
 func _on_peer_disconnected(id: int) -> void:
+	peer_loadouts.erase(id)
 	print("[NetworkManager] Peer desconectado: %d" % id)
 	if is_in_lobby:
 		if lobby_roster.has(id):

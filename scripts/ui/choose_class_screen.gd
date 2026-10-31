@@ -2174,6 +2174,10 @@ func _on_confirm_pressed() -> void:
 		if p and is_instance_valid(p) and "weapon_manager" in p and p.weapon_manager and p.weapon_manager.has_method("reset_on_respawn"):
 			p.weapon_manager.reset_on_respawn()
 	is_initial_spawn = false
+	# multiplayer: os outros jogadores passam a ver a arma e os acessórios desta classe
+	var nm_c = get_node_or_null("/root/NetworkManager")
+	if nm_c and nm_c.has_method("submit_local_loadout"):
+		nm_c.submit_local_loadout()
 	close_screen()
 
 func _on_firing_range_pressed() -> void:
