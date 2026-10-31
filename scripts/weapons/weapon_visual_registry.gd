@@ -512,6 +512,32 @@ static var REGISTRY: Dictionary = {
 }
 
 # Cenas de acessórios 3D
+# ── COMPATIBILIDADE DE ACESSÓRIOS ─────────────────────────────────────────────
+# Quais encaixes cada arma aceita, pela categoria. A mira óptica também exige has_optic
+# no WeaponData (armas cujo ADS com luneta ainda não foi validado ficam só com mira de ferro).
+const SLOTS_BY_CATEGORY := {
+	"ar": ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"],
+	"lmg": ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"],
+	"smg": ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"],
+	"shotgun": ["optic", "muzzle", "underbarrel", "stock", "grip"],
+	"secondary": ["optic", "muzzle", "mag"],
+}
+
+static func get_allowed_slots(weapon_path_or_id: String) -> Array:
+	var cfg = get_weapon_config(weapon_path_or_id)
+	var slots: Array = SLOTS_BY_CATEGORY.get(cfg.get("category", ""), []).duplicate()
+	if "optic" in slots:
+		var wid := weapon_path_or_id.get_file().get_basename()
+		var res_path := "res://resources/weapons/%s.tres" % wid
+		if ResourceLoader.exists(res_path):
+			var data = load(res_path)
+			if data and "has_optic" in data and not data.has_optic:
+				slots.erase("optic")
+	return slots
+
+static func is_slot_allowed(weapon_path_or_id: String, slot: String) -> bool:
+	return slot in get_allowed_slots(weapon_path_or_id)
+
 const ATTACHMENT_SCENES: Dictionary = {
 	"optic_red_dot": "res://scenes/weapons/attachments/optic_red_dot.tscn",
 	"red_dot": "res://scenes/weapons/attachments/optic_red_dot.tscn",
@@ -801,10 +827,13 @@ static func update_attachments(
 		["stock", stock_id, "SocketStock", "socket_stock", Vector3(0, 0.06, 0.22)],
 		["grip", grip_id, "SocketRearGrip", "socket_rear_grip", Vector3(0, -0.10, 0.05)],
 	]
+	var allowed: Array = SLOTS_BY_CATEGORY.get(cfg.get("category", ""), ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"])
 	for sl in slots:
 		var att_id: String = sl[1]
 		if att_id == "none" or att_id == "" or att_id == "optic_iron" or not ATTACHMENT_SCENES.has(att_id):
 			continue
+		if not (sl[0] in allowed):
+			continue  # encaixe que essa categoria de arma não tem (ex.: pente em escopeta de tubo)
 		var pos := _socket_in_pivot(pivot, target_parent, sl[2], cfg.get(sl[3], sl[4]))
 		var node := _spawn_attachment(att_container, ATTACHMENT_SCENES[att_id], pos, 1.0)
 		if node:
@@ -876,6 +905,23 @@ static func update_integrated_weapon_parts(
 	]
 
 	for child in root.find_children("*", "Node3D", true, false):
+		# 0. Peças nomeadas dos modelos modulares (Magazine, Stock, Muzzle, Sight, Front_Sight, Rear_Sight, RearGrip)
+		var mod_name := String(child.name).to_lower().get_slice(".", 0)
+		if mod_name == "magazine" or mod_name.begins_with("magazine_"):
+			child.visible = not has_mag
+			continue
+		if mod_name == "stock":
+			child.visible = not has_stock
+			continue
+		if mod_name == "muzzle":
+			child.visible = not has_muzzle
+			continue
+		if mod_name in ["sight", "front_sight", "rear_sight"]:
+			child.visible = not has_optic
+			continue
+		if mod_name == "reargrip":
+			child.visible = not has_grip
+			continue
 		# 1. Checagem direta de nós modulares estruturados
 		if child.has_meta("part_type"):
 			var p_type = child.get_meta("part_type")

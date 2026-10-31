@@ -791,7 +791,17 @@ func _update_integrated_sights_visibility() -> void:
 	if current_custom_model_instance and is_instance_valid(current_custom_model_instance):
 		var pivot = current_custom_model_instance.get_node_or_null("Pivot")
 		if pivot:
-			WeaponVisualRegistry.update_integrated_sights_and_muzzle(pivot, current_optic_id, current_muzzle_id)
+			# só o modelo da arma (não os acessórios nem a mira) e com TODOS os encaixes: antes, mira e cano
+			# sozinhos faziam reaparecer o pente e a coronha originais por baixo do pente estendido/coronha tática
+			var model_root: Node3D = null
+			for c in pivot.get_children():
+				if c is Node3D and c.name != "AttachmentContainer" and c != current_optic_instance and c.name != "GripL":
+					model_root = c
+					break
+			if model_root:
+				WeaponVisualRegistry.update_integrated_weapon_parts(model_root, current_optic_id, current_muzzle_id,
+					current_attachments.get("mag", "none"), current_attachments.get("underbarrel", "none"),
+					current_attachments.get("stock", "none"), current_attachments.get("grip", "none"))
 
 func update_ads_alignment() -> void:
 	if not is_inside_tree():
