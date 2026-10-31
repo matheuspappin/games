@@ -40,7 +40,7 @@ func _native_center() -> Vector3:
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_prints/reload"))
 	await get_tree().create_timer(2.0).timeout
-	for wid in ["ak47", "m4a1", "smg", "pistol", "deagle"]:
+	for wid in ["mp7", "pp90m1", "krm262", "spas12"]:
 		vm.equip_weapon_data(load("res://resources/weapons/%s.tres" % wid))
 		vm.set_ads(false)
 		await get_tree().create_timer(2.0).timeout

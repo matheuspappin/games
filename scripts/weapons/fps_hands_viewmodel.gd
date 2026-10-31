@@ -389,7 +389,7 @@ func _update_left_hand_ik(delta: float) -> void:
 # As animações do addon movem o pente da arma nativa (escondida): "mag" (AK, LMG) ou "clip"
 # (SMG, pistola). Antes, a mão ia até esse pente invisível e "pegava o ar". Agora o pente do
 # modelo customizado copia, a cada frame, o deslocamento do pente nativo em relação ao repouso.
-const NATIVE_MAG_NAMES := ["mag", "clip"]
+const NATIVE_MAG_NAMES := ["mag", "clip", "slug1"] # slug1: cartucho da escopeta
 var _mag_native: Node3D = null
 var _mag_native_rest := Transform3D()
 var _mag_rest_ok := false
@@ -433,17 +433,21 @@ func _update_mag_follower() -> void:
 	var st := ""
 	if fps_hands and fps_hands.state_machine:
 		st = str(fps_hands.state_machine.get_current_node())
+	# Escopetas: o cartucho do modelo fica escondido e, na recarga, vai na palma da mão esquerda
+	if String(_mag_native.name) == "slug1":
+		_update_shell_in_hand(st.begins_with("reload"))
+		return
 	# repouso registrado na primeira vez que a arma fica parada (idle)
 	if not _mag_rest_ok:
 		if st == "idle":
 			_mag_native_rest = _mag_native.transform
 			_mag_rest_ok = true
 		return
+	var reloading := st.begins_with("reload")
 	var p_parent := _mag_native.get_parent() as Node3D
 	if not p_parent:
 		return
 	var delta_local: Transform3D = _mag_native.transform * _mag_native_rest.affine_inverse()
-	var reloading := st.begins_with("reload")
 	var pg := p_parent.global_transform
 	var delta_world: Transform3D = pg * delta_local * pg.affine_inverse()
 	for e in _mag_custom:
@@ -454,6 +458,33 @@ func _update_mag_follower() -> void:
 		if reloading:
 			node.global_transform = delta_world * node.global_transform
 	_update_reload_hand_target(reloading)
+
+func _update_shell_in_hand(reloading: bool) -> void:
+	_reload_ik_weight = 0.0
+	var skel: Skeleton3D = null
+	if fps_hands and is_instance_valid(fps_hands.weapon):
+		var sk = fps_hands.weapon.find_children("*", "Skeleton3D", true, false)
+		if not sk.is_empty(): skel = sk.front()
+	for e in _mag_custom:
+		var node: Node3D = e["node"]
+		if not is_instance_valid(node):
+			continue
+		node.transform = e["rest"]
+		node.visible = reloading and skel != null
+		if not node.visible:
+			continue
+		var pi := -1
+		for i in skel.get_bone_count():
+			if skel.get_bone_name(i).begins_with("L_palm"):
+				pi = i
+				break
+		if pi < 0:
+			node.visible = false
+			continue
+		# centro do cartucho na palma, mantendo a orientação do cartucho
+		var palm: Transform3D = skel.global_transform * skel.get_bone_global_pose(pi)
+		var c := _mesh_center(node)
+		node.global_position += palm.origin - c
 
 func _update_reload_hand_target(reloading: bool) -> void:
 	_reload_ik_weight = 0.0
