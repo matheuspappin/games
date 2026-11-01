@@ -409,6 +409,34 @@ func _update_left_hand_ik(delta: float) -> void:
 		if st in LEFT_IK_OFF_STATES:
 			want = 0.0
 	var grip_marker = current_custom_model_instance.get_node_or_null("Pivot/GripL") if current_custom_model_instance and is_instance_valid(current_custom_model_instance) else null
+	# Encaixe do Blender com correção da mão de apoio (ex.: punho na empunhadura vertical do modelo):
+	# alvo = punho animado + deslocamento fixo no espaço da arma; liberado na recarga/troca/faca
+	if _current_has_rig_fit() and not (st in LEFT_IK_OFF_STATES) and not st.begins_with("reload"):
+		var cfg_s = WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower())
+		if cfg_s.has("support_delta"):
+			var skel_s := left_hand_ik.get_parent() as Skeleton3D
+			var ref_s: Node3D = null
+			for m in current_custom_model_instance.find_children("*", "MeshInstance3D", true, false):
+				if String(m.name).to_lower().begins_with("receiver"):
+					ref_s = m
+					break
+			if skel_s and ref_s:
+				var wi := -1
+				for i in skel_s.get_bone_count():
+					if skel_s.get_bone_name(i).begins_with("L_wrist"):
+						wi = i
+						break
+				if wi >= 0:
+					if not _reload_hand_target or not is_instance_valid(_reload_hand_target):
+						_reload_hand_target = Node3D.new()
+						_reload_hand_target.name = "ReloadHandTarget"
+						add_child(_reload_hand_target)
+					var wrist_g := skel_s.global_transform * skel_s.get_bone_global_pose(wi).origin
+					_reload_hand_target.global_position = wrist_g + ref_s.global_basis * (cfg_s["support_delta"] as Vector3)
+					left_hand_ik.target = _reload_hand_target
+					left_hand_ik_weight = move_toward(left_hand_ik_weight, 1.0, delta * 6.0)
+					left_hand_ik.influence = left_hand_ik_weight
+					return
 	if st.begins_with("reload") and _reload_ik_weight > 0.0 and _reload_hand_target:
 		# recarga: leva a mão do pente original (invisível) até o pente do modelo
 		left_hand_ik.target = _reload_hand_target

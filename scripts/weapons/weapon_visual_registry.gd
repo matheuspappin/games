@@ -152,6 +152,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0017, 0.0338, 0.0614), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.000001, -1.384040, 15.461782)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		"has_arms": false,
 		"socket_optic": Vector3(-0.0135, 0.1267, 0.0500),
 		"socket_muzzle": Vector3(-0.0135, 0.0731, -0.2871),
@@ -175,6 +176,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0044, -0.0217, -0.0952), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, -0.000010, 0.000000), Vector3(0.000010, -117.024361, 0.000000), Vector3(0.000000, 0.000000, 117.024361)), Vector3(-0.000000, 1.143686, 6.626442)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(-0.0032, 0.0790, 0.0000),
@@ -199,6 +201,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0055, 0.0220, -0.0114), # mão de apoio: c clamp guarda mao bullpup (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.000001, -0.564870, 17.451199)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		"has_arms": false,
 		"hide_nodes": ["Cartridge", "Cube.013_Cartridge_0"],
 		"socket_optic": Vector3(0, 0.0908, 0.0230),
@@ -245,6 +248,9 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(-1.981, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.000000, -1.852138, 3.560404)), # Blender: gatilho sob o indicador da pose original (família SMG)
+		# punho esquerdo fecha na empunhadura vertical do modelo (medido no Blender, espaço do glb em metros)
+		"support_delta": Vector3(0.015, -0.025, -0.0265),
 		"has_arms": false,
 		"socket_optic": Vector3(0.0062, 0.1352, -0.0200),
 		"socket_muzzle": Vector3(0.0062, 0.0855, -0.2947),
