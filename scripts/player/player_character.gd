@@ -761,4 +761,3 @@ func apply_remote_loadout(d: Dictionary) -> void:
 	var rifle = find_child("PlayerRifle3D", true, false)
 	if rifle and rifle.has_method("set_weapon_loadout"):
 		rifle.set_weapon_loadout(str(d.get("weapon", "")), d, str(d.get("camo", "default")))
-
