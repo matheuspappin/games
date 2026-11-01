@@ -324,16 +324,8 @@ func _update_custom_weapon_visual(wid: String) -> void:
 			custom_model.position = vm_pos
 			mount_node.add_child(custom_model)
 			if cfg.has("rig_fit"):
-				# Encaixe do Blender: o glb da arma fica exatamente onde foi posado em relação ao nó "base"
-				var pv := custom_model.get_node_or_null("Pivot") as Node3D
-				var inst_node: Node3D = null
-				if pv:
-					for c in pv.get_children():
-						if c is Node3D and c.name != "AttachmentContainer" and c.name != "GripL":
-							inst_node = c
-							break
-				if pv and inst_node:
-					custom_model.transform = (cfg["rig_fit"] as Transform3D) * (pv.transform * inst_node.transform).affine_inverse()
+				# encaixe do Blender aplicado depois dos ajustes adiados da cena da arma (escala do Pivot etc.)
+				_apply_rig_fit.call_deferred(custom_model, cfg["rig_fit"])
 			WeaponManager.set_viewmodel_layers(custom_model, 2) # Camada 1P: fora da mira PiP e do mundo
 			current_custom_model_instance = custom_model
 			# Pose de mão do Blender já é a correta: sem IK da mão esquerda (só o da recarga)
@@ -579,6 +571,34 @@ func _snap_optic_next_frame(optic: Node3D) -> void:
 	WeaponVisualRegistry.snap_optic_to_rail(pivot, optic)
 	update_ads_alignment()
 
+## Encaixe do Blender: a peça Receiver da arma vai exatamente para rig_fit (relativo ao nó "base"),
+## descontando escalas intermediárias da cena da arma (Pivot, cena .tscn, nós do glb)
+func _current_has_rig_fit() -> bool:
+	if not current_weapon_data:
+		return false
+	return WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower()).has("rig_fit")
+
+func _apply_rig_fit(custom_model: Node3D, fit: Transform3D) -> void:
+	for pass_i in 2:
+		if pass_i == 1:
+			await get_tree().process_frame
+		if not is_instance_valid(custom_model):
+			return
+		var ref_mesh: Node3D = null
+		for m in custom_model.find_children("*", "MeshInstance3D", true, false):
+			if String(m.name).to_lower().begins_with("receiver"):
+				ref_mesh = m
+				break
+		if not ref_mesh:
+			return
+		var chain := Transform3D.IDENTITY
+		var n: Node = ref_mesh
+		while n and n != custom_model:
+			if n is Node3D:
+				chain = (n as Node3D).transform * chain
+			n = n.get_parent()
+		custom_model.transform = fit * chain.affine_inverse()
+
 func _get_optic_mount_node() -> Node3D:
 	if not fps_hands or not is_instance_valid(fps_hands.weapon):
 		return null
@@ -691,7 +711,7 @@ func _process(_delta: float) -> void:
 			fps_hands.weapon.position = fps_hands.start_pos
 
 		# 2. Rotação do modelo da arma: Hipfire angular -> ADS 100% reto coaxial com o centro da tela
-		if current_custom_model_instance and is_instance_valid(current_custom_model_instance):
+		if current_custom_model_instance and is_instance_valid(current_custom_model_instance) and not _current_has_rig_fit():
 			var pivot = current_custom_model_instance.get_node_or_null("Pivot")
 			if pivot and camera:
 				if smooth_t >= 0.999:
@@ -859,6 +879,12 @@ func update_ads_alignment() -> void:
 			sight_pivot_pos = opt_sock + ret_off
 		else:
 			sight_pivot_pos = cfg.get("socket_iron_ads", Vector3(0, 0.12, 0))
+
+		if _current_has_rig_fit():
+			# encaixe do Blender: cano paralelo ao da arma original, a mira se alinha como a dela
+			var sg: Vector3 = pivot.to_global(sight_pivot_pos)
+			fps_hands.ads_pos = target_sight_in_fps_hands - (fps_hands.to_local(sg) - fps_hands.weapon.position)
+			return
 
 		# Rotação canônica de ADS: alinhamento 100% coaxial reto com a câmera
 		var prev_global_basis = pivot.global_basis

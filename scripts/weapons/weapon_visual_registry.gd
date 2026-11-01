@@ -25,6 +25,9 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0846, 0.0770, -0.1250), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
+		# Encaixe feito no Blender (pipeline estilo CoD): gatilho sob a polpa do indicador da pose original do addon,
+		# cano paralelo ao da AK original e escala real (117 un/m). Matriz do glb da arma em relação ao nó "base".
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000018), Vector3(-0.477971, 117.023384, 0.0), Vector3(0.000018, 0.0, -117.024361)), Vector3(0.772975, 3.208940, 17.324545)),
 		"has_arms": false,
 		"socket_optic": Vector3(0.0064, 0.1650, 0.0260),
 		"socket_muzzle": Vector3(0.0064, 0.0430, -0.2750),
@@ -51,7 +54,7 @@ static var REGISTRY: Dictionary = {
 		"grip_l": Vector3(-0.0883, 0.0716, -0.1397), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		# Encaixe feito no Blender (pipeline estilo CoD): gatilho sob a polpa do indicador da pose original do addon,
 		# cano paralelo ao da AK original e escala real (117 un/m). Matriz do glb da arma em relação ao nó "base".
-		"rig_fit": Transform3D(-117.023415, -0.477971, -0.000018, -0.477971, 117.023384, 0.000000, 0.000018, 0.000000, -117.024361, 0.772975, 3.208940, 17.324545),
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000018), Vector3(-0.477971, 117.023384, 0.0), Vector3(0.000018, 0.0, -117.024361)), Vector3(0.772975, 3.208940, 17.324545)),
 		"has_arms": false,
 		"socket_optic": Vector3(0.0064, 0.1650, 0.0260),
 		"socket_muzzle": Vector3(0.0064, 0.0430, -0.2750),
