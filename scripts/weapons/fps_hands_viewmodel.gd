@@ -686,6 +686,34 @@ func optic_reticle_world() -> Vector3:
 	var o_s: Vector3 = current_optic_instance.scale
 	return current_optic_instance.global_transform * Vector3(ret_o.x / max(o_s.x, 1e-5), ret_o.y / max(o_s.y, 1e-5), ret_o.z / max(o_s.z, 1e-5))
 
+const FINGER_GRIP_SCRIPT := preload("res://scripts/weapons/finger_grip_modifier.gd")
+
+## Punho fechado na empunhadura montada pelo Gunsmith (armas encaixadas no Blender)
+func _update_finger_grip(delta: float) -> void:
+	if not left_hand_ik or not is_instance_valid(left_hand_ik):
+		return
+	var sk := left_hand_ik.get_parent() as Skeleton3D
+	if not sk:
+		return
+	var mod: SkeletonModifier3D = sk.get_node_or_null("FingerGrip") as SkeletonModifier3D
+	if not mod:
+		mod = FINGER_GRIP_SCRIPT.new()
+		mod.name = "FingerGrip"
+		mod.influence = 0.0
+		sk.add_child(mod)
+		sk.move_child(mod, left_hand_ik.get_index())  # antes do IK: dedos fecham, depois o IK posiciona a mão
+	var want := 0.0
+	var st := ""
+	if fps_hands and fps_hands.state_machine:
+		st = str(fps_hands.state_machine.get_current_node())
+	if _current_has_rig_fit() and current_custom_model_instance and is_instance_valid(current_custom_model_instance) \
+			and not (st in LEFT_IK_OFF_STATES) and not st.begins_with("reload"):
+		var ub: Node3D = current_custom_model_instance.find_child("Att_underbarrel", true, false) as Node3D
+		if ub and ub.is_visible_in_tree():
+			want = 1.0
+	mod.influence = move_toward(mod.influence, want, delta * 6.0)
+	mod.active = mod.influence > 0.001
+
 func _rig_ref_mesh() -> Node3D:
 	if not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
 		return null
@@ -815,6 +843,7 @@ func _process(_delta: float) -> void:
 	_update_left_hand_ik(_delta)
 	_update_mag_follower()
 	_place_rig_optic()
+	_update_finger_grip(_delta)
 
 	# ── SINCRONIZAÇÃO E ALINHAMENTO COAXIAL DE MIRA ADS ESTILO CALL OF DUTY ───
 	# (sem arma equipada ainda: nada a alinhar; antes isso gerava um aviso por frame)
