@@ -1,7 +1,7 @@
 extends Node3D
 # Laboratório de acessórios: cada arma sem nada e com montagem completa, na cintura e no ADS.
 @onready var vm = $Camera/WeaponRig/FpsHandsViewModel
-const WEAPONS := ["pistol", "deagle"]
+const WEAPONS := ["shotgun", "krm262", "spas12", "deagle"]
 const FULL := ["optic_holo", "muzzle_suppressor", "mag_extended", "grip_vertical", "stock_heavy", "none"]
 var lines := []
 

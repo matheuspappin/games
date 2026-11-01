@@ -275,6 +275,9 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.1237, 0.0279, -0.0885), # mão de apoio: bomba (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000002, -0.000010), Vector3(0.000000, 115.385590, 19.515818), Vector3(0.000010, 19.515818, -115.385590)), Vector3(0.260828, -6.749563, 27.877321)), # Blender: gatilho sob o indicador da pose original (família escopeta)
+		# mão esquerda na bomba (12 cm à frente da pose original, medido no Blender, espaço do glb)
+		"support_delta": Vector3(0.0, 0.0, -0.12),
 		"has_arms": false,
 		"hide_nodes": ["Object_4"],
 		"socket_optic": Vector3(-0.0208, 0.0856, -0.1000),
@@ -299,6 +302,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.1061, 0.0472, -0.2489), # mão de apoio: bomba (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000002, -0.000010), Vector3(0.000000, 115.385590, 19.515818), Vector3(0.000010, 19.515818, -115.385590)), Vector3(0.260830, 0.428030, 8.807804)), # Blender: gatilho sob o indicador da pose original (família escopeta)
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(0, 0.1085, 0.0260),
@@ -345,6 +349,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 180),
 		"rotation_deg": Vector3(0, 85, 3),
 		"y_offset": 0.02,
+		"rig_fit": Transform3D(Basis(Vector3(117.024391, 0.000000, 0.000000), Vector3(0.000000, -115.385590, -19.515808), Vector3(0.000000, 19.515808, -115.385590)), Vector3(0.260830, -2.564057, 25.024649)), # Blender: gatilho sob o indicador da pose original (família escopeta)
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.0889, -0.0500),
 		"socket_muzzle": Vector3(0, 0.0712, -0.2900),
