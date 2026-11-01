@@ -371,6 +371,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0921, 0.2056, -0.1504), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.071694, -14.195594, 26.967350)), # Blender: gatilho sob o indicador da pose original (família AK — usada pela LMG e pelo RPK no jogo)
 		"has_arms": false,
 		"hide_nodes": [
 			"545_20", "casing_545_17", "Object_44", "Object_45",
@@ -420,6 +421,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(-0.729, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.014197, 6.833509, 22.824688)), # Blender: gatilho sob o indicador da pose original (família AK — usada pela LMG e pelo RPK no jogo)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0021, 0.1030, 0.0000),
 		"socket_muzzle": Vector3(0.0021, 0.0733, -0.5000),
