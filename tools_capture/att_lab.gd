@@ -1,7 +1,7 @@
 extends Node3D
 # Laboratório de acessórios: cada arma sem nada e com montagem completa, na cintura e no ADS.
 @onready var vm = $Camera/WeaponRig/FpsHandsViewModel
-const WEAPONS := ["ak47", "m4a1", "scar_h", "man_o_war", "lmg", "rpk", "smg", "mp7", "vmp", "pp90m1", "pistol", "deagle", "shotgun", "krm262", "spas12"]
+const WEAPONS := ["ak47", "m4a1", "man_o_war", "lmg", "smg", "vmp", "pp90m1", "krm262"]
 const FULL := ["optic_holo", "muzzle_suppressor", "mag_extended", "grip_vertical", "stock_heavy", "none"]
 var lines := []
 
@@ -12,7 +12,7 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_prints/att"))
 	await get_tree().create_timer(2.0).timeout
 	for wid in WEAPONS:
-		for mode in ["nada"]:
+		for mode in ["completa"]:
 			vm.equip_weapon_data(load("res://resources/weapons/%s.tres" % wid))
 			await get_tree().create_timer(1.6).timeout
 			if mode == "completa":

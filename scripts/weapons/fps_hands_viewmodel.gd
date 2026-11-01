@@ -413,6 +413,35 @@ func _update_left_hand_ik(delta: float) -> void:
 	# alvo = punho animado + deslocamento fixo no espaço da arma; liberado na recarga/troca/faca
 	if _current_has_rig_fit() and not (st in LEFT_IK_OFF_STATES) and not st.begins_with("reload"):
 		var cfg_s = WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower())
+		# empunhadura montada pelo Gunsmith: a mão esquerda vai até ela (como no CoD)
+		var ub: Node3D = current_custom_model_instance.find_child("Att_underbarrel", true, false) as Node3D
+		if ub and ub.is_visible_in_tree() and camera:
+			var skel_g := left_hand_ik.get_parent() as Skeleton3D
+			var ref_g := _rig_ref_mesh()
+			if skel_g and ref_g:
+				var wi_g := -1
+				var pi_g := -1
+				for i3 in skel_g.get_bone_count():
+					var bn := skel_g.get_bone_name(i3)
+					if wi_g < 0 and bn.begins_with("L_wrist"):
+						wi_g = i3
+					if pi_g < 0 and bn.begins_with("L_palm"):
+						pi_g = i3
+				if wi_g >= 0 and pi_g >= 0:
+					if not _reload_hand_target or not is_instance_valid(_reload_hand_target):
+						_reload_hand_target = Node3D.new()
+						_reload_hand_target.name = "ReloadHandTarget"
+						add_child(_reload_hand_target)
+					var wpm_g: float = ref_g.global_basis.get_scale().x
+					var wrist_gg := skel_g.global_transform * skel_g.get_bone_global_pose(wi_g).origin
+					var palm_gg := skel_g.global_transform * skel_g.get_bone_global_pose(pi_g).origin
+					# palma no terço superior da empunhadura, encostada pelo lado esquerdo
+					var palm_tgt: Vector3 = ub.global_position - camera.global_basis.y.normalized() * 0.03 * wpm_g - camera.global_basis.x.normalized() * 0.025 * wpm_g
+					_reload_hand_target.global_position = palm_tgt - (palm_gg - wrist_gg)
+					left_hand_ik.target = _reload_hand_target
+					left_hand_ik_weight = move_toward(left_hand_ik_weight, 1.0, delta * 6.0)
+					left_hand_ik.influence = left_hand_ik_weight
+					return
 		if cfg_s.has("support_delta") or cfg_s.has("support_point"):
 			var skel_s := left_hand_ik.get_parent() as Skeleton3D
 			var ref_s: Node3D = null
