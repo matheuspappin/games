@@ -413,7 +413,7 @@ func _update_left_hand_ik(delta: float) -> void:
 	# alvo = punho animado + deslocamento fixo no espaço da arma; liberado na recarga/troca/faca
 	if _current_has_rig_fit() and not (st in LEFT_IK_OFF_STATES) and not st.begins_with("reload"):
 		var cfg_s = WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower())
-		if cfg_s.has("support_delta"):
+		if cfg_s.has("support_delta") or cfg_s.has("support_point"):
 			var skel_s := left_hand_ik.get_parent() as Skeleton3D
 			var ref_s: Node3D = null
 			for m in current_custom_model_instance.find_children("*", "MeshInstance3D", true, false):
@@ -432,7 +432,17 @@ func _update_left_hand_ik(delta: float) -> void:
 						_reload_hand_target.name = "ReloadHandTarget"
 						add_child(_reload_hand_target)
 					var wrist_g := skel_s.global_transform * skel_s.get_bone_global_pose(wi).origin
-					_reload_hand_target.global_position = wrist_g + ref_s.global_basis * (cfg_s["support_delta"] as Vector3)
+					if cfg_s.has("support_point"):
+						# ponto fixo da arma para a PALMA (ex.: pistola com duas mãos); o alvo do IK é o punho
+						var pi_s := -1
+						for i2 in skel_s.get_bone_count():
+							if skel_s.get_bone_name(i2).begins_with("L_palm"):
+								pi_s = i2
+								break
+						var palm_g := skel_s.global_transform * skel_s.get_bone_global_pose(pi_s).origin if pi_s >= 0 else wrist_g
+						_reload_hand_target.global_position = ref_s.global_transform * (cfg_s["support_point"] as Vector3) - (palm_g - wrist_g)
+					else:
+						_reload_hand_target.global_position = wrist_g + ref_s.global_basis * (cfg_s["support_delta"] as Vector3)
 					left_hand_ik.target = _reload_hand_target
 					left_hand_ik_weight = move_toward(left_hand_ik_weight, 1.0, delta * 6.0)
 					left_hand_ik.influence = left_hand_ik_weight

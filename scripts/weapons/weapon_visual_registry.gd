@@ -451,6 +451,9 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 85, 4),
 		"y_offset": 0.015,
 		"grip_l": Vector3(0.0505, -0.0514, 0.1981), # mão de apoio: pistola duas maos (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.012665, 1.656164, -0.035717), Vector3(1.652361, 116.869003, 5.797137), Vector3(0.117712, 5.796052, -116.880684)), Vector3(-0.012974, 1.051537, 9.667155)), # Blender: gatilho sob o indicador da pose original (família pistola)
+		# duas mãos (padrão CoD): palma esquerda no lado esquerdo do cabo, espelhando a direita, 2 cm abaixo (espaço do glb)
+		"support_point": Vector3(-0.044, -0.0592, 0.0989),
 		"has_arms": false,
 		"hide_nodes": ["Bullet_low", "BulletCase_low", "BulletThrow_low"],
 		"socket_optic": Vector3(0, 0.1181, 0.0190),
@@ -475,6 +478,9 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 85, 4),
 		"y_offset": 0.015,
 		"grip_l": Vector3(0.0505, -0.0513, 0.1880), # mão de apoio: pistola duas maos (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.012665, 1.656164, -0.035717), Vector3(1.652361, 116.869003, 5.797137), Vector3(0.117712, 5.796052, -116.880684)), Vector3(-0.054872, -1.902740, 9.942418)), # Blender: gatilho sob o indicador da pose original (família pistola)
+		# duas mãos (padrão CoD): palma esquerda no lado esquerdo do cabo, espelhando a direita, 2 cm abaixo (espaço do glb)
+		"support_point": Vector3(-0.044, -0.0341, 0.1025),
 		"has_arms": false,
 		"socket_optic": Vector3(0.0020, 0.0850, -0.0200),
 		"socket_muzzle": Vector3(0.0020, 0.0550, -0.1950),
