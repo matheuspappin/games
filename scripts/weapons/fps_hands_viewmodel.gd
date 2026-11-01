@@ -323,9 +323,21 @@ func _update_custom_weapon_visual(wid: String) -> void:
 			var vm_pos = cfg.get("vm_offset", Vector3(0.0, 2.2, 3.5))
 			custom_model.position = vm_pos
 			mount_node.add_child(custom_model)
+			if cfg.has("rig_fit"):
+				# Encaixe do Blender: o glb da arma fica exatamente onde foi posado em relação ao nó "base"
+				var pv := custom_model.get_node_or_null("Pivot") as Node3D
+				var inst_node: Node3D = null
+				if pv:
+					for c in pv.get_children():
+						if c is Node3D and c.name != "AttachmentContainer" and c.name != "GripL":
+							inst_node = c
+							break
+				if pv and inst_node:
+					custom_model.transform = (cfg["rig_fit"] as Transform3D) * (pv.transform * inst_node.transform).affine_inverse()
 			WeaponManager.set_viewmodel_layers(custom_model, 2) # Camada 1P: fora da mira PiP e do mundo
 			current_custom_model_instance = custom_model
-			_setup_left_hand_ik(cfg)
+			# Pose de mão do Blender já é a correta: sem IK da mão esquerda (só o da recarga)
+			_setup_left_hand_ik({} if cfg.has("rig_fit") else cfg)
 			_setup_mag_follower()
 			_apply_attachments()
 		else:
