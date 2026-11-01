@@ -621,10 +621,19 @@ func _place_rig_optic() -> void:
 	if not current_weapon_data or not _current_has_rig_fit():
 		return
 	var cfg_o = WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower())
-	if not cfg_o.has("optic_rail"):
-		return
 	var ref_o := _rig_ref_mesh()
 	if not ref_o:
+		return
+	if not cfg_o.has("optic_rail"):
+		# sem assento medido: mantém a altura/posição do encaixe no trilho, mas centraliza a ótica
+		# na linha central do trilho e alinha ao cano
+		if not cfg_o.has("ads_front"):
+			return
+		var lp: Vector3 = ref_o.to_local(current_optic_instance.global_position)
+		lp.x = (cfg_o["ads_front"] as Vector3).x
+		var b2 := ref_o.global_basis.orthonormalized()
+		var sc2 := current_optic_instance.global_basis.get_scale()
+		current_optic_instance.global_transform = Transform3D(Basis(b2.x * sc2.x, b2.y * sc2.y, b2.z * sc2.z), ref_o.global_transform * lp)
 		return
 	var b := ref_o.global_basis.orthonormalized()
 	match String(cfg_o.get("optic_basis_fix", "")):
@@ -634,6 +643,19 @@ func _place_rig_optic() -> void:
 			b = b * Basis(Vector3.BACK, PI)
 	var sc := current_optic_instance.global_basis.get_scale()
 	current_optic_instance.global_transform = Transform3D(Basis(b.x * sc.x, b.y * sc.y, b.z * sc.z), ref_o.global_transform * (cfg_o["optic_rail"] as Vector3))
+
+## Centro real do retículo da ótica montada: a peça de retículo do próprio modelo
+## (RedDotReticle / HoloReticle; lente nas lunetas). Tabela de deslocamentos só como reserva.
+func optic_reticle_world() -> Vector3:
+	if not current_optic_instance or not is_instance_valid(current_optic_instance):
+		return Vector3.ZERO
+	for m in current_optic_instance.find_children("*", "MeshInstance3D", true, false):
+		var n := String(m.name).to_lower()
+		if "reticle" in n or "lens" in n:
+			return m.global_transform * m.get_aabb().get_center()
+	var ret_o: Vector3 = OPTIC_RETICLE_OFFSETS.get(current_optic_id, Vector3(0.0, 0.027023, -0.010408))
+	var o_s: Vector3 = current_optic_instance.scale
+	return current_optic_instance.global_transform * Vector3(ret_o.x / max(o_s.x, 1e-5), ret_o.y / max(o_s.y, 1e-5), ret_o.z / max(o_s.z, 1e-5))
 
 func _rig_ref_mesh() -> Node3D:
 	if not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
@@ -974,16 +996,27 @@ func update_ads_alignment() -> void:
 				var depth: float = float(cfg.get("ads_eye", 0.09)) * wpm + rear_w.distance_to(front_w)
 				if has_optic:
 					# mira ótica: o centro do retículo vai ao centro da tela, olho à distância real de uso da mira
-					var ret_o: Vector3 = OPTIC_RETICLE_OFFSETS.get(current_optic_id, Vector3(0.0, 0.027023, -0.010408))
-					var o_s: Vector3 = current_optic_instance.scale
-					var ret_local := Vector3(ret_o.x / max(o_s.x, 1e-5), ret_o.y / max(o_s.y, 1e-5), ret_o.z / max(o_s.z, 1e-5))
-					p_f = wpn.to_local(current_optic_instance.global_transform * ret_local)
-					var eye_opt := 0.075 if current_optic_id in ["optic_acog", "optic_sniper", "acog", "sniper"] else 0.10
-					depth = eye_opt * wpm
+					var ret_w: Vector3 = optic_reticle_world()
+					p_f = wpn.to_local(ret_w)
+					# olho 5 cm atrás da ponta traseira real da ótica (vale para red dot, holo, ACOG e luneta de qualquer tamanho)
+					var axis_w: Vector3 = (front_w - ref_a.global_transform * Vector3((cfg["ads_front"] as Vector3).x, (cfg["ads_front"] as Vector3).y, (cfg["ads_rear"] as Vector3).z)).normalized()
+					var back := 0.0
+					for om in current_optic_instance.find_children("*", "MeshInstance3D", true, false):
+						if not om.is_visible_in_tree():
+							continue
+						var ab: AABB = om.get_aabb()
+						for ci in 8:
+							back = maxf(back, -(om.global_transform * ab.get_endpoint(ci) - ret_w).dot(axis_w))
+					depth = back + 0.05 * wpm
 				var tgt_l: Vector3 = fps_hands.to_local(cam.to_global(Vector3(0.0, 0.0, -depth)))
 				# rotação que põe a linha alça->massa no eixo da câmera (como no CoD)
 				# direção do cano = alça -> massa de ferro (mesmo quando a referência de mira é o retículo da ótica)
-				var d: Vector3 = (b0 * (wpn.to_local(front_w) - p_r)).normalized()
+				# eixo do cano = eixo longitudinal do próprio modelo (todos estão alinhados ao comprimento no glb);
+				# a alça só define a distância do olho, nunca a direção
+				var fl: Vector3 = cfg["ads_front"]
+				var rl: Vector3 = cfg["ads_rear"]
+				var rear_axis_w: Vector3 = ref_a.global_transform * Vector3(fl.x, fl.y, rl.z)
+				var d: Vector3 = (b0 * (wpn.to_local(front_w) - wpn.to_local(rear_axis_w))).normalized()
 				var c: Vector3 = (fps_hands.global_basis.inverse() * (-cam.global_basis.z)).normalized()
 				_ads_sight_rot = Quaternion(d, c) if d.length() > 0.5 and c.length() > 0.5 else Quaternion.IDENTITY
 				fps_hands.ads_pos = tgt_l - (Basis(_ads_sight_rot) * b0) * p_f
