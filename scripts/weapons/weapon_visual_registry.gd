@@ -24,7 +24,7 @@ static var REGISTRY: Dictionary = {
 		"vm_rotation": Vector3(2.0, -2.5, 0.5),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0572, 0.0311, -0.2659), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0846, 0.0770, -0.1250), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0064, 0.1650, 0.0260),
 		"socket_muzzle": Vector3(0.0064, 0.0430, -0.2750),
@@ -48,7 +48,7 @@ static var REGISTRY: Dictionary = {
 		"vm_rotation": Vector3(2.0, -2.5, 0.5),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0624, 0.0283, -0.2656), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0883, 0.0716, -0.1397), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0064, 0.1650, 0.0260),
 		"socket_muzzle": Vector3(0.0064, 0.0430, -0.2750),
@@ -71,7 +71,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(-0.572, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0510, 0.0096, -0.2272), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0860, 0.0403, -0.0116), # mão de apoio: empunhadura embutida (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0221, 0.1344, 0.0250),
 		"socket_muzzle": Vector3(0.0221, 0.0653, -0.4250),
@@ -94,7 +94,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0292, 0.0220, -0.2380), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0884, 0.0582, -0.0513), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.0957, 0.0265),
 		"socket_muzzle": Vector3(0, 0.0442, -0.2800),
@@ -117,7 +117,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0375, 0.0001, -0.2326), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0878, 0.0507, -0.0982), # mão de apoio: c clamp guarda mao bullpup (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.1418, 0.0265),
 		"socket_muzzle": Vector3(0, 0.0580, -0.2800),
@@ -142,7 +142,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0975, -0.0759, -0.2716), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0017, 0.0338, 0.0614), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(-0.0135, 0.1267, 0.0500),
 		"socket_muzzle": Vector3(-0.0135, 0.0731, -0.2871),
@@ -165,7 +165,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(180, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0737, -0.0330, -0.2716), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0044, -0.0217, -0.0952), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(-0.0032, 0.0790, 0.0000),
@@ -189,7 +189,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0471, -0.0590, -0.2810), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0055, 0.0220, -0.0114), # mão de apoio: c clamp guarda mao bullpup (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"hide_nodes": ["Cartridge", "Cube.013_Cartridge_0"],
 		"socket_optic": Vector3(0, 0.0908, 0.0230),
@@ -213,7 +213,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(-1.981, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0792, -0.0725, -0.2810), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0022, -0.0444, -0.0820), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0062, 0.1352, -0.0200),
 		"socket_muzzle": Vector3(0.0062, 0.0855, -0.2947),
@@ -259,7 +259,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(-1.556, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.1140, -0.0861, -0.5705), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.1237, 0.0279, -0.0885), # mão de apoio: bomba (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"hide_nodes": ["Object_4"],
 		"socket_optic": Vector3(-0.0208, 0.0856, -0.1000),
@@ -283,7 +283,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0891, -0.1401, -0.5583), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.1061, 0.0472, -0.2489), # mão de apoio: bomba (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(0, 0.1085, 0.0260),
@@ -307,7 +307,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 180),
 		"rotation_deg": Vector3(0, 85, 3),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0922, -0.0633, -0.3952), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.1108, 0.0624, -0.0814), # mão de apoio: madeira sob canos (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.0889, -0.0500),
 		"socket_muzzle": Vector3(0, 0.0712, -0.2900),
@@ -355,7 +355,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0732, 0.0441, -0.2813), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0921, 0.2056, -0.1504), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"hide_nodes": [
 			"545_20", "casing_545_17", "Object_44", "Object_45",
@@ -382,7 +382,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(-0.729, 0, 0),
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
-		"grip_l": Vector3(-0.0412, 0.0222, -0.2570), # ponto da mão esquerda (IK), calculado por tools_capture/grip_probe
+		"grip_l": Vector3(-0.0825, -0.0701, -0.0655), # mão de apoio: empunhadura embutida (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0021, 0.1030, 0.0000),
 		"socket_muzzle": Vector3(0.0021, 0.0733, -0.5000),
@@ -433,6 +433,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(0, 0, 0),
 		"rotation_deg": Vector3(0, 85, 4),
 		"y_offset": 0.015,
+		"grip_l": Vector3(0.0505, -0.0514, 0.1981), # mão de apoio: pistola duas maos (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"hide_nodes": ["Bullet_low", "BulletCase_low", "BulletThrow_low"],
 		"socket_optic": Vector3(0, 0.1181, 0.0190),
@@ -456,6 +457,7 @@ static var REGISTRY: Dictionary = {
 		"model_rotation": Vector3(-2.764, 0, 0),
 		"rotation_deg": Vector3(0, 85, 4),
 		"y_offset": 0.015,
+		"grip_l": Vector3(0.0505, -0.0513, 0.1880), # mão de apoio: pistola duas maos (tools_capture/support_fit, palma medida após o IK)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0020, 0.0850, -0.0200),
 		"socket_muzzle": Vector3(0.0020, 0.0550, -0.1950),

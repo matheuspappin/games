@@ -998,3 +998,12 @@ class LeftHandIK extends SkeletonModifier3D:
 			a_local = a_local * Quaternion((a_gr.inverse() * axis1.normalized()).normalized(), ac_at_0)
 		skel.set_bone_pose_rotation(root_idx, a_local)
 		skel.set_bone_pose_rotation(mid_idx, b_local)
+		# mantém a orientação da mão da animação (palma para cima segurando por baixo): sem isso a mão
+		# gira junto com o antebraço e fica em pé atravessando a arma
+		var root_parent := skel.get_bone_parent(root_idx)
+		var parent_g := skel.get_bone_global_pose(root_parent) if root_parent >= 0 else Transform3D.IDENTITY
+		var a_pose := Transform3D(Basis(a_local), skel.get_bone_pose_position(root_idx))
+		var b_pose := Transform3D(Basis(b_local), skel.get_bone_pose_position(mid_idx))
+		var mid_g_new := parent_g * a_pose * b_pose
+		var end_rot := (mid_g_new.basis.orthonormalized().inverse() * rc.basis.orthonormalized()).get_rotation_quaternion()
+		skel.set_bone_pose_rotation(end_idx, end_rot)
