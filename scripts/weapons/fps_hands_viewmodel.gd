@@ -611,6 +611,38 @@ func _snap_optic_next_frame(optic: Node3D) -> void:
 
 ## Encaixe do Blender: a peça Receiver da arma vai exatamente para rig_fit (relativo ao nó "base"),
 ## descontando escalas intermediárias da cena da arma (Pivot, cena .tscn, nós do glb)
+var _ads_sight_rot: Quaternion = Quaternion.IDENTITY
+
+## Ótica nas armas encaixadas no Blender: assenta no ponto real do topo (optic_rail), alinhada ao cano
+## e com o "para cima" real da arma (modelos invertidos usam optic_basis_fix)
+func _place_rig_optic() -> void:
+	if not current_optic_instance or not is_instance_valid(current_optic_instance) or current_optic_id == "none":
+		return
+	if not current_weapon_data or not _current_has_rig_fit():
+		return
+	var cfg_o = WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower())
+	if not cfg_o.has("optic_rail"):
+		return
+	var ref_o := _rig_ref_mesh()
+	if not ref_o:
+		return
+	var b := ref_o.global_basis.orthonormalized()
+	match String(cfg_o.get("optic_basis_fix", "")):
+		"x180":
+			b = b * Basis(Vector3.RIGHT, PI)
+		"z180":
+			b = b * Basis(Vector3.BACK, PI)
+	var sc := current_optic_instance.global_basis.get_scale()
+	current_optic_instance.global_transform = Transform3D(Basis(b.x * sc.x, b.y * sc.y, b.z * sc.z), ref_o.global_transform * (cfg_o["optic_rail"] as Vector3))
+
+func _rig_ref_mesh() -> Node3D:
+	if not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
+		return null
+	for m in current_custom_model_instance.find_children("*", "MeshInstance3D", true, false):
+		if String(m.name).to_lower().begins_with("receiver"):
+			return m
+	return null
+
 func _current_has_rig_fit() -> bool:
 	if not current_weapon_data:
 		return false
@@ -731,6 +763,7 @@ func _process(_delta: float) -> void:
 		fps_hands.rotation = Vector3(0, PI, 0)
 	_update_left_hand_ik(_delta)
 	_update_mag_follower()
+	_place_rig_optic()
 
 	# ── SINCRONIZAÇÃO E ALINHAMENTO COAXIAL DE MIRA ADS ESTILO CALL OF DUTY ───
 	# (sem arma equipada ainda: nada a alinhar; antes isso gerava um aviso por frame)
@@ -747,6 +780,11 @@ func _process(_delta: float) -> void:
 			fps_hands.weapon.position = fps_hands.start_pos.lerp(fps_hands.ads_pos, smooth_t)
 		else:
 			fps_hands.weapon.position = fps_hands.start_pos
+			_ads_sight_rot = Quaternion.IDENTITY
+		# mira de ferro das armas encaixadas no Blender: gira o conjunto braços+arma até alça e massa ficarem em linha com o olho
+		if fps_hands.weapon.has_meta("_vm_base_basis"):
+			var b0r: Basis = fps_hands.weapon.get_meta("_vm_base_basis")
+			fps_hands.weapon.basis = Basis(Quaternion.IDENTITY.slerp(_ads_sight_rot, smooth_t)) * b0r
 
 		# 2. Rotação do modelo da arma: Hipfire angular -> ADS 100% reto coaxial com o centro da tela
 		if current_custom_model_instance and is_instance_valid(current_custom_model_instance) and not _current_has_rig_fit():
@@ -874,6 +912,7 @@ func _update_integrated_sights_visibility() -> void:
 					current_attachments.get("stock", "none"), current_attachments.get("grip", "none"))
 
 func update_ads_alignment() -> void:
+	_ads_sight_rot = Quaternion.IDENTITY
 	if not is_inside_tree():
 		return
 	if not fps_hands or not is_instance_valid(fps_hands.weapon):
@@ -918,6 +957,37 @@ func update_ads_alignment() -> void:
 		else:
 			sight_pivot_pos = cfg.get("socket_iron_ads", Vector3(0, 0.12, 0))
 
+		if _current_has_rig_fit() and cfg.has("ads_front"):
+			# mira de ferro real: massa de mira no centro da tela, olho a ads_eye metros (reais) da alça
+			var ref_a := _rig_ref_mesh()
+			if ref_a:
+				var wpn: Node3D = fps_hands.weapon
+				if not wpn.has_meta("_vm_base_basis"):
+					wpn.set_meta("_vm_base_basis", wpn.basis)
+				var b0: Basis = wpn.get_meta("_vm_base_basis")
+				var rear_w: Vector3 = ref_a.global_transform * (cfg["ads_rear"] as Vector3)
+				var front_w: Vector3 = ref_a.global_transform * (cfg["ads_front"] as Vector3)
+				# pontos no espaço do nó da arma (independe da rotação de mira já aplicada)
+				var p_f: Vector3 = wpn.to_local(front_w)
+				var p_r: Vector3 = wpn.to_local(rear_w)
+				var wpm: float = ref_a.global_basis.get_scale().x
+				var depth: float = float(cfg.get("ads_eye", 0.09)) * wpm + rear_w.distance_to(front_w)
+				if has_optic:
+					# mira ótica: o centro do retículo vai ao centro da tela, olho à distância real de uso da mira
+					var ret_o: Vector3 = OPTIC_RETICLE_OFFSETS.get(current_optic_id, Vector3(0.0, 0.027023, -0.010408))
+					var o_s: Vector3 = current_optic_instance.scale
+					var ret_local := Vector3(ret_o.x / max(o_s.x, 1e-5), ret_o.y / max(o_s.y, 1e-5), ret_o.z / max(o_s.z, 1e-5))
+					p_f = wpn.to_local(current_optic_instance.global_transform * ret_local)
+					var eye_opt := 0.075 if current_optic_id in ["optic_acog", "optic_sniper", "acog", "sniper"] else 0.10
+					depth = eye_opt * wpm
+				var tgt_l: Vector3 = fps_hands.to_local(cam.to_global(Vector3(0.0, 0.0, -depth)))
+				# rotação que põe a linha alça->massa no eixo da câmera (como no CoD)
+				# direção do cano = alça -> massa de ferro (mesmo quando a referência de mira é o retículo da ótica)
+				var d: Vector3 = (b0 * (wpn.to_local(front_w) - p_r)).normalized()
+				var c: Vector3 = (fps_hands.global_basis.inverse() * (-cam.global_basis.z)).normalized()
+				_ads_sight_rot = Quaternion(d, c) if d.length() > 0.5 and c.length() > 0.5 else Quaternion.IDENTITY
+				fps_hands.ads_pos = tgt_l - (Basis(_ads_sight_rot) * b0) * p_f
+				return
 		if _current_has_rig_fit():
 			# encaixe do Blender: cano paralelo ao da arma original, a mira se alinha como a dela
 			var sg: Vector3 = pivot.to_global(sight_pivot_pos)
