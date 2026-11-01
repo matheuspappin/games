@@ -78,6 +78,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0860, 0.0403, -0.0116), # mão de apoio: empunhadura embutida (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.007407, 1.544053, 23.994934)), # Blender: gatilho sob o indicador da pose original (família AK)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0221, 0.1344, 0.0250),
 		"socket_muzzle": Vector3(0.0221, 0.0653, -0.4250),
@@ -101,6 +102,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0884, 0.0582, -0.0513), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.074029, 5.289135, 18.974588)), # Blender: gatilho sob o indicador da pose original (família AK)
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.0957, 0.0265),
 		"socket_muzzle": Vector3(0, 0.0442, -0.2800),
@@ -124,6 +126,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0878, 0.0507, -0.0982), # mão de apoio: c clamp guarda mao bullpup (tools_capture/support_fit, palma medida após o IK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.008364, 5.405824, 5.785941)), # Blender: gatilho sob o indicador da pose original (família AK)
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.1418, 0.0265),
 		"socket_muzzle": Vector3(0, 0.0580, -0.2800),
