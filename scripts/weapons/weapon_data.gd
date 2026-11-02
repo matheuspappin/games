@@ -112,3 +112,8 @@ func get_damage_at_distance(distance: float) -> int:
 
 func get_fire_interval() -> float:
 	return 60.0 / fire_rate_rpm
+
+# ── Multiplicadores dos acessórios (calculados pelo WeaponModifier; não salvos no recurso) ──
+var move_speed_mult   : float = 1.0   # mobilidade geral (ex.: canos)
+var ads_move_mult     : float = 1.0   # velocidade andando enquanto mira (ex.: coronhas)
+var reload_speed_mult : float = 1.0   # multiplica o tempo de recarga (ex.: pente rápido)

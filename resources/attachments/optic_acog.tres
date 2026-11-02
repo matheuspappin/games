@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttachmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/attachment_data.gd" id="1_att"]
+
+[resource]
+script = ExtResource("1_att")
+attachment_name = "Mira ACOG 3.5x"
+attachment_id = "optic_acog"
+slot = 0
+unlock_level = 1
+delta_recoil = -0.08
+delta_ads_time = 0.04
+delta_bloom = -0.02
+optic_zoom_fov = -18.0

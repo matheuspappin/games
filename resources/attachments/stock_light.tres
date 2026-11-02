@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AttachmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/attachment_data.gd" id="1_att"]
+
+[resource]
+script = ExtResource("1_att")
+attachment_name = "Coronha de Deslocamento Rápido"
+attachment_id = "stock_light"
+slot = 3
+unlock_level = 1
+delta_ads_move_speed = 0.25
+delta_recoil = 0.1

@@ -15,7 +15,15 @@ const ATTACHMENT_PATHS = {
 	"mag_extended": "res://resources/attachments/mag_extended.tres",
 	"barrel_extended": "res://resources/attachments/barrel_extended.tres",
 	"barrel_short": "res://resources/attachments/barrel_short.tres",
-	"ammo_fmj": "res://resources/attachments/ammo_fmj.tres"
+	"ammo_fmj": "res://resources/attachments/ammo_fmj.tres",
+	"optic_acog": "res://resources/attachments/optic_acog.tres",
+	"mag_fast": "res://resources/attachments/mag_fast.tres",
+	"grip_vertical": "res://resources/attachments/grip_vertical.tres",
+	"grip_angled": "res://resources/attachments/grip_angled.tres",
+	"stock_heavy": "res://resources/attachments/stock_heavy.tres",
+	"stock_light": "res://resources/attachments/stock_light.tres",
+	"grip_rubber": "res://resources/attachments/grip_rubber.tres",
+	"grip_stippled": "res://resources/attachments/grip_stippled.tres"
 }
 
 static func get_attachment_resource(att_id: String) -> AttachmentData:
@@ -36,6 +44,9 @@ static func apply_attachments(base_data: WeaponData, attachments: Array[Attachme
 	var total_delta_recoil: float = 0.0
 	var total_delta_ads: float = 0.0
 	var total_delta_bloom: float = 0.0
+	var total_move: float = 0.0
+	var total_ads_move: float = 0.0
+	var total_reload: float = 0.0
 	var total_delta_mag: int = 0
 	var total_delta_range: float = 0.0
 	var total_pen_bonus: int = 0
@@ -51,6 +62,9 @@ static func apply_attachments(base_data: WeaponData, attachments: Array[Attachme
 		total_delta_recoil += att.delta_recoil
 		total_delta_ads += att.delta_ads_time
 		total_delta_bloom += att.delta_bloom
+		total_move += att.delta_movement_speed
+		total_ads_move += att.delta_ads_move_speed
+		total_reload += att.delta_reload_speed
 		total_delta_mag += att.delta_magazine
 		total_delta_range += att.delta_damage_range
 		total_pen_bonus += att.penetration_bonus
@@ -80,6 +94,9 @@ static func apply_attachments(base_data: WeaponData, attachments: Array[Attachme
 	var recoil_factor = maxf(0.2, 1.0 + total_delta_recoil)
 	w.recoil_kick *= recoil_factor
 	w.bloom_per_shot = maxf(0.005, w.bloom_per_shot * (1.0 + total_delta_bloom))
+	w.move_speed_mult = clampf(1.0 + total_move, 0.6, 1.3)
+	w.ads_move_mult = clampf(1.0 + total_ads_move, 0.6, 1.5)
+	w.reload_speed_mult = clampf(1.0 - total_reload, 0.4, 1.5)
 
 	# 3. ADS & Óptica
 	w.ads_time = clampf(w.ads_time + total_delta_ads, 0.12, 0.6)

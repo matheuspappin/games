@@ -24,6 +24,8 @@ enum Slot { OPTIC, BARREL, UNDERBARREL, STOCK, GRIP, AMMO }
 @export var delta_movement_speed    : float = 0.0    # negativo = mais lento
 @export var delta_magazine          : int   = 0      # pente estendido
 @export var delta_damage_range      : float = 0.0    # positivo = mais alcance
+@export var delta_reload_speed      : float = 0.0    # positivo = recarga mais rápida (0.35 = 35%)
+@export var delta_ads_move_speed    : float = 0.0    # positivo = anda mais rápido mirando
 @export var optic_zoom_fov          : float = 0.0    # FOV adicional da óptica
 @export var suppressed              : bool  = false   # troca som de disparo
 @export var penetration_bonus       : int   = 0      # FMJ: +1 penetração

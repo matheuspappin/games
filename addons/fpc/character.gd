@@ -320,9 +320,14 @@ func _handle_jumping() -> void:
 				velocity.y += jump_velocity
 
 
+## Multiplicador de velocidade sobreposto pelas subclasses (arma, mira); 1.0 = sem efeito
+func _speed_multiplier() -> float:
+	return 1.0
+
+
 func _handle_movement(delta : float, input_dir : Vector2) -> void:
 	var direction2D := input_dir.rotated(-rotation.y - HEAD.rotation.y)
-	var direction3D := Vector3(direction2D.x, 0, direction2D.y)
+	var direction3D := Vector3(direction2D.x, 0, direction2D.y) * _speed_multiplier()
 
 	if in_air_momentum:
 		if is_on_floor():

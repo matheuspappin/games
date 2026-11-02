@@ -685,6 +685,7 @@ func start_reload() -> void:
 	var is_empty    = (current_ammo == 0)
 	var pm = player.get_node_or_null("PerkManager") if player else null
 	var reload_mult = pm.get_reload_speed_multiplier() if (pm and pm.has_method("get_reload_speed_multiplier")) else 1.0
+	reload_mult *= float(weapon_data.reload_speed_mult) if "reload_speed_mult" in weapon_data else 1.0  # pente rápido etc.
 	var reload_time = (weapon_data.reload_empty_time if is_empty else weapon_data.reload_tactical_time) * reload_mult
 	reload_started.emit(reload_time)
 

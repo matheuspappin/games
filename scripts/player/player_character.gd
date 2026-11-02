@@ -761,3 +761,16 @@ func apply_remote_loadout(d: Dictionary) -> void:
 	var rifle = find_child("PlayerRifle3D", true, false)
 	if rifle and rifle.has_method("set_weapon_loadout"):
 		rifle.set_weapon_loadout(str(d.get("weapon", "")), d, str(d.get("camo", "default")))
+
+## Velocidade do jogador pela arma (como no CoD): mobilidade dos acessórios e mira mais lenta,
+## ajustada pelas coronhas. Correndo não se mira, então a redução de mira só vale andando/agachado.
+func _speed_multiplier() -> float:
+	var m := 1.0
+	var wd = weapon_manager.weapon_data if weapon_manager and "weapon_data" in weapon_manager else null
+	if wd and "move_speed_mult" in wd:
+		m *= float(wd.move_speed_mult)
+	var ads := clampf(float(ads_amount), 0.0, 1.0) if "ads_amount" in self else 0.0
+	if ads > 0.0:
+		var ads_mult: float = PlayerConstants.ADS_SPEED_MULT * (float(wd.ads_move_mult) if wd and "ads_move_mult" in wd else 1.0)
+		m *= lerpf(1.0, minf(ads_mult, 1.0), ads)
+	return m
