@@ -234,6 +234,7 @@ func toggle_weapon() -> void:
 		equip(default_weapon)
 
 func _process(delta: float) -> void:
+	_update_sprint_to_fire(delta)
 	if _is_player_dead():
 		if weapon_rig and weapon_rig.visible:
 			weapon_rig.visible = false
@@ -390,6 +391,44 @@ func equip(data: WeaponData) -> void:
 	weapon_switched.emit(data)
 
 # ── DISPARO ───────────────────────────────────────────────────────────────────
+## Atraso para atirar ao sair do sprint (s), por categoria — base inspirada no CoD
+const SPRINT_TO_FIRE_BASE := {
+	WeaponData.WeaponCategory.PISTOL: 0.12, WeaponData.WeaponCategory.SMG: 0.16,
+	WeaponData.WeaponCategory.SHOTGUN: 0.20, WeaponData.WeaponCategory.ASSAULT_RIFLE: 0.22,
+	WeaponData.WeaponCategory.LMG: 0.32, WeaponData.WeaponCategory.SNIPER: 0.32,
+	WeaponData.WeaponCategory.LAUNCHER: 0.35,
+}
+var sprint_out_timer := 0.0
+var _was_sprinting := false
+var _queued_shot := false
+
+func _player_is_sprinting() -> bool:
+	if not player:
+		return false
+	if "state" in player:
+		return player.state == "sprinting"
+	if "state_machine" in player and player.state_machine:
+		return player.state_machine.current_state in [MovementStateMachine.State.SPRINT, MovementStateMachine.State.TACT_SPRINT]
+	return false
+
+func _sprint_to_fire_time() -> float:
+	if weapon_data == null:
+		return 0.0
+	var base: float = SPRINT_TO_FIRE_BASE.get(weapon_data.category, 0.2)
+	return base * (float(weapon_data.sprint_to_fire_mult) if "sprint_to_fire_mult" in weapon_data else 1.0)
+
+## Chamado a cada quadro: arma o atraso ao sair do sprint e solta o tiro guardado quando ele termina
+func _update_sprint_to_fire(delta: float) -> void:
+	var now := _player_is_sprinting()
+	if _was_sprinting and not now:
+		sprint_out_timer = maxf(sprint_out_timer, _sprint_to_fire_time())
+	_was_sprinting = now
+	if sprint_out_timer > 0.0:
+		sprint_out_timer = maxf(0.0, sprint_out_timer - delta)
+		if sprint_out_timer == 0.0 and _queued_shot:
+			_queued_shot = false
+			try_fire()
+
 func try_fire() -> void:
 	if _is_player_dead():
 		return
@@ -399,6 +438,17 @@ func try_fire() -> void:
 		return
 	if weapon_data.category == WeaponData.WeaponCategory.MELEE:
 		_execute_melee()
+		return
+	# saída do sprint: o primeiro tiro espera a arma subir (fica guardado, não se perde)
+	if _player_is_sprinting():
+		if player.has_method("_enter_normal_state"):
+			player._enter_normal_state()
+		_was_sprinting = false
+		sprint_out_timer = maxf(sprint_out_timer, _sprint_to_fire_time())
+		_queued_shot = true
+		return
+	if sprint_out_timer > 0.0:
+		_queued_shot = true
 		return
 	if current_ammo <= 0:
 		_play_sound(weapon_data.sound_dry_fire)

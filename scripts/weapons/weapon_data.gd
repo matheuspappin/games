@@ -117,3 +117,5 @@ func get_fire_interval() -> float:
 var move_speed_mult   : float = 1.0   # mobilidade geral (ex.: canos)
 var ads_move_mult     : float = 1.0   # velocidade andando enquanto mira (ex.: coronhas)
 var reload_speed_mult : float = 1.0   # multiplica o tempo de recarga (ex.: pente rápido)
+var flinch_mult       : float = 1.0   # tranco na mira ao levar tiro (ex.: coronha pesada)
+var sprint_to_fire_mult : float = 1.0 # atraso para atirar ao sair do sprint (ex.: coronha leve)

@@ -521,6 +521,10 @@ func _on_health_damage_received(amount: int, direction: Vector3, _attacker: Node
 
 func _apply_damage_flinch(amount: int, direction: Vector3) -> void:
 	var strength = clampf(float(amount) / 45.0, 0.4, 1.2)
+	# coronha pesada etc.: menos tranco na mira
+	var wd_f = weapon_manager.weapon_data if weapon_manager and "weapon_data" in weapon_manager else null
+	if wd_f and "flinch_mult" in wd_f:
+		strength *= float(wd_f.flinch_mult)
 	_cam_flinch_vel.x += deg_to_rad(randf_range(2.0, 4.0) * strength)
 	if direction != Vector3.ZERO:
 		var cam_right = global_transform.basis.x

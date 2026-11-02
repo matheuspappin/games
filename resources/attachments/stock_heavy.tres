@@ -10,3 +10,4 @@ slot = 3
 unlock_level = 1
 delta_bloom = -0.05
 delta_ads_move_speed = -0.08
+delta_flinch = -0.35

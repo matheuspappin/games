@@ -10,3 +10,4 @@ slot = 4
 unlock_level = 1
 delta_ads_time = -0.0125
 delta_bloom = 0.05
+delta_sprint_to_fire = -0.2
