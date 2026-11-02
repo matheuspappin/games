@@ -1,7 +1,7 @@
 extends Node3D
 # Laboratório de acessórios: cada arma sem nada e com montagem completa, na cintura e no ADS.
 @onready var vm = $Camera/WeaponRig/FpsHandsViewModel
-const WEAPONS := ["ak47", "m4a1", "scar_h", "lmg", "smg", "mp7", "pp90m1", "spas12", "krm262"]
+const WEAPONS := ["mp7"]
 const FULL := ["optic_holo", "muzzle_suppressor", "mag_extended", "grip_vertical", "stock_heavy", "none"]
 var lines := []
 
@@ -12,11 +12,13 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_prints/att"))
 	await get_tree().create_timer(2.0).timeout
 	for wid in WEAPONS:
-		for mode in ["cano_longo", "cano_curto"]:
+		for mode in ["nada", "cano_longo", "comp", "cano_curto"]:
 			vm.equip_weapon_data(load("res://resources/weapons/%s.tres" % wid))
 			await get_tree().create_timer(1.6).timeout
 			if mode == "cano_longo":
 				vm.set_weapon_customization("default", "none", "muzzle_suppressor", "none", "none", "none", "none", "barrel_extended")
+			elif mode == "comp":
+				vm.set_weapon_customization("default", "none", "muzzle_compensator", "none", "none", "none", "none", "none")
 			elif mode == "cano_curto":
 				vm.set_weapon_customization("default", "none", "none", "none", "none", "none", "none", "barrel_short")
 			elif mode == "completa":

@@ -163,6 +163,8 @@ static var REGISTRY: Dictionary = {
 		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.000001, -1.384040, 15.461782)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 10 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(-0.0109, 0.115, 0.149), "ads_front": Vector3(-0.0109, 0.115, 0.079), "ads_eye": 0.10,
+		# boca do cano (base do silenciador embutido, separado no Blender como peça Muzzle); à frente fica a lanterna
+		"muzzle_tip": Vector3(-0.011, 0.048, -0.0877),
 		"has_arms": false,
 		"socket_optic": Vector3(-0.0135, 0.1267, 0.0500),
 		"socket_muzzle": Vector3(-0.0135, 0.0731, -0.2871),
@@ -1205,17 +1207,27 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 	for p in pts: gb = gb.expand(p)
 	var gun_front: float = gb.position.z if front < 0 else gb.end.z
 	var gun_rear: float = gb.end.z if front < 0 else gb.position.z
+	# boca do cano registrada (modelos em que a peça mais à frente não é o cano, ex.: MP7 com lanterna)
+	var tip_override := false
+	var tip_c := Vector3.ZERO
+	if cfg.has("muzzle_tip"):
+		for m in pivot.find_children("*", "MeshInstance3D", true, false):
+			if not cont.is_ancestor_of(m) and String(m.name).to_lower().begins_with("receiver"):
+				tip_c = _xf_to(m, pivot) * (cfg["muzzle_tip"] as Vector3)
+				gun_front = tip_c.z
+				tip_override = true
+				break
 	# ponta do cano: centro e raio pelos vértices reais da boca
 	var tip_x := []; var tip_y := []
 	for p in pts:
-		if absf(p.z - gun_front) < 0.015:
+		if absf(p.z - gun_front) < 0.015 and (not tip_override or Vector2(p.x - tip_c.x, p.y - tip_c.y).length() < 0.03 * k):
 			tip_x.append(p.x); tip_y.append(p.y)
 	var muzzle_front: float = gun_front
 	var barrel_node: Node3D = cont.get_node_or_null("Att_barrel") as Node3D
 	if barrel_node and tip_x.size() > 3:
 		tip_x.sort(); tip_y.sort()
-		var cx: float = float(tip_x[tip_x.size() / 2])
-		var cy: float = float(tip_y[tip_y.size() / 2])
+		var cx: float = tip_c.x if tip_override else float(tip_x[tip_x.size() / 2])
+		var cy: float = tip_c.y if tip_override else float(tip_y[tip_y.size() / 2])
 		var dists := []
 		for i in tip_x.size():
 			dists.append(Vector2(float(tip_x[i]) - cx, float(tip_y[i]) - cy).length())
@@ -1269,7 +1281,11 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 				for p in pts:
 					if absf(p.z - gun_front) < 0.015:
 						ys.append(p.y); xs.append(p.x)
-				if ys.size() > 3:
+				if tip_override:
+					var c0 := ab.get_center()
+					a.position.y += tip_c.y - c0.y
+					a.position.x += tip_c.x - c0.x
+				elif ys.size() > 3:
 					ys.sort(); xs.sort()
 					var c := ab.get_center()
 					a.position.y += float(ys[ys.size() / 2]) - c.y
