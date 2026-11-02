@@ -165,6 +165,7 @@ static var REGISTRY: Dictionary = {
 		"ads_rear": Vector3(-0.0109, 0.115, 0.149), "ads_front": Vector3(-0.0109, 0.115, 0.079), "ads_eye": 0.10,
 		# boca do cano (base do silenciador embutido, separado no Blender como peça Muzzle); à frente fica a lanterna
 		"muzzle_tip": Vector3(-0.011, 0.048, -0.0877),
+		"one_handed": true, # segura só com a mão direita (braço esquerdo fora de cena, volta na recarga)
 		"has_arms": false,
 		"socket_optic": Vector3(-0.0135, 0.1267, 0.0500),
 		"socket_muzzle": Vector3(-0.0135, 0.0731, -0.2871),
@@ -305,6 +306,9 @@ static var REGISTRY: Dictionary = {
 		"support_delta": Vector3(0.0, 0.0, -0.12),
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho na coronha, a 30 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(-0.0236, 0.0918, -0.0186), "ads_front": Vector3(-0.0236, 0.0918, -0.4185), "ads_eye": 0.30,
+		# assento real da ótica: topo do corpo (modelo 2,4 cm fora do centro)
+		"optic_rail": Vector3(-0.0236, 0.0732, 0.09),
+		"allow_optic": true, # tem trilho/topo plano: aceita ótica como no CoD
 		"has_arms": false,
 		"hide_nodes": ["Object_4"],
 		"socket_optic": Vector3(-0.0208, 0.0856, -0.1000),
@@ -333,6 +337,9 @@ static var REGISTRY: Dictionary = {
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho na coronha, a 18 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(0, 0.129, 0.018), "ads_front": Vector3(0, 0.129, -0.324), "ads_eye": 0.18,
 		"no_barrel_visual": true, # vários tubos na boca: cano estendido só muda atributos
+		# assento real da ótica: trilho alto em alça, parte traseira (medido no Blender, espaço do glb)
+		"optic_rail": Vector3(0, 0.125, -0.04),
+		"allow_optic": true, # tem trilho/topo plano: aceita ótica como no CoD
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(0, 0.1085, 0.0260),
@@ -604,7 +611,8 @@ static func get_allowed_slots(weapon_path_or_id: String) -> Array:
 		var res_path := "res://resources/weapons/%s.tres" % wid
 		if ResourceLoader.exists(res_path):
 			var data = load(res_path)
-			if data and "has_optic" in data and not data.has_optic:
+			# arma sem ótica de fábrica não recebe ótica, salvo liberação explícita (trilho real, ex.: KRM-262, SPAS-12)
+			if data and "has_optic" in data and not data.has_optic and not bool(cfg.get("allow_optic", false)):
 				slots.erase("optic")
 	return slots
 

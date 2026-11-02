@@ -1,6 +1,6 @@
 extends Node
 # Sonda de mira no JOGO REAL: mapa do estande + personagem completo (balanço, câmera, zoom de mira)
-const COMBOS := [["ak47", "optic_red_dot"], ["m4a1", "optic_red_dot"], ["scar_h", "optic_red_dot"], ["man_o_war", "optic_red_dot"], ["lmg", "optic_red_dot"], ["rpk", "optic_red_dot"], ["smg", "optic_red_dot"], ["mp7", "optic_red_dot"], ["vmp", "optic_red_dot"], ["pp90m1", "optic_red_dot"], ["m4a1", "optic_holo"], ["rpk", "optic_acog"]]
+const COMBOS := [["krm262", "optic_red_dot"], ["krm262", "optic_holo"], ["spas12", "optic_red_dot"], ["spas12", "optic_acog"], ["mp7", "none"], ["mp7", "optic_red_dot"]]
 const WEAPONS := ["ak47", "m4a1", "scar_h", "man_o_war", "lmg", "rpk", "smg", "mp7", "vmp", "pp90m1", "pistol", "deagle", "shotgun", "krm262", "spas12"]
 var out := []
 func _ready() -> void:

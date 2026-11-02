@@ -253,7 +253,7 @@ func equip_weapon_data(data: WeaponData) -> void:
 	_update_custom_weapon_visual(wid)
 
 	# Se a arma NÃO possui mira óptica, destruir a mira e calcular ADS de ferro
-	if not current_weapon_data or not current_weapon_data.has_optic or current_optic_id == "none":
+	if not _optic_allowed() or current_optic_id == "none":
 		if current_optic_instance and is_instance_valid(current_optic_instance):
 			current_optic_instance.queue_free()
 			current_optic_instance = null
@@ -411,6 +411,10 @@ func _update_left_hand_ik(delta: float) -> void:
 	var grip_marker = current_custom_model_instance.get_node_or_null("Pivot/GripL") if current_custom_model_instance and is_instance_valid(current_custom_model_instance) else null
 	# Encaixe do Blender com correção da mão de apoio (ex.: punho na empunhadura vertical do modelo):
 	# alvo = punho animado + deslocamento fixo no espaço da arma; liberado na recarga/troca/faca
+	if _is_one_handed() and not st.begins_with("reload"):
+		left_hand_ik_weight = move_toward(left_hand_ik_weight, 0.0, delta * 8.0)
+		left_hand_ik.influence = left_hand_ik_weight
+		return
 	if _current_has_rig_fit() and not (st in LEFT_IK_OFF_STATES) and not st.begins_with("reload"):
 		var cfg_s = WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower())
 		# empunhadura montada pelo Gunsmith: a mão esquerda vai até ela (como no CoD)
@@ -676,7 +680,7 @@ func _place_rig_optic() -> void:
 ## Centro real do retículo da ótica montada: a peça de retículo do próprio modelo
 ## (RedDotReticle / HoloReticle; lente nas lunetas). Tabela de deslocamentos só como reserva.
 func optic_reticle_world() -> Vector3:
-	if not current_optic_instance or not is_instance_valid(current_optic_instance):
+	if not current_optic_instance or not is_instance_valid(current_optic_instance) or not current_optic_instance.is_inside_tree():
 		return Vector3.ZERO
 	for m in current_optic_instance.find_children("*", "MeshInstance3D", true, false):
 		var n := String(m.name).to_lower()
@@ -687,6 +691,37 @@ func optic_reticle_world() -> Vector3:
 	return current_optic_instance.global_transform * Vector3(ret_o.x / max(o_s.x, 1e-5), ret_o.y / max(o_s.y, 1e-5), ret_o.z / max(o_s.z, 1e-5))
 
 const FINGER_GRIP_SCRIPT := preload("res://scripts/weapons/finger_grip_modifier.gd")
+const LEFT_ARM_HIDE_SCRIPT := preload("res://scripts/weapons/left_arm_hide_modifier.gd")
+
+## A arma aceita ótica: de fábrica (has_optic) ou liberada no registro por ter trilho (allow_optic)
+func _optic_allowed() -> bool:
+	if not current_weapon_data:
+		return false
+	return current_weapon_data.has_optic or bool(WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower()).get("allow_optic", false))
+
+func _is_one_handed() -> bool:
+	return current_weapon_data != null and bool(WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower()).get("one_handed", false))
+
+## Armas de uma mão: braço esquerdo fora de cena (volta só na recarga, que precisa dele para o pente)
+func _update_one_handed(delta: float) -> void:
+	if not left_hand_ik or not is_instance_valid(left_hand_ik):
+		return
+	var sk := left_hand_ik.get_parent() as Skeleton3D
+	if not sk:
+		return
+	var mod: SkeletonModifier3D = sk.get_node_or_null("LeftArmHide") as SkeletonModifier3D
+	if not mod:
+		mod = LEFT_ARM_HIDE_SCRIPT.new()
+		mod.name = "LeftArmHide"
+		mod.influence = 0.0
+		sk.add_child(mod)  # por último: depois do IK
+	var st := ""
+	if fps_hands and fps_hands.state_machine:
+		st = str(fps_hands.state_machine.get_current_node())
+	var want := 1.0 if (_is_one_handed() and not st.begins_with("reload")) else 0.0
+	# troca de arma e recarga: sem transição lenta para o braço não "crescer" na frente da câmera
+	mod.influence = want if want == 0.0 and st.begins_with("reload") else move_toward(mod.influence, want, delta * 8.0)
+	mod.active = mod.influence > 0.001
 
 ## Punho fechado na empunhadura montada pelo Gunsmith (armas encaixadas no Blender)
 func _update_finger_grip(delta: float) -> void:
@@ -844,6 +879,7 @@ func _process(_delta: float) -> void:
 	_update_mag_follower()
 	_place_rig_optic()
 	_update_finger_grip(_delta)
+	_update_one_handed(_delta)
 
 	# ── SINCRONIZAÇÃO E ALINHAMENTO COAXIAL DE MIRA ADS ESTILO CALL OF DUTY ───
 	# (sem arma equipada ainda: nada a alinhar; antes isso gerava um aviso por frame)
@@ -895,7 +931,7 @@ func _process(_delta: float) -> void:
 				old.get_parent().remove_child(old)
 			old.queue_free()
 
-	if current_weapon_data and current_weapon_data.has_optic and current_optic_id != "none":
+	if _optic_allowed() and current_optic_id != "none":
 		if fps_hands and is_instance_valid(fps_hands.weapon):
 			if not is_instance_valid(current_optic_instance) or current_optic_instance.get_parent() == null:
 				_update_weapon_optic()
@@ -906,7 +942,7 @@ func _process(_delta: float) -> void:
 			update_ads_alignment()
 
 func _update_weapon_optic() -> void:
-	if not current_weapon_data or not current_weapon_data.has_optic or current_optic_id == "none":
+	if not _optic_allowed() or current_optic_id == "none":
 		if current_optic_instance and is_instance_valid(current_optic_instance):
 			current_optic_instance.queue_free()
 			current_optic_instance = null
@@ -1056,6 +1092,8 @@ func update_ads_alignment() -> void:
 				var p_r: Vector3 = wpn.to_local(rear_w)
 				var wpm: float = ref_a.global_basis.get_scale().x
 				var depth: float = float(cfg.get("ads_eye", 0.09)) * wpm + rear_w.distance_to(front_w)
+				if has_optic and (not current_optic_instance.is_inside_tree() or current_optic_instance.is_queued_for_deletion()):
+					return  # ótica sendo trocada: alinha no quadro seguinte
 				if has_optic:
 					# mira ótica: o centro do retículo vai ao centro da tela, olho à distância real de uso da mira
 					var ret_w: Vector3 = optic_reticle_world()
