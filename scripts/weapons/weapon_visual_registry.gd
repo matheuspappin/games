@@ -80,9 +80,10 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0860, 0.0403, -0.0116), # mão de apoio: empunhadura embutida (tools_capture/support_fit, palma medida após o IK)
-		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.007407, 1.544053, 23.994934)), # Blender: gatilho sob o indicador da pose original (família AK)
+		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(2.698946, 1.555046, 23.994934)), # Blender: gatilho sob o indicador da pose original (família AK)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 8 cm da alça (uso real / CoD)
-		"ads_rear": Vector3(0.005, 0.1485, 0.186), "ads_front": Vector3(0.005, 0.1485, -0.223), "ads_eye": 0.08,
+		"ads_rear": Vector3(0.023, 0.1485, 0.186), "ads_front": Vector3(0.023, 0.1485, -0.223), "ads_eye": 0.08,
+		# desvio lateral real do modelo: +0.0230 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0221, 0.1344, 0.0250),
 		"socket_muzzle": Vector3(0.0221, 0.0653, -0.4250),
@@ -160,12 +161,13 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0017, 0.0338, 0.0614), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
-		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.000001, -1.384040, 15.461782)), # Blender: gatilho sob o indicador da pose original (família SMG)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-1.287269, -1.384040, 15.461782)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 10 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(-0.0109, 0.115, 0.149), "ads_front": Vector3(-0.0109, 0.115, 0.079), "ads_eye": 0.10,
 		# boca do cano (base do silenciador embutido, separado no Blender como peça Muzzle); à frente fica a lanterna
 		"muzzle_tip": Vector3(-0.011, 0.048, -0.0877),
 		"one_handed": true, # segura só com a mão direita (braço esquerdo fora de cena, volta na recarga)
+		# desvio lateral real do modelo: -0.0110 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
 		"has_arms": false,
 		"socket_optic": Vector3(-0.0135, 0.1267, 0.0500),
 		"socket_muzzle": Vector3(-0.0135, 0.0731, -0.2871),
@@ -248,13 +250,14 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.0022, -0.0444, -0.0820), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
-		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.000000, -1.852138, 3.560404)), # Blender: gatilho sob o indicador da pose original (família SMG)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.912790, -1.852138, 3.560404)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		# punho esquerdo fecha na empunhadura vertical do modelo (medido no Blender, espaço do glb em metros)
 		"support_delta": Vector3(0.015, -0.025, -0.0265),
-		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 7 cm da alça (uso real / CoD)
-		"ads_rear": Vector3(0.0078, 0.162, 0.047), "ads_front": Vector3(0.0078, 0.162, -0.319), "ads_eye": 0.07,
+		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 10 cm da alça (uso real / CoD)
+		"ads_rear": Vector3(0.0078, 0.162, 0.047), "ads_front": Vector3(0.0078, 0.162, -0.319), "ads_eye": 0.10,
 		# assento real da ótica no topo da arma (medido no Blender, espaço do glb)
 		"optic_rail": Vector3(0, 0.147, -0.059),
+		# desvio lateral real do modelo: +0.0078 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
 		"has_arms": false,
 		"socket_optic": Vector3(0.0062, 0.1352, -0.0200),
 		"socket_muzzle": Vector3(0.0062, 0.0855, -0.2947),
@@ -301,7 +304,7 @@ static var REGISTRY: Dictionary = {
 		"rotation_deg": Vector3(0, 80, 4),
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.1237, 0.0279, -0.0885), # mão de apoio: bomba (tools_capture/support_fit, palma medida após o IK)
-		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000002, -0.000010), Vector3(0.000000, 115.385590, 19.515818), Vector3(0.000010, 19.515818, -115.385590)), Vector3(0.260828, -6.749563, 27.877321)), # Blender: gatilho sob o indicador da pose original (família escopeta)
+		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000002, -0.000010), Vector3(0.000000, 115.385590, 19.515818), Vector3(0.000010, 19.515818, -115.385590)), Vector3(-2.500948, -6.749563, 27.877321)), # Blender: gatilho sob o indicador da pose original (família escopeta)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho na coronha, a 30 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(-0.0236, 0.0918, -0.0186), "ads_front": Vector3(-0.0236, 0.0918, -0.4185), "ads_eye": 0.30,
 		# assento real da ótica: topo do corpo (modelo 2,4 cm fora do centro)
@@ -309,6 +312,7 @@ static var REGISTRY: Dictionary = {
 		"allow_optic": true, # tem trilho/topo plano: aceita ótica como no CoD
 		# mão esquerda: palma sob a metade de trás da bomba (15-30 cm à frente, 4,8 cm de largura) e punho fechado em volta
 		"support_point": Vector3(-0.032, 0.004, -0.26), "support_fist": 1.0, "support_hand": "pump",
+		# desvio lateral real do modelo: -0.0236 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
 		"has_arms": false,
 		"hide_nodes": ["Object_4"],
 		"socket_optic": Vector3(-0.0208, 0.0856, -0.1000),
@@ -454,6 +458,8 @@ static var REGISTRY: Dictionary = {
 		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.014197, 6.833509, 22.824688)), # Blender: gatilho sob o indicador da pose original (família AK — usada pela LMG e pelo RPK no jogo)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 9 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(0.0023, 0.129, 0.245), "ads_front": Vector3(0.0023, 0.129, -0.376), "ads_eye": 0.09,
+		# mão esquerda: punho fechado no terço superior da empunhadura vertical embutida (topo -7,4 cm, 18,6 cm à frente)
+		"support_point": Vector3(-0.023, -0.104, -0.186), "support_fist": 1.0,
 		"has_arms": false,
 		"socket_optic": Vector3(0.0021, 0.1030, 0.0000),
 		"socket_muzzle": Vector3(0.0021, 0.0733, -0.5000),
