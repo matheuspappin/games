@@ -1,7 +1,7 @@
 extends Node3D
 # Revisão de qualidade: cada arma em 5 vistas (quadril, lado direito, lado esquerdo, close da mão esquerda, mira)
 @onready var vm = $Camera/WeaponRig/FpsHandsViewModel
-const WEAPONS := ["krm262"]
+const WEAPONS := ["spas12"]
 
 func _ready() -> void:
 	_run.call_deferred()

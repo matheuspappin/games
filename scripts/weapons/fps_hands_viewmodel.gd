@@ -481,7 +481,8 @@ func _update_left_hand_ik(delta: float) -> void:
 						var off: Vector3 = palm_g - wrist_g
 						if String(cfg_s.get("support_hand", "")) == "pump":
 							# pegada de bomba: o punho da empunhadura vertical girado 90° (eixo deitado ao longo do cano, palma para cima)
-							var hb: Basis = ref_s.global_basis.orthonormalized() * Basis(Vector3.RIGHT, PI / 2.0) * Basis(SMG_FIST_HAND)
+							var flip: Basis = Basis(Vector3.BACK, PI) if bool(cfg_s.get("model_inverted", false)) else Basis.IDENTITY
+							var hb: Basis = ref_s.global_basis.orthonormalized() * flip * Basis(Vector3.RIGHT, PI / 2.0) * Basis(SMG_FIST_HAND)
 							var wb_anim: Basis = (skel_s.global_transform * skel_s.get_bone_global_pose(wi)).basis.orthonormalized()
 							off = hb * (wb_anim.inverse() * off)
 							_reload_hand_target.set_meta("hand_basis", hb)

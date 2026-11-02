@@ -302,13 +302,13 @@ static var REGISTRY: Dictionary = {
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.1237, 0.0279, -0.0885), # mão de apoio: bomba (tools_capture/support_fit, palma medida após o IK)
 		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000002, -0.000010), Vector3(0.000000, 115.385590, 19.515818), Vector3(0.000010, 19.515818, -115.385590)), Vector3(0.260828, -6.749563, 27.877321)), # Blender: gatilho sob o indicador da pose original (família escopeta)
-		# mão esquerda na bomba (12 cm à frente da pose original, medido no Blender, espaço do glb)
-		"support_delta": Vector3(0.0, 0.0, -0.12),
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho na coronha, a 30 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(-0.0236, 0.0918, -0.0186), "ads_front": Vector3(-0.0236, 0.0918, -0.4185), "ads_eye": 0.30,
 		# assento real da ótica: topo do corpo (modelo 2,4 cm fora do centro)
 		"optic_rail": Vector3(-0.0236, 0.0732, 0.09),
 		"allow_optic": true, # tem trilho/topo plano: aceita ótica como no CoD
+		# mão esquerda: palma sob a metade de trás da bomba (15-30 cm à frente, 4,8 cm de largura) e punho fechado em volta
+		"support_point": Vector3(-0.032, 0.004, -0.26), "support_fist": 1.0, "support_hand": "pump",
 		"has_arms": false,
 		"hide_nodes": ["Object_4"],
 		"socket_optic": Vector3(-0.0208, 0.0856, -0.1000),
@@ -367,10 +367,11 @@ static var REGISTRY: Dictionary = {
 		"y_offset": 0.02,
 		"grip_l": Vector3(-0.1108, 0.0624, -0.0814), # mão de apoio: madeira sob canos (tools_capture/support_fit, palma medida após o IK)
 		"rig_fit": Transform3D(Basis(Vector3(117.024391, 0.000000, 0.000000), Vector3(0.000000, -115.385590, -19.515808), Vector3(0.000000, 19.515808, -115.385590)), Vector3(0.260830, -2.564057, 25.024649)), # Blender: gatilho sob o indicador da pose original (família escopeta)
-		"support_delta": Vector3(0.0, 0.03, -0.02),
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho na coronha, a 22 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(0, -0.075, 0.072), "ads_front": Vector3(0, -0.075, -0.302), "ads_eye": 0.22,
 		"no_barrel_visual": true, # vários tubos na boca: cano estendido só muda atributos
+		# mão esquerda: palma sob a telha, entre os canos (modelo invertido: palma gira 180° em torno do cano); dedos 60% pelas laterais
+		"support_point": Vector3(-0.01, -0.012, -0.08), "support_fist": 0.6, "support_hand": "pump", "model_inverted": true,
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.0889, -0.0500),
 		"socket_muzzle": Vector3(0, 0.0712, -0.2900),
