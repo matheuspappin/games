@@ -102,7 +102,7 @@ func set_weapon_loadout(weapon_path: String, attachments: Dictionary = {}, p_cam
 		return
 	add_child(wrapper)
 	WeaponVisualRegistry.update_attachments(wrapper, attachments.get("optic", "none"), attachments.get("muzzle", "none"),
-		attachments.get("mag", "none"), attachments.get("underbarrel", "none"), attachments.get("stock", "none"), attachments.get("grip", "none"))
+		attachments.get("mag", "none"), attachments.get("underbarrel", "none"), attachments.get("stock", "none"), attachments.get("grip", "none"), attachments.get("barrel", "none"))
 	if p_camo != "default":
 		WeaponVisualRegistry.apply_camo(wrapper, p_camo)
 	var frame := _reference_frame()

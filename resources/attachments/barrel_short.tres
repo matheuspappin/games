@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AttachmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/attachment_data.gd" id="1_att"]
+
+[resource]
+script = ExtResource("1_att")
+attachment_name = "Cano Curto CQB 10.5\""
+attachment_id = "barrel_short"
+slot = 1
+unlock_level = 1
+delta_damage = 0
+delta_recoil = 0.0
+delta_ads_time = -0.0375
+delta_bloom = 0.0
+delta_movement_speed = 0.05
+delta_magazine = 0
+delta_damage_range = -0.15
+optic_zoom_fov = 0.0
+suppressed = false
+penetration_bonus = 0

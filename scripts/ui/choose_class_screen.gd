@@ -1979,7 +1979,8 @@ func _apply_and_sync_all() -> void:
 			cur_class.get("mag", "none"),
 			cur_class.get("underbarrel", "none"),
 			cur_class.get("stock", "none"),
-			cur_class.get("grip", "none")
+			cur_class.get("grip", "none"),
+			cur_class.get("barrel", "none")
 		)
 		gm.set_equipment_and_perks(
 			cur_class.get("lethal", "semtex"),

@@ -360,7 +360,8 @@ func _peer_create_client(peer: MultiplayerPeer, address: String, port: int) -> E
 ## Inicia o Servidor Dedicado Neutro (Headless / Nuvem / Docker - Opção A)
 # ── CLASSE DOS JOGADORES NA REDE (arma + acessórios visíveis em 3ª pessoa) ─────
 var peer_loadouts := {}  # peer_id -> {weapon, camo, optic, muzzle, mag, underbarrel, stock, grip}
-const LOADOUT_SLOTS := ["optic", "muzzle", "mag", "underbarrel", "stock", "grip"]
+const LOADOUT_SLOTS := ["optic", "muzzle", "mag", "underbarrel", "stock", "grip", "barrel"]
+const BARREL_IDS := ["barrel_extended", "barrel_short"]  # canos: peça gerada por código (sem cena)
 
 ## Monta o dicionário da classe local a partir do GameManager
 func build_local_loadout() -> Dictionary:
@@ -394,7 +395,7 @@ func _sanitize_loadout(d: Dictionary) -> Dictionary:
 	out["camo"] = str(d.get("camo", "default")).substr(0, 32)
 	for k in LOADOUT_SLOTS:
 		var v := str(d.get(k, "none"))
-		out[k] = v if (v == "none" or WeaponVisualRegistry.ATTACHMENT_SCENES.has(v)) else "none"
+		out[k] = v if (v == "none" or WeaponVisualRegistry.ATTACHMENT_SCENES.has(v) or (k == "barrel" and v in BARREL_IDS)) else "none"
 	return out
 
 @rpc("any_peer", "call_remote", "reliable")

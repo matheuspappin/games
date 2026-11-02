@@ -13,6 +13,8 @@ const ATTACHMENT_PATHS = {
 	"muzzle_suppressor": "res://resources/attachments/muzzle_suppressor.tres",
 	"muzzle_compensator": "res://resources/attachments/muzzle_compensator.tres",
 	"mag_extended": "res://resources/attachments/mag_extended.tres",
+	"barrel_extended": "res://resources/attachments/barrel_extended.tres",
+	"barrel_short": "res://resources/attachments/barrel_short.tres",
 	"ammo_fmj": "res://resources/attachments/ammo_fmj.tres"
 }
 

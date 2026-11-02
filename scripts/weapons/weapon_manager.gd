@@ -359,7 +359,7 @@ func equip(data: WeaponData) -> void:
 			var gm = get_node("/root/GameManager")
 			var is_prim = (data == default_weapon) or (data and data.category != WeaponData.WeaponCategory.PISTOL and data.category != WeaponData.WeaponCategory.MELEE)
 			if is_prim:
-				fps_vm.set_weapon_customization(gm.primary_camo, gm.primary_optic, gm.primary_muzzle, gm.primary_mag, gm.primary_underbarrel, gm.primary_stock, gm.primary_grip)
+				fps_vm.set_weapon_customization(gm.primary_camo, gm.primary_optic, gm.primary_muzzle, gm.primary_mag, gm.primary_underbarrel, gm.primary_stock, gm.primary_grip, gm.primary_barrel)
 			else:
 				fps_vm.set_weapon_customization("default", "none", "none")
 		if primary_viewmodel and primary_viewmodel != fps_vm:

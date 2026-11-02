@@ -174,11 +174,11 @@ func _on_fps_hands_taking_weapon() -> void:
 		_update_weapon_optic.call_deferred()
 		update_ads_alignment.call_deferred()
 
-func set_weapon_customization(p_camo: String, p_optic: String, p_muzzle: String, p_mag: String = "none", p_underbarrel: String = "none", p_stock: String = "none", p_grip: String = "none") -> void:
+func set_weapon_customization(p_camo: String, p_optic: String, p_muzzle: String, p_mag: String = "none", p_underbarrel: String = "none", p_stock: String = "none", p_grip: String = "none", p_barrel: String = "none") -> void:
 	current_camo_id = p_camo if p_camo != "" else "default"
 	current_optic_id = p_optic if p_optic != "" else "none"
 	current_muzzle_id = p_muzzle if p_muzzle != "" else "none"
-	current_attachments = {"mag": p_mag, "underbarrel": p_underbarrel, "stock": p_stock, "grip": p_grip}
+	current_attachments = {"mag": p_mag, "underbarrel": p_underbarrel, "stock": p_stock, "grip": p_grip, "barrel": p_barrel}
 	_apply_camo()
 	if current_custom_model_instance and is_instance_valid(current_custom_model_instance):
 		_apply_attachments()
@@ -195,7 +195,7 @@ func _apply_attachments() -> void:
 	# cano, pente, empunhadura, coronha e cabo pelo montador único; a mira segue no código de ADS
 	WeaponVisualRegistry.update_attachments(current_custom_model_instance, "none", current_muzzle_id,
 		current_attachments.get("mag", "none"), current_attachments.get("underbarrel", "none"),
-		current_attachments.get("stock", "none"), current_attachments.get("grip", "none"))
+		current_attachments.get("stock", "none"), current_attachments.get("grip", "none"), current_attachments.get("barrel", "none"))
 	var cont = current_custom_model_instance.get_node_or_null("Pivot/AttachmentContainer")
 	if cont:
 		WeaponManager.set_viewmodel_layers(cont, 2)
@@ -987,7 +987,11 @@ func _update_integrated_sights_visibility() -> void:
 					model_root = c
 					break
 			if model_root:
-				WeaponVisualRegistry.update_integrated_weapon_parts(model_root, current_optic_id, current_muzzle_id,
+				# cano curto tira o quebra-chamas do modelo, como um acessório de boca
+				var muzzle_eff: String = current_muzzle_id
+				if (muzzle_eff == "none" or muzzle_eff == "") and current_attachments.get("barrel", "none") == "barrel_short":
+					muzzle_eff = "barrel_short"
+				WeaponVisualRegistry.update_integrated_weapon_parts(model_root, current_optic_id, muzzle_eff,
 					current_attachments.get("mag", "none"), current_attachments.get("underbarrel", "none"),
 					current_attachments.get("stock", "none"), current_attachments.get("grip", "none"))
 

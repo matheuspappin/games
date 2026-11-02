@@ -87,6 +87,7 @@ var primary_mag    : String = "none"
 var primary_underbarrel : String = "none"
 var primary_stock  : String = "none"
 var primary_grip   : String = "none"
+var primary_barrel : String = "none"
 
 # ── EQUIPAMENTOS & VANTAGENS (PERKS / BO6) ───────────────────────────────────
 var selected_lethal    : String = "semtex"      # "semtex", "frag", "c4", "molotov"
@@ -447,7 +448,8 @@ func set_loadout(primary_path: String, secondary_path: String, melee_path: Strin
 	melee_weapon_res = melee_path
 	selected_class_name = class_name_str
 
-func set_weapon_customization(camo: String, optic: String, muzzle: String, mag: String, underbarrel: String = "none", stock: String = "none", grip: String = "none") -> void:
+func set_weapon_customization(camo: String, optic: String, muzzle: String, mag: String, underbarrel: String = "none", stock: String = "none", grip: String = "none", barrel: String = "none") -> void:
+	primary_barrel = barrel if barrel != "" else "none"
 	primary_camo = camo if camo != "" else "default"
 	primary_optic = optic if optic != "" else "none"
 	primary_muzzle = muzzle if muzzle != "" else "none"
@@ -459,7 +461,7 @@ func set_weapon_customization(camo: String, optic: String, muzzle: String, mag: 
 ## Todos os acessórios da arma primária, por encaixe (fonte única para a arma na mão)
 func get_primary_attachment_ids() -> Dictionary:
 	return {"optic": primary_optic, "muzzle": primary_muzzle, "mag": primary_mag,
-		"underbarrel": primary_underbarrel, "stock": primary_stock, "grip": primary_grip}
+		"underbarrel": primary_underbarrel, "stock": primary_stock, "grip": primary_grip, "barrel": primary_barrel}
 
 func get_primary_attachments() -> Array[AttachmentData]:
 	var list: Array[AttachmentData] = []
@@ -472,7 +474,7 @@ func get_primary_attachments() -> Array[AttachmentData]:
 	if primary_mag != "none" and primary_mag != "":
 		var att = WeaponModifier.get_attachment_resource(primary_mag)
 		if att: list.append(att)
-	for extra in [primary_underbarrel, primary_stock, primary_grip]:
+	for extra in [primary_underbarrel, primary_stock, primary_grip, primary_barrel]:
 		if extra != "none" and extra != "":
 			var att_x = WeaponModifier.get_attachment_resource(extra)
 			if att_x: list.append(att_x)

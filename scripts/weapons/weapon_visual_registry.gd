@@ -330,6 +330,7 @@ static var REGISTRY: Dictionary = {
 		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000002, -0.000010), Vector3(0.000000, 115.385590, 19.515818), Vector3(0.000010, 19.515818, -115.385590)), Vector3(0.260830, 0.428030, 8.807804)), # Blender: gatilho sob o indicador da pose original (família escopeta)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho na coronha, a 18 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(0, 0.129, 0.018), "ads_front": Vector3(0, 0.129, -0.324), "ads_eye": 0.18,
+		"no_barrel_visual": true, # vários tubos na boca: cano estendido só muda atributos
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(0, 0.1085, 0.0260),
@@ -358,6 +359,7 @@ static var REGISTRY: Dictionary = {
 		"support_delta": Vector3(0.0, 0.03, -0.02),
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho na coronha, a 22 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(0, -0.075, 0.072), "ads_front": Vector3(0, -0.075, -0.302), "ads_eye": 0.22,
+		"no_barrel_visual": true, # vários tubos na boca: cano estendido só muda atributos
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.0889, -0.0500),
 		"socket_muzzle": Vector3(0, 0.0712, -0.2900),
@@ -914,8 +916,20 @@ static func update_attachments(
 			node.set_meta("slot", sl[0])
 			node.set_meta("attachment_id", att_id)
 
+	# Cano estendido: peça gerada por código no encaixe (diâmetro real da ponta do cano de cada arma)
+	# (escopetas de dois canos / cano + tubo: não há um cano único para prolongar -> só atributos)
+	if barrel_id == "barrel_extended" and "barrel" in allowed and not bool(cfg.get("no_barrel_visual", false)):
+		var bnode := Node3D.new()
+		bnode.name = "Att_barrel"
+		bnode.set_meta("slot", "barrel")
+		bnode.set_meta("attachment_id", barrel_id)
+		att_container.add_child(bnode)
+	# Cano curto: sem o quebra-chamas do modelo (quando ele é uma peça separada), como num cano cortado
+	var muzzle_for_parts := muzzle_id
+	if barrel_id == "barrel_short" and "barrel" in allowed and (muzzle_id == "none" or muzzle_id == ""):
+		muzzle_for_parts = "barrel_short"
 	# Controle dinâmico unificado: Ocultar peças nativas (miras, magazine, coronha, boca, cabo) quando substituídas
-	update_integrated_weapon_parts(target_parent, optic_id, muzzle_id, mag_id, underbarrel_id, stock_id, grip_id)
+	update_integrated_weapon_parts(target_parent, optic_id, muzzle_for_parts, mag_id, underbarrel_id, stock_id, grip_id)
 	# Encaixe pela geometria real (depois de esconder as peças originais)
 	_snap_attachments(pivot, att_container, cfg)
 
@@ -1191,8 +1205,51 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 	for p in pts: gb = gb.expand(p)
 	var gun_front: float = gb.position.z if front < 0 else gb.end.z
 	var gun_rear: float = gb.end.z if front < 0 else gb.position.z
+	# ponta do cano: centro e raio pelos vértices reais da boca
+	var tip_x := []; var tip_y := []
+	for p in pts:
+		if absf(p.z - gun_front) < 0.015:
+			tip_x.append(p.x); tip_y.append(p.y)
+	var muzzle_front: float = gun_front
+	var barrel_node: Node3D = cont.get_node_or_null("Att_barrel") as Node3D
+	if barrel_node and tip_x.size() > 3:
+		tip_x.sort(); tip_y.sort()
+		var cx: float = float(tip_x[tip_x.size() / 2])
+		var cy: float = float(tip_y[tip_y.size() / 2])
+		var dists := []
+		for i in tip_x.size():
+			dists.append(Vector2(float(tip_x[i]) - cx, float(tip_y[i]) - cy).length())
+		dists.sort()
+		# núcleo do cano (parte mais estreita da boca), sem freios/quebra-chamas largos
+		var r: float = clampf(float(dists[int(dists.size() * 0.35)]), 0.006 * k, 0.016 * k)
+		var L: float = 0.08 * k  # 8 cm reais de cano a mais
+		for ch in barrel_node.get_children():
+			ch.free()
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.09, 0.09, 0.10)
+		mat.metallic = 0.85
+		mat.roughness = 0.38
+		var tube := MeshInstance3D.new()
+		var cm := CylinderMesh.new()
+		cm.top_radius = r; cm.bottom_radius = r; cm.height = L; cm.radial_segments = 20
+		cm.material = mat
+		tube.mesh = cm
+		tube.basis = Basis(Vector3.RIGHT, PI / 2.0)
+		tube.position = Vector3(cx, cy, gun_front + front * (L * 0.5 - 0.004 * k))
+		barrel_node.add_child(tube)
+		var crown := MeshInstance3D.new()
+		var rm := CylinderMesh.new()
+		rm.top_radius = r * 1.18; rm.bottom_radius = r * 1.18; rm.height = 0.012 * k; rm.radial_segments = 20
+		rm.material = mat
+		crown.mesh = rm
+		crown.basis = Basis(Vector3.RIGHT, PI / 2.0)
+		crown.position = Vector3(cx, cy, gun_front + front * (L - 0.006 * k))
+		barrel_node.add_child(crown)
+		barrel_node.position = Vector3.ZERO
+		muzzle_front = gun_front + front * L
 	for a in cont.get_children():
 		if not (a is Node3D): continue
+		if String(a.get_meta("slot", "")) == "barrel": continue
 		var ab := AABB(); var first := true
 		for m in a.find_children("*", "MeshInstance3D", true, false):
 			if m.mesh == null: continue
@@ -1206,7 +1263,7 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 				snap_optic_to_rail(pivot, a)
 			"muzzle":
 				# começa na ponta do cano (0,5 cm de sobreposição para não ver fresta)
-				a.position.z += (gun_front - front * 0.005 * k) - a_rear
+				a.position.z += (muzzle_front - front * 0.005 * k) - a_rear
 				# e fica no eixo do cano: centro (mediana) dos pontos da ponta do cano
 				var ys := []; var xs := []
 				for p in pts:
