@@ -399,9 +399,14 @@ func _setup_left_hand_ik(cfg: Dictionary) -> void:
 	ik.influence = 0.0
 	left_hand_ik = ik
 
+## Rotação da mão esquerda em volta da empunhadura vertical da família SMG, no espaço do glb da arma
+const SMG_FIST_HAND := Quaternion(0.223010, -0.188218, -0.402611, 0.867609)
+
 func _update_left_hand_ik(delta: float) -> void:
 	if not left_hand_ik or not is_instance_valid(left_hand_ik):
 		return
+	if _reload_hand_target and is_instance_valid(_reload_hand_target) and _reload_hand_target.has_meta("hand_basis"):
+		_reload_hand_target.remove_meta("hand_basis")
 	var want := 1.0
 	var st := ""
 	if fps_hands and fps_hands.state_machine:
@@ -473,7 +478,14 @@ func _update_left_hand_ik(delta: float) -> void:
 								pi_s = i2
 								break
 						var palm_g := skel_s.global_transform * skel_s.get_bone_global_pose(pi_s).origin if pi_s >= 0 else wrist_g
-						_reload_hand_target.global_position = ref_s.global_transform * (cfg_s["support_point"] as Vector3) - (palm_g - wrist_g)
+						var off: Vector3 = palm_g - wrist_g
+						if String(cfg_s.get("support_hand", "")) == "pump":
+							# pegada de bomba: o punho da empunhadura vertical girado 90° (eixo deitado ao longo do cano, palma para cima)
+							var hb: Basis = ref_s.global_basis.orthonormalized() * Basis(Vector3.RIGHT, PI / 2.0) * Basis(SMG_FIST_HAND)
+							var wb_anim: Basis = (skel_s.global_transform * skel_s.get_bone_global_pose(wi)).basis.orthonormalized()
+							off = hb * (wb_anim.inverse() * off)
+							_reload_hand_target.set_meta("hand_basis", hb)
+						_reload_hand_target.global_position = ref_s.global_transform * (cfg_s["support_point"] as Vector3) - off
 					else:
 						_reload_hand_target.global_position = wrist_g + ref_s.global_basis * (cfg_s["support_delta"] as Vector3)
 					left_hand_ik.target = _reload_hand_target
@@ -746,6 +758,11 @@ func _update_finger_grip(delta: float) -> void:
 		var ub: Node3D = current_custom_model_instance.find_child("Att_underbarrel", true, false) as Node3D
 		if ub and ub.is_visible_in_tree():
 			want = 1.0
+		elif current_weapon_data:
+			# fechamento próprio da arma (ex.: punho em volta da bomba das escopetas)
+			want = float(WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower()).get("support_fist", 0.0))
+		if _is_one_handed():
+			want = 0.0
 	mod.influence = move_toward(mod.influence, want, delta * 6.0)
 	mod.active = mod.influence > 0.001
 
@@ -1284,5 +1301,9 @@ class LeftHandIK extends SkeletonModifier3D:
 		var a_pose := Transform3D(Basis(a_local), skel.get_bone_pose_position(root_idx))
 		var b_pose := Transform3D(Basis(b_local), skel.get_bone_pose_position(mid_idx))
 		var mid_g_new := parent_g * a_pose * b_pose
-		var end_rot := (mid_g_new.basis.orthonormalized().inverse() * rc.basis.orthonormalized()).get_rotation_quaternion()
+		var hand_g: Basis = rc.basis.orthonormalized()
+		if target.has_meta("hand_basis"):
+			# rotação de mão pedida pelo alvo (ex.: pegada de bomba de escopeta), em espaço do mundo
+			hand_g = skel.global_basis.orthonormalized().inverse() * (target.get_meta("hand_basis") as Basis)
+		var end_rot := (mid_g_new.basis.orthonormalized().inverse() * hand_g).get_rotation_quaternion()
 		skel.set_bone_pose_rotation(end_idx, end_rot)

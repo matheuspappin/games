@@ -340,6 +340,8 @@ static var REGISTRY: Dictionary = {
 		# assento real da ótica: trilho alto em alça, parte traseira (medido no Blender, espaço do glb)
 		"optic_rail": Vector3(0, 0.125, -0.04),
 		"allow_optic": true, # tem trilho/topo plano: aceita ótica como no CoD
+		# mão esquerda: palma sob a bomba (16-32 cm à frente, 5 cm de largura) e punho fechado em volta dela
+		"support_point": Vector3(-0.012, 0.004, -0.24), "support_fist": 1.0, "support_hand": "pump",
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(0, 0.1085, 0.0260),
