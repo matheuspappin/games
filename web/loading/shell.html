@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<title>$GODOT_PROJECT_NAME</title>
+<style>
+html, body, #canvas { margin: 0; padding: 0; border: 0; }
+body { color: #fff; background: #050608; overflow: hidden; touch-action: none; font-family: 'Segoe UI', 'Noto Sans', Arial, sans-serif; }
+#canvas { display: block; }
+#canvas:focus { outline: none; }
+
+/* Tela de entrada. Todas as animações usam só opacity/transform: o navegador as roda fora da
+   thread principal, então continuam se mexendo mesmo enquanto o motor está ocupado iniciando. */
+#status { position: fixed; inset: 0; z-index: 10; background: #050608; overflow: hidden; transition: opacity .8s ease; }
+#status.saindo { opacity: 0; pointer-events: none; }
+
+.slides { position: absolute; inset: 0; }
+.slide { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0;
+	animation: fade 30s infinite, zoom 30s infinite linear; will-change: opacity, transform; }
+.slide:nth-child(1) { background-image: url('loading/01_operador.jpg'); animation-delay: 0s, 0s; }
+.slide:nth-child(2) { background-image: url('loading/03_nuketown2065.jpg'); animation-delay: 6s, 6s; }
+.slide:nth-child(3) { background-image: url('loading/02_gunsmith.jpg'); animation-delay: 12s, 12s; }
+.slide:nth-child(4) { background-image: url('loading/04_nuketown2065_casa.jpg'); animation-delay: 18s, 18s; }
+.slide:nth-child(5) { background-image: url('loading/05_nuketown.jpg'); animation-delay: 24s, 24s; }
+@keyframes fade { 0% { opacity: 0; } 4% { opacity: 1; } 20% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes zoom { 0% { transform: scale(1.0) translateX(0); } 25% { transform: scale(1.08) translateX(-1.5%); } 100% { transform: scale(1.08) translateX(-1.5%); } }
+
+.sombra { position: absolute; inset: 0; background:
+	linear-gradient(to top, rgba(5,6,8,.95) 0%, rgba(5,6,8,.55) 28%, rgba(5,6,8,0) 55%),
+	linear-gradient(to right, rgba(5,6,8,.7) 0%, rgba(5,6,8,0) 45%); }
+.scan { position: absolute; inset: 0; opacity: .12; background: repeating-linear-gradient(to bottom, rgba(255,255,255,.08) 0 1px, transparent 1px 3px); pointer-events: none; }
+
+.logo { position: absolute; left: 6vw; top: 7vh; }
+.logo h1 { margin: 0; font-size: clamp(36px, 6vw, 84px); font-weight: 900; letter-spacing: .04em; line-height: 1; font-style: italic; }
+.logo h1 span { color: #ff8a00; }
+.logo p { margin: .6em 0 0; font-size: clamp(11px, 1vw, 14px); letter-spacing: .35em; text-transform: uppercase; color: rgba(255,255,255,.65); }
+.logo .barra { width: 64px; height: 3px; margin-top: 14px; background: #ff8a00; }
+
+.rodape { position: absolute; left: 6vw; right: 6vw; bottom: 7vh; }
+.dicas { position: relative; height: 3.2em; margin-bottom: 22px; max-width: 760px; }
+.dica { position: absolute; left: 0; top: 0; opacity: 0; font-size: clamp(13px, 1.15vw, 17px); color: rgba(255,255,255,.88); animation: dica 36s infinite; }
+.dica b { color: #ff8a00; font-weight: 700; letter-spacing: .12em; font-size: .78em; display: block; margin-bottom: 4px; }
+.dica:nth-child(1) { animation-delay: 0s; } .dica:nth-child(2) { animation-delay: 6s; } .dica:nth-child(3) { animation-delay: 12s; }
+.dica:nth-child(4) { animation-delay: 18s; } .dica:nth-child(5) { animation-delay: 24s; } .dica:nth-child(6) { animation-delay: 30s; }
+@keyframes dica { 0% { opacity: 0; transform: translateY(6px); } 2% { opacity: 1; transform: none; } 15% { opacity: 1; transform: none; } 17% { opacity: 0; } 100% { opacity: 0; } }
+
+.linha { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; font-size: clamp(11px, .95vw, 14px); letter-spacing: .14em; text-transform: uppercase; }
+#etapa { color: #fff; display: flex; align-items: center; gap: 12px; }
+#numeros { color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,138,0,.25); border-top-color: #ff8a00; border-radius: 50%; animation: gira .8s linear infinite; flex: none; }
+@keyframes gira { to { transform: rotate(360deg); } }
+
+.trilho { position: relative; height: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+#preenchido { position: absolute; inset: 0; background: linear-gradient(90deg, #ff6a00, #ffb000); transform-origin: left; transform: scaleX(0); transition: transform .25s ease-out; }
+#brilho { position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); animation: brilho 1.4s ease-in-out infinite; }
+@keyframes brilho { from { transform: translateX(-120%); } to { transform: translateX(380%); } }
+.trilho.indeterminado #preenchido { transform: scaleX(1) !important; opacity: .55; }
+
+#aviso { display: none; margin-top: 18px; padding: 14px 16px; border-left: 3px solid #e5484d; background: rgba(40,10,12,.85); color: #f1d6d7; font-size: 14px; line-height: 1.4; white-space: pre-line; }
+@media (max-width: 640px) { .logo { left: 16px; } .rodape { left: 16px; right: 16px; } .dicas { height: 4.4em; } }
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas">Seu navegador não suporta canvas.</canvas>
+<noscript>Ative o JavaScript para jogar.</noscript>
+
+<div id="status">
+	<div class="slides"><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div></div>
+	<div class="sombra"></div><div class="scan"></div>
+	<div class="logo"><h1>NUKE<span>FPS</span></h1><p>Tactical Warfare</p><div class="barra"></div></div>
+	<div class="rodape">
+		<div class="dicas">
+			<div class="dica"><b>DICA</b>Dois toques no Shift ativam a corrida tática. A arma demora um pouco mais para ficar pronta para atirar.</div>
+			<div class="dica"><b>DICA</b>Segure Q ou E para inclinar e espiar quinas sem se expor.</div>
+			<div class="dica"><b>DICA</b>Z deita. Deitado e parado, você continua podendo atirar.</div>
+			<div class="dica"><b>DICA</b>Aperte Espaço perto de uma borda para escalar muros de até 2 metros.</div>
+			<div class="dica"><b>GUNSMITH</b>Monte até 5 acessórios por arma: miras, canos, pentes, empunhaduras e coronhas.</div>
+			<div class="dica"><b>DICA</b>Clique na tela do jogo para capturar o mouse. Esc solta.</div>
+		</div>
+		<div class="linha"><div id="etapa"><div class="spinner"></div><span id="etapa-texto">Conectando</span></div><div id="numeros"></div></div>
+		<div class="trilho" id="trilho"><div id="preenchido"></div><div id="brilho"></div></div>
+		<div id="aviso"></div>
+	</div>
+</div>
+
+<script src="$GODOT_URL"></script>
+<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const overlay = document.getElementById('status');
+	const etapa = document.getElementById('etapa-texto');
+	const numeros = document.getElementById('numeros');
+	const trilho = document.getElementById('trilho');
+	const preenchido = document.getElementById('preenchido');
+	const aviso = document.getElementById('aviso');
+	let ativo = true;
+
+	function mb(b) { return (b / 1048576).toFixed(0); }
+
+	function falha(err) {
+		console.error(err);
+		const msg = (err instanceof Error) ? err.message : (typeof err === 'string' ? err : 'Erro desconhecido.');
+		etapa.textContent = 'Não foi possível iniciar';
+		aviso.textContent = msg;
+		aviso.style.display = 'block';
+		trilho.style.display = 'none';
+		ativo = false;
+	}
+
+	function esconder() {
+		if (!ativo) return;
+		ativo = false;
+		overlay.classList.add('saindo');
+		setTimeout(() => overlay.remove(), 900);
+	}
+
+	const faltando = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+	if (faltando.length !== 0) {
+		falha('Seu navegador não tem recursos necessários para rodar o jogo:\n' + faltando.join('\n') + '\n\nUse a versão mais recente do Chrome, Edge ou Firefox.');
+		return;
+	}
+
+	let preparando = false;
+	function fasePreparar() {
+		if (preparando) return;
+		preparando = true;
+		etapa.textContent = 'Preparando o jogo';
+		numeros.textContent = 'pode levar alguns segundos';
+		trilho.classList.add('indeterminado');
+	}
+
+	engine.startGame({
+		onProgress: function (atual, total) {
+			if (!ativo) return;
+			if (atual > 0 && total > 0) {
+				const p = Math.min(1, atual / total);
+				preenchido.style.transform = 'scaleX(' + p + ')';
+				if (p >= 1) { fasePreparar(); return; }
+				etapa.textContent = 'Baixando arquivos do jogo';
+				numeros.textContent = mb(atual) + ' / ' + mb(total) + ' MB  ·  ' + Math.floor(p * 100) + '%';
+			}
+		},
+	}).then(esconder, falha);
+}());
+</script>
+</body>
+</html>
