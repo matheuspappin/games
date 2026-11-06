@@ -17,14 +17,17 @@ body { color: #fff; background: #050608; overflow: hidden; touch-action: none; f
 
 .slides { position: absolute; inset: 0; }
 .slide { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0;
-	animation: fade 30s infinite, zoom 30s infinite linear; will-change: opacity, transform; }
-.slide:nth-child(1) { background-image: url('loading/01_operador.jpg'); animation-delay: 0s, 0s; }
-.slide:nth-child(2) { background-image: url('loading/03_nuketown2065.jpg'); animation-delay: 6s, 6s; }
-.slide:nth-child(3) { background-image: url('loading/02_gunsmith.jpg'); animation-delay: 12s, 12s; }
-.slide:nth-child(4) { background-image: url('loading/04_nuketown2065_casa.jpg'); animation-delay: 18s, 18s; }
-.slide:nth-child(5) { background-image: url('loading/05_nuketown.jpg'); animation-delay: 24s, 24s; }
-@keyframes fade { 0% { opacity: 0; } 4% { opacity: 1; } 20% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
-@keyframes zoom { 0% { transform: scale(1.0) translateX(0); } 25% { transform: scale(1.08) translateX(-1.5%); } 100% { transform: scale(1.08) translateX(-1.5%); } }
+	animation: fade 40s infinite, zoom 40s infinite linear; will-change: opacity, transform; }
+.slide:nth-child(1) { background-image: url('loading/01_nuketown2065_aereo.jpg'); animation-delay: 0s, 0s; }
+.slide:nth-child(2) { background-image: url('loading/02_esquadrao.jpg'); animation-delay: 5s, 5s; }
+.slide:nth-child(3) { background-image: url('loading/03_nuketown2065_drone.jpg'); animation-delay: 10s, 10s; }
+.slide:nth-child(4) { background-image: url('loading/04_patrulha.jpg'); animation-delay: 15s, 15s; }
+.slide:nth-child(5) { background-image: url('loading/05_operadores.jpg'); animation-delay: 20s, 20s; }
+.slide:nth-child(6) { background-image: url('loading/06_nuketown2065_vista.jpg'); animation-delay: 25s, 25s; }
+.slide:nth-child(7) { background-image: url('loading/07_gunsmith.jpg'); animation-delay: 30s, 30s; }
+.slide:nth-child(8) { background-image: url('loading/08_operador.jpg'); animation-delay: 35s, 35s; }
+@keyframes fade { 0% { opacity: 0; } 3% { opacity: 1; } 12.5% { opacity: 1; } 15.5% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes zoom { 0% { transform: scale(1.0) translateX(0); } 15.5% { transform: scale(1.07) translateX(-1.2%); } 100% { transform: scale(1.07) translateX(-1.2%); } }
 
 .sombra { position: absolute; inset: 0; background:
 	linear-gradient(to top, rgba(5,6,8,.95) 0%, rgba(5,6,8,.55) 28%, rgba(5,6,8,0) 55%),
@@ -67,7 +70,7 @@ $GODOT_HEAD_INCLUDE
 <noscript>Ative o JavaScript para jogar.</noscript>
 
 <div id="status">
-	<div class="slides"><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div></div>
+	<div class="slides"><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div></div>
 	<div class="sombra"></div><div class="scan"></div>
 	<div class="logo"><h1>NUKE<span>FPS</span></h1><p>Tactical Warfare</p><div class="barra"></div></div>
 	<div class="rodape">
