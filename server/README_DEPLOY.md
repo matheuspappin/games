@@ -1,100 +1,67 @@
-# 🚀 Guia de Deploy: Servidor Dedicado Godot 4 com Docker (Até 6v6)
+# Deploy: jogo no navegador + servidor dedicado (Docker)
 
-Este guia explica como exportar o servidor dedicado do Godot e executá-lo em uma máquina na nuvem (VPS / Docker) para partidas online de 1v1 até 6v6.
+Tudo roda em **um endereço só**: o Caddy entrega a página do jogo (exportado para Web) e
+encaminha o WebSocket da partida para o servidor dedicado do Godot. O navegador não abre
+UDP, então a rede do jogo é **WebSocket/TCP** (não ENet/UDP).
 
----
-
-## 1. Exportando o Servidor Dedicado no Godot
-
-1. Abra o projeto no **Godot Editor**.
-2. Vá no menu: `Projeto` > `Exportar...`.
-3. Selecione o preset **`Linux Dedicated Server`** (já pré-configurado no projeto).
-4. Clique em **`Exportar Projeto...`**.
-5. Salve o arquivo como:
-   * **Caminho:** `server/bin/server.x86_64`
-   * Certifique-se de que a opção **"Exportar com Debug"** esteja desmarcada para ambiente de produção (ou marcada para testar logs de depuração).
-
-Após exportar, a pasta `server/bin/` conterá os arquivos:
 ```
-server/bin/
-├── server.x86_64
-└── server.pck (se não embutido)
+navegador ──https──► Caddy :443 ─┬─ arquivos  ─► /srv/game  (web/public/game)
+          ──wss────►              └─ WebSocket ─► nuke-dedicated-server:7777
 ```
 
----
+## 1. Exportar (sempre cliente e servidor juntos)
 
-## 2. Preparando a VPS na Nuvem
+Cliente e servidor precisam ser da mesma versão (RPCs e sincronização mudam entre versões).
 
-Você pode usar qualquer provedor de VPS (Oracle Cloud Always Free, Hetzner, DigitalOcean, AWS Lightsail, Linode).
+- Windows: `tools_capture\export_all.bat` (servidor + web). Feche o Docker Desktop antes se a
+  máquina tiver pouca RAM — a exportação usa vários GB.
+- Ou no editor: `Projeto > Exportar`:
+  - **Linux Dedicated Server** → `server/bin/server.x86_64` (modo servidor dedicado, visuais removidos)
+  - **Web** → `web/public/game/index.html` e **Web BO3 Pack** → `web/public/game/maps_bo3.pck`
 
-### Requisitos Mínimos da VPS:
-* **SO:** Ubuntu 22.04 LTS ou Debian 12
-* **Recursos:** 1 vCPU, 1 GB RAM (o servidor dedicado do Godot consome menos de 150 MB)
-* **Docker & Docker Compose instalados:**
-  ```bash
-  curl -fsSL https://get.docker.com | sh
-  sudo usermod -aG docker $USER
-  ```
+## 2. Teste local no PC (http://localhost:8090)
 
----
+Na pasta `server`:
 
-## 3. Liberando a Porta 7777 (UDP)
-
-O protocolo de rede multiplayer do Godot (ENet) opera sobre **UDP**.
-
-### No Firewall do Linux (UFW):
 ```bash
-sudo ufw allow 7777/udp
-sudo ufw reload
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 ```
 
-### No Painel da Nuvem (Ex: Oracle Cloud / AWS Security Group):
-* Crie uma regra de entrada (*Ingress Rule*):
-  * **Protocolo:** UDP
-  * **Porta de Destino:** 7777
-  * **Origem:** `0.0.0.0/0` (Qualquer IP)
+Abra `http://localhost:8090` no navegador. No menu do jogo, **Servidor dedicado** já vem
+preenchido com o endereço da página. Para um segundo jogador na mesma rede, abra
+`http://IP-DO-PC:8090` em outro computador.
 
----
+Logs: `docker compose logs -f nuke-dedicated-server`.
 
-## 4. Enviando os Arquivos e Iniciando o Container
+## 3. Produção (VPS com domínio)
 
-1. Na sua máquina local, copie a pasta `server` para a sua VPS via SCP ou Rsync:
-   ```bash
-   scp -r server/ usuario@SEU_IP_VPS:/home/usuario/nuke_server
-   ```
+1. DNS: `play.seudominio.com` → IP da VPS.
+2. Firewall: liberar **TCP 80 e 443** (não precisa UDP nem 7777).
+3. Na VPS, com a pasta do projeto (`server/` e `web/public/game/`):
 
-2. Na VPS, entre na pasta e inicialize o container:
-   ```bash
-   cd /home/usuario/nuke_server
-   docker compose up -d --build
-   ```
-
-3. Verifique os logs em tempo real:
-   ```bash
-   docker compose logs -f
-   ```
-   Você verá a mensagem:
-   ```
-   [NetworkManager] SERVIDOR DEDICADO ONLINE NA PORTA 7777 (UDP)
-   [NetworkManager] Capacidade Máxima: 12 jogadores (Suporta até 6v6)
-   [NetworkManager] Meta da Partida: 50 Kills
-   ```
-
----
-
-## 5. Como os Jogadores Conectam
-
-### Opção A: Linha de Comando / Atalho do Cliente
-Crie um atalho do jogo para os jogadores com o IP público da VPS:
 ```bash
-Jogo.exe --client --server-ip=SEU_IP_VPS
+export GAME_DOMAIN=play.seudominio.com
+export MATCH_SECRET="$(openssl rand -hex 32)"   # guarde: valida os resultados
+docker compose up -d --build
 ```
 
-### Opção B: Pelo Menu / HUD do Jogo
-1. O jogador abre o jogo normalmente.
-2. No painel de conexão (`ConnectionPanel`), digita o IP público da VPS (ex: `142.93.120.45`).
-3. Clica em **JOIN**.
-4. O servidor automaticamente:
-   * Aloca o jogador na equipe com menos membros (Alpha/CT ou Bravo/T);
-   * Spawna o personagem na base correta de Nuketown;
-   * Sincroniza posições, tiros e placar em tempo real.
+O Caddy emite o certificado HTTPS sozinho; o cliente usa `wss://` automaticamente.
+
+## 4. Resultado das partidas (base das apostas)
+
+- O **servidor é o único que aplica dano, conta kills e decide o vencedor**. O cliente só
+  informa "atirei daqui, nesta direção, com esta arma"; o servidor confere (vivo, arma da
+  classe, origem perto da cabeça, cadência) e refaz o tiro.
+- No fim da partida o servidor grava `results/<match_id>.json` com o placar, os jogadores e
+  a carteira informada por cada um, assinado com **HMAC-SHA256** usando `MATCH_SECRET`.
+  Os arquivos ficam em `https://SEU_DOMINIO/results/<match_id>.json`.
+- Verificação (oráculo/backend): `HMAC_SHA256(MATCH_SECRET, payload) == signature`.
+- A carteira é **declarada** pela página (`?wallet=`). Antes de pagar alguém, o backend
+  precisa provar a posse (assinatura de mensagem pela carteira no site).
+
+## 5. Limites conhecidos
+
+- Sem compensação de latência: com ping alto o servidor pode recusar tiros que acertaram na
+  tela do jogador.
+- Download do jogo: ~530 MB sem compressão (o Caddy comprime na transferência). Para
+  produção, vale reduzir texturas e separar mapas sob demanda.

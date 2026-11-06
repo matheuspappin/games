@@ -1,0 +1,2 @@
+@echo off
+powershell -NoProfile -Command "$o=Get-CimInstance Win32_OperatingSystem; \"livre_MB=$([int]($o.FreePhysicalMemory/1024)) total_MB=$([int]($o.TotalVisibleMemorySize/1024))\"; Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 8 Name,@{n=\"MB\";e={[int]($_.WorkingSet64/1MB)}} | Format-Table -AutoSize | Out-String; (Get-PSDrive C).Free/1GB" > "C:\gemini cli\games\_prints\mem2.txt" 2>&1

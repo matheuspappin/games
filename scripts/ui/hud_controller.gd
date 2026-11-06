@@ -154,13 +154,17 @@ func _update_stance() -> void:
 			MovementStateMachine.State.MANTLE:
 				stance_label.text = "MANTLE"
 	elif "state" in player:
-		if not player.is_on_floor():
+		if "mantling" in player and player.mantling:
+			stance_label.text = "ESCALANDO"
+		elif not player.is_on_floor():
 			stance_label.text = "NO AR"
 		else:
 			match player.state:
 				"normal":
 					stance_label.text = "EM PÉ"
 				"sprinting":
-					stance_label.text = "SPRINT"
+					stance_label.text = "TACT SPRINT" if ("tac_sprinting" in player and player.tac_sprinting) else "SPRINT"
 				"crouching":
 					stance_label.text = "AGACHADO"
+				"prone":
+					stance_label.text = "DEITADO"

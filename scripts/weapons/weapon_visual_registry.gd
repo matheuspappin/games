@@ -28,8 +28,10 @@ static var REGISTRY: Dictionary = {
 		# Encaixe feito no Blender (pipeline estilo CoD): gatilho sob a polpa do indicador da pose original do addon,
 		# cano paralelo ao da AK original e escala real (117 un/m). Matriz do glb da arma em relação ao nó "base".
 		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000018), Vector3(-0.477971, 117.023384, 0.0), Vector3(0.000018, 0.0, -117.024361)), Vector3(0.772975, 3.208940, 17.324545)),
-		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 9 cm da alça (uso real / CoD)
-		"ads_rear": Vector3(0.0064, 0.135, 0.18), "ads_front": Vector3(0.0064, 0.135, -0.286), "ads_eye": 0.09,
+		# modelo sem mira de ferro (só trilho): alça e massa rebatíveis montadas no trilho quando não há ótica (como no CoD)
+		"ads_rear": Vector3(0.0064, 0.145, 0.15), "ads_front": Vector3(0.0064, 0.145, -0.27), "ads_eye": 0.09,
+		"buis": {"rail_y": 0.123, "x": 0.0064, "rear_z": 0.15, "front_z": -0.27, "line_y": 0.145},
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.195), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"socket_optic": Vector3(0.0064, 0.1650, 0.0260),
 		"socket_muzzle": Vector3(0.0064, 0.0430, -0.2750),
@@ -57,6 +59,10 @@ static var REGISTRY: Dictionary = {
 		# Encaixe feito no Blender (pipeline estilo CoD): gatilho sob a polpa do indicador da pose original do addon,
 		# cano paralelo ao da AK original e escala real (117 un/m). Matriz do glb da arma em relação ao nó "base".
 		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000018), Vector3(-0.477971, 117.023384, 0.0), Vector3(0.000018, 0.0, -117.024361)), Vector3(0.772975, 3.208940, 17.324545)),
+		# modelo sem mira de ferro (só trilho): alça e massa rebatíveis montadas no trilho quando não há ótica (como no CoD)
+		"ads_rear": Vector3(0.0064, 0.145, 0.15), "ads_front": Vector3(0.0064, 0.145, -0.27), "ads_eye": 0.09,
+		"buis": {"rail_y": 0.123, "x": 0.0064, "rear_z": 0.15, "front_z": -0.27, "line_y": 0.145},
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.195), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"socket_optic": Vector3(0.0064, 0.1650, 0.0260),
 		"socket_muzzle": Vector3(0.0064, 0.0430, -0.2750),
@@ -84,6 +90,7 @@ static var REGISTRY: Dictionary = {
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 8 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(0.023, 0.1485, 0.186), "ads_front": Vector3(0.023, 0.1485, -0.223), "ads_eye": 0.08,
 		# desvio lateral real do modelo: +0.0230 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
+		"cuts": [{"slot": "underbarrel", "mesh": "reargrip", "min": Vector3(-1, -1, -1), "max": Vector3(1, 1, -0.05)}, {"slot": "grip", "mesh": "reargrip", "min": Vector3(-1, -1, 0.05), "max": Vector3(1, 1, 1)}], # empunhadura e cabo na mesma malha
 		"has_arms": false,
 		"socket_optic": Vector3(0.0221, 0.1344, 0.0250),
 		"socket_muzzle": Vector3(0.0221, 0.0653, -0.4250),
@@ -109,7 +116,8 @@ static var REGISTRY: Dictionary = {
 		"grip_l": Vector3(-0.0884, 0.0582, -0.0513), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.074029, 5.289135, 18.974588)), # Blender: gatilho sob o indicador da pose original (família AK)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 8 cm da alça (uso real / CoD)
-		"ads_rear": Vector3(-0.002, 0.12, 0.176), "ads_front": Vector3(-0.002, 0.12, -0.2016), "ads_eye": 0.08,
+		"ads_rear": Vector3(-0.002, 0.128, 0.176), "ads_front": Vector3(-0.002, 0.128, -0.2016), "ads_eye": 0.08, # centro do capuz da massa
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.215), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.0957, 0.0265),
 		"socket_muzzle": Vector3(0, 0.0442, -0.2800),
@@ -135,7 +143,12 @@ static var REGISTRY: Dictionary = {
 		"grip_l": Vector3(-0.0878, 0.0507, -0.0982), # mão de apoio: c clamp guarda mao bullpup (tools_capture/support_fit, palma medida após o IK)
 		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.008364, 5.405824, 5.785941)), # Blender: gatilho sob o indicador da pose original (família AK)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 8 cm da alça (uso real / CoD)
-		"ads_rear": Vector3(-0.002, 0.171, 0.097), "ads_front": Vector3(-0.002, 0.171, -0.072), "ads_eye": 0.08,
+		"ads_rear": Vector3(-0.002, 0.171, 0.097), "ads_front": Vector3(-0.002, 0.171, -0.072), "ads_eye": 0.22, # janela grande: olho mais atrás
+		"sight_dot": Vector3(-0.002, 0.171, -0.07), # ponto vermelho da mira embutida (sem ótica)
+		# vidro da mira embutida faz parte da malha "Sight": triângulos de frente para o cano dentro da janela viram vidro translúcido
+		"sight_glass": {"mesh": "Sight", "x0": -0.038, "x1": 0.034, "y0": 0.120, "y1": 0.205},
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.405), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
+		"grip_side": "front", # bullpup: cabo à frente do pente
 		"has_arms": false,
 		"socket_optic": Vector3(0, 0.1418, 0.0265),
 		"socket_muzzle": Vector3(0, 0.0580, -0.2800),
@@ -168,6 +181,8 @@ static var REGISTRY: Dictionary = {
 		"muzzle_tip": Vector3(-0.011, 0.048, -0.0877),
 		"one_handed": true, # segura só com a mão direita (braço esquerdo fora de cena, volta na recarga)
 		# desvio lateral real do modelo: -0.0110 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.235), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
+		"grip_side": "mag", # pente dentro do cabo
 		"has_arms": false,
 		"socket_optic": Vector3(-0.0135, 0.1267, 0.0500),
 		"socket_muzzle": Vector3(-0.0135, 0.0731, -0.2871),
@@ -193,10 +208,11 @@ static var REGISTRY: Dictionary = {
 		"grip_l": Vector3(-0.0044, -0.0217, -0.0952), # mão de apoio: c clamp guarda mao (tools_capture/support_fit, palma medida após o IK)
 		"rig_fit": Transform3D(Basis(Vector3(-117.024391, -0.000010, 0.000000), Vector3(0.000010, -117.024361, 0.000000), Vector3(0.000000, 0.000000, 117.024361)), Vector3(-0.000000, 1.143686, 6.626442)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 8 cm da alça (uso real / CoD)
-		"ads_rear": Vector3(-0.0028, -0.0644, 0.079), "ads_front": Vector3(-0.0028, -0.0644, 0.2145), "ads_eye": 0.08,
+		"ads_rear": Vector3(-0.0028, -0.0625, 0.079), "ads_front": Vector3(-0.0028, -0.0625, 0.2145), "ads_eye": 0.08, # modelo invertido: topo = y negativo
 		# assento real da ótica no topo da arma (medido no Blender, espaço do glb)
 		"optic_rail": Vector3(0, -0.060, 0.13),
 		"optic_basis_fix": "x180",
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, -1), "max": Vector3(1, 1, -0.08)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"hide_nodes": ["Icosphere"],
 		"socket_optic": Vector3(-0.0032, 0.0790, 0.0000),
@@ -223,9 +239,10 @@ static var REGISTRY: Dictionary = {
 		"grip_l": Vector3(-0.0055, 0.0220, -0.0114), # mão de apoio: c clamp guarda mao bullpup (tools_capture/support_fit, palma medida após o IK)
 		"rig_fit": Transform3D(Basis(Vector3(-117.024391, 0.000000, -0.000010), Vector3(0.000000, 117.024361, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(-0.000001, -0.564870, 17.451199)), # Blender: gatilho sob o indicador da pose original (família SMG)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 8 cm da alça (uso real / CoD)
-		"ads_rear": Vector3(-0.0026, 0.108, 0.038), "ads_front": Vector3(-0.0026, 0.108, -0.057), "ads_eye": 0.08,
+		"ads_rear": Vector3(-0.0026, 0.115, 0.038), "ads_front": Vector3(-0.0026, 0.115, -0.062), "ads_eye": 0.08, # ponta da massa no topo da alça
 		# assento real da ótica no topo da arma (medido no Blender, espaço do glb)
 		"optic_rail": Vector3(0, 0.112, 0.038),
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.215), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"hide_nodes": ["Cartridge", "Cube.013_Cartridge_0"],
 		"socket_optic": Vector3(0, 0.0908, 0.0230),
@@ -258,6 +275,7 @@ static var REGISTRY: Dictionary = {
 		# assento real da ótica no topo da arma (medido no Blender, espaço do glb)
 		"optic_rail": Vector3(0, 0.147, -0.059),
 		# desvio lateral real do modelo: +0.0078 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
+		"cuts": [{"slot": "underbarrel", "mesh": "receiver", "min": Vector3(-1, -1, -0.30), "max": Vector3(1, 0.015, -0.235)}, {"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.1), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"socket_optic": Vector3(0.0062, 0.1352, -0.0200),
 		"socket_muzzle": Vector3(0.0062, 0.0855, -0.2947),
@@ -314,7 +332,7 @@ static var REGISTRY: Dictionary = {
 		"support_point": Vector3(-0.032, 0.004, -0.26), "support_fist": 1.0, "support_hand": "pump",
 		# desvio lateral real do modelo: -0.0236 m (rig_fit deslocado para o gatilho real ficar sob o dedo)
 		"has_arms": false,
-		"hide_nodes": ["Object_4"],
+		"hide_nodes": ["Object_4", "Magazine"], # cartucho solto do modelo
 		"socket_optic": Vector3(-0.0208, 0.0856, -0.1000),
 		"socket_muzzle": Vector3(-0.0208, 0.0246, -0.4200),
 		"socket_mag": Vector3(-0.0208, -0.0100, -0.0500),
@@ -346,8 +364,11 @@ static var REGISTRY: Dictionary = {
 		"allow_optic": true, # tem trilho/topo plano: aceita ótica como no CoD
 		# mão esquerda: palma sob a bomba (16-32 cm à frente, 5 cm de largura) e punho fechado em volta dela
 		"support_point": Vector3(-0.012, 0.004, -0.24), "support_fist": 1.0, "support_hand": "pump",
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.3), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
+		"grip_side": "front", # bullpup: cabo à frente do pente
+		"ub_max_drop": 0.25, # tubo de cartuchos fundo sob o cano
 		"has_arms": false,
-		"hide_nodes": ["Icosphere"],
+		"hide_nodes": ["Icosphere", "Magazine"],
 		"socket_optic": Vector3(0, 0.1085, 0.0260),
 		"socket_muzzle": Vector3(0, 0.0481, -0.2750),
 		"socket_mag": Vector3(0, -0.0268, -0.0260),
@@ -428,6 +449,7 @@ static var REGISTRY: Dictionary = {
 		"rig_fit": Transform3D(Basis(Vector3(-117.023415, -0.477971, -0.000010), Vector3(-0.477971, 117.023384, 0.000000), Vector3(0.000010, 0.000000, -117.024361)), Vector3(0.071694, -14.195594, 26.967350)), # Blender: gatilho sob o indicador da pose original (família AK — usada pela LMG e pelo RPK no jogo)
 		# mira de ferro medida no modelo (Blender): alça e massa no espaço do glb; olho a 9 cm da alça (uso real / CoD)
 		"ads_rear": Vector3(0, 0.285, 0.22), "ads_front": Vector3(0, 0.285, -0.349), "ads_eye": 0.09,
+		"cuts": [{"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.3), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"hide_nodes": [
 			"545_20", "casing_545_17", "Object_44", "Object_45",
@@ -460,6 +482,7 @@ static var REGISTRY: Dictionary = {
 		"ads_rear": Vector3(0.0023, 0.129, 0.245), "ads_front": Vector3(0.0023, 0.129, -0.376), "ads_eye": 0.09,
 		# mão esquerda: punho fechado no terço superior da empunhadura vertical embutida (topo -7,4 cm, 18,6 cm à frente)
 		"support_point": Vector3(-0.023, -0.104, -0.186), "support_fist": 1.0,
+		"cuts": [{"slot": "underbarrel", "mesh": "receiver", "min": Vector3(-1, -1, -0.215), "max": Vector3(1, -0.02, -0.15)}, {"slot": "stock", "mesh": "receiver", "min": Vector3(-1, -1, 0.29), "max": Vector3(1, 1, 1)}], # coronha fundida no corpo: recortada quando entra coronha tática
 		"has_arms": false,
 		"socket_optic": Vector3(0.0021, 0.1030, 0.0000),
 		"socket_muzzle": Vector3(0.0021, 0.0733, -0.5000),
@@ -774,6 +797,7 @@ static func instantiate_weapon_for_hand(weapon_path_or_id: String) -> Node3D:
 		for n in inst.find_children("*" + n_name + "*", "", true, false):
 			if n is Node3D or n is CanvasItem:
 				n.visible = false
+				n.set_meta("force_hidden", true)
 
 	_cache_base_materials_recursive(inst)
 
@@ -834,6 +858,7 @@ static func instantiate_weapon_showcase(weapon_path_or_id: String) -> Node3D:
 		for n in inst.find_children("*" + n_name + "*", "", true, false):
 			if n is Node3D or n is CanvasItem:
 				n.visible = false
+				n.set_meta("force_hidden", true)
 
 	# Fazer cache de materiais originais para que o camo default nunca apague
 	_cache_base_materials_recursive(inst)
@@ -931,6 +956,7 @@ static func update_attachments(
 		var pos := _socket_in_pivot(pivot, target_parent, sl[2], fallback)
 		var node := _spawn_attachment(att_container, ATTACHMENT_SCENES[att_id], pos, att_scale)
 		if node:
+			_decorate_attachment(node, att_id)
 			node.name = "Att_" + String(sl[0])
 			node.set_meta("slot", sl[0])
 			node.set_meta("attachment_id", att_id)
@@ -949,6 +975,12 @@ static func update_attachments(
 		muzzle_for_parts = "barrel_short"
 	# Controle dinâmico unificado: Ocultar peças nativas (miras, magazine, coronha, boca, cabo) quando substituídas
 	update_integrated_weapon_parts(target_parent, optic_id, muzzle_for_parts, mag_id, underbarrel_id, stock_id, grip_id)
+	# Peças fundidas na malha do corpo (coronha, cabo, empunhadura): recorta a região quando o acessório entra
+	var active := []
+	for pair in [["stock", stock_id], ["grip", grip_id], ["underbarrel", underbarrel_id]]:
+		if pair[1] != "none" and pair[1] != "" and pair[0] in allowed:
+			active.append(pair[0])
+	_apply_body_cuts(pivot, cfg, active)
 	# Encaixe pela geometria real (depois de esconder as peças originais)
 	_snap_attachments(pivot, att_container, cfg)
 
@@ -1011,6 +1043,9 @@ static func update_integrated_weapon_parts(
 	]
 
 	for child in root.find_children("*", "Node3D", true, false):
+		if child.has_meta("force_hidden"):
+			child.visible = false
+			continue
 		# 0. Peças nomeadas dos modelos modulares (Magazine, Stock, Muzzle, Sight, Front_Sight, Rear_Sight, RearGrip)
 		var mod_name := String(child.name).to_lower().get_slice(".", 0)
 		if mod_name == "magazine" or mod_name.begins_with("magazine_"):
@@ -1276,6 +1311,12 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 		barrel_node.add_child(crown)
 		barrel_node.position = Vector3.ZERO
 		muzzle_front = gun_front + front * L
+	# centro lateral da arma e pente original (mesmo escondido) para encaixar pente/empunhadura/cabo
+	var xs_all := []
+	for p in pts: xs_all.append(p.x)
+	xs_all.sort()
+	var cx: float = float(xs_all[xs_all.size() / 2])
+	var mag := _mag_info(pivot, cont, k)
 	for a in cont.get_children():
 		if not (a is Node3D): continue
 		if String(a.get_meta("slot", "")) == "barrel": continue
@@ -1308,20 +1349,386 @@ static func _snap_attachments(pivot: Node3D, cont: Node3D, cfg: Dictionary) -> v
 					a.position.y += float(ys[ys.size() / 2]) - c.y
 					a.position.x += float(xs[xs.size() / 2]) - c.x
 			"stock":
-				# encosta na traseira do corpo (1 cm de sobreposição)
+				# encosta na traseira do corpo (1 cm de sobreposição) e alinha o topo com o topo da traseira
 				a.position.z += (gun_rear + front * 0.01 * k) - a_front
-			"underbarrel", "mag":
-				# topo encosta no fundo da arma naquele ponto (pente entra 2 cm no poço)
-				var zc := ab.get_center().z
-				var half := maxf(ab.size.z * 0.5, 0.015)
-				var bottom := INF
+				var rear_top := -INF
 				for p in pts:
-					# fundo da arma nessa fatia (guarda-mão ou poço do pente, com o pente original já escondido)
-					if absf(p.z - zc) <= half and absf(p.x - ab.get_center().x) < 0.05 and p.y < bottom:
-						bottom = p.y
-				if bottom != INF:
-					var inset := (0.02 if String(a.get_meta("slot", "")) == "mag" else 0.003) * k
-					a.position.y += (bottom + inset) - ab.end.y
+					var du: float = (p.z - gun_rear) * front   # >0 = para dentro da arma
+					if du >= 0.0 and du < 0.035 * k and absf(p.x - cx) < 0.03 * k and p.y > rear_top:
+						rear_top = p.y
+				# coronha maior que a traseira da arma (ex.: escopeta de cano serrado): reduz proporcionalmente
+				var rear_lo := INF
+				for p in pts:
+					var du2: float = (p.z - gun_rear) * front
+					if du2 >= 0.0 and du2 < 0.06 * k and absf(p.x - cx) < 0.04 * k and p.y < rear_lo:
+						rear_lo = p.y
+				if rear_top != -INF and rear_lo != INF and ab.size.y > 1.3 * (rear_top - rear_lo):
+					var f: float = clampf(1.15 * (rear_top - rear_lo) / ab.size.y, 0.45, 1.0)
+					var anchor := Vector3(ab.get_center().x, ab.end.y, a_front)
+					a.scale *= f
+					a.position = anchor + (a.position - anchor) * f
+					ab = AABB(anchor + (ab.position - anchor) * f, ab.size * f)
+				if rear_top != -INF:
+					a.position.y += (rear_top - 0.004 * k) - ab.end.y
+				a.position.x += cx - ab.get_center().x
+			"mag":
+				if (String(cfg.get("category", "")) == "secondary" or String(cfg.get("grip_side", "")) == "mag") and not mag.is_empty():
+					_fit_pistol_mag(pivot, cont, a, mag, k)
+				else:
+					_fit_mag(a, ab, mag, pts, cx, front, k)
+			"underbarrel":
+				_fit_underbarrel(a, ab, pts, mag, cx, front, k, gun_front, cfg)
+			"grip":
+				_fit_rear_grip(a, pts, mag, cx, front, k, cfg)
+
+# ── ENCAIXE DE PENTE / EMPUNHADURA / CABO PELA GEOMETRIA DO MODELO ───────────
+## Pente original (malha "Magazine*", mesmo escondida): topo, fundo e inclinação, no espaço do Pivot
+static func _mag_info(pivot: Node3D, cont: Node3D, k: float) -> Dictionary:
+	var mp := PackedVector3Array()
+	for m in pivot.find_children("*", "MeshInstance3D", true, false):
+		if cont.is_ancestor_of(m) or m.mesh == null:
+			continue
+		if not String(m.name).to_lower().begins_with("magazine"):
+			continue
+		var xf := _xf_to(m, pivot)
+		for s in m.mesh.get_surface_count():
+			for v in m.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]:
+				mp.append(xf * v)
+	if mp.size() < 8:
+		return {}
+	var lo := INF; var hi := -INF; var zlo := INF; var zhi := -INF; var xlo := INF; var xhi := -INF
+	for p in mp:
+		lo = minf(lo, p.y); hi = maxf(hi, p.y); zlo = minf(zlo, p.z); zhi = maxf(zhi, p.z); xlo = minf(xlo, p.x); xhi = maxf(xhi, p.x)
+	var h := hi - lo
+	var top := Vector3.ZERO; var nt := 0; var bot := Vector3.ZERO; var nb := 0
+	for p in mp:
+		if p.y > hi - 0.15 * h: top += p; nt += 1
+		if p.y < lo + 0.15 * h: bot += p; nb += 1
+	top /= maxi(nt, 1); bot /= maxi(nb, 1)
+	# pente "normal" (alto, fino, embaixo da arma); tambores, caixas laterais e tubos usam o encaixe antigo
+	var normal := h > 0.06 * k and (xhi - xlo) < 0.07 * k and h > 0.5 * (zhi - zlo)
+	return {"top": Vector3(top.x, hi, top.z), "bottom": bot, "lo": lo, "hi": hi, "zlo": zlo, "zhi": zhi, "xlo": xlo, "xhi": xhi, "normal": normal}
+
+## Gira e posiciona um acessório de modo que o eixo -Y local aponte para d (no plano y-z)
+static func _tilt_to(a: Node3D, d: Vector3, k: float, extra: Basis = Basis.IDENTITY, scl: Vector3 = Vector3.ONE) -> void:
+	d.x = 0.0
+	d = d.normalized()
+	var th := atan2(-d.z, -d.y)
+	a.basis = Basis(Vector3.RIGHT, th) * extra * Basis.from_scale(scl * k)
+
+static func _fit_mag(a: Node3D, ab: AABB, mag: Dictionary, pts: PackedVector3Array, cx: float, front: float, k: float) -> void:
+	if not mag.is_empty() and bool(mag["normal"]):
+		# mesmo topo e mesma inclinação do pente original
+		var d: Vector3 = (mag["bottom"] as Vector3) - (mag["top"] as Vector3)
+		var ang := rad_to_deg(atan2(-d.z, -d.y))
+		if absf(ang) > 35.0:
+			d = Vector3(0, -1, 0).rotated(Vector3.RIGHT, deg_to_rad(clampf(ang, -35.0, 35.0)))
+		# tamanho pelo pente original (a escala dos acessórios não bate com a de todos os modelos)
+		a.transform = Transform3D.IDENTITY
+		var mesh_len: float = maxf(_node_aabb_local(a).size.y, 0.01)
+		var orig_len: float = (float(mag["hi"]) - float(mag["lo"])) / maxf(absf(d.normalized().y), 0.5)
+		var factor := 1.45 if String(a.get_meta("attachment_id", "")) in ["mag_extended", "extended"] else 1.05
+		_tilt_to(a, d, 1.0, Basis.IDENTITY, Vector3.ONE * (orig_len * factor / mesh_len))
+		a.position = mag["top"]
+		return
+	# sem pente reconhecível: topo encosta no fundo da arma naquele ponto (entra 2 cm no poço)
+	var zc := ab.get_center().z
+	var half := maxf(ab.size.z * 0.5, 0.015)
+	var bottom := INF
+	for p in pts:
+		if absf(p.z - zc) <= half and absf(p.x - ab.get_center().x) < 0.05 and p.y < bottom:
+			bottom = p.y
+	if bottom != INF:
+		a.position.y += (bottom + 0.02 * k) - ab.end.y
+
+## Pistola: o pente fica dentro do cabo; mostra o pente original e uma extensão abaixo do cabo
+static func _fit_pistol_mag(pivot: Node3D, cont: Node3D, a: Node3D, mag: Dictionary, k: float) -> void:
+	for m in pivot.find_children("*", "MeshInstance3D", true, false):
+		if not cont.is_ancestor_of(m) and String(m.name).to_lower().begins_with("magazine"):
+			var n: Node = m
+			while n and n != pivot:
+				if n is Node3D: (n as Node3D).visible = true
+				n = n.get_parent()
+	for m in a.find_children("*", "MeshInstance3D", true, false):
+		(m as MeshInstance3D).visible = false
+	var ext: bool = String(a.get_meta("attachment_id", "")) in ["mag_extended", "extended"]
+	var top: Vector3 = mag["top"]
+	var bot: Vector3 = mag["bottom"]
+	var axis: Vector3 = (bot - top)
+	axis.x = 0.0
+	var mag_len: float = axis.length()
+	axis = axis.normalized()
+	var w: float = float(mag["xhi"]) - float(mag["xlo"])
+	# espessura do pente perpendicular ao eixo (no plano y-z), medida pelos limites em z
+	var d: float = clampf(absf(float(mag["zhi"]) - float(mag["zlo"])) - mag_len * absf(axis.z), 0.012 * k, 0.05 * k)
+	var h: float = mag_len * (0.32 if ext else 0.12)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.07, 0.07, 0.075) if ext else Color(0.55, 0.47, 0.40)
+	mat.roughness = 0.8
+	a.transform = Transform3D.IDENTITY
+	var th := atan2(-axis.z, -axis.y)
+	var holder := Node3D.new()
+	holder.basis = Basis(Vector3.RIGHT, th)
+	holder.position = bot
+	a.add_child(holder)
+	var body := MeshInstance3D.new()
+	var bm := BoxMesh.new(); bm.size = Vector3(w * 0.92, h, d * 0.92); bm.material = mat
+	body.mesh = bm
+	holder.add_child(body)
+	body.position = Vector3(0, -h * 0.5 + 0.002 * k, 0)
+	var plate := MeshInstance3D.new()
+	var pm := BoxMesh.new(); pm.size = Vector3(w * 1.05, 0.004 * k, d * 1.1); pm.material = mat
+	plate.mesh = pm
+	holder.add_child(plate)
+	plate.position = Vector3(0, -h - 0.001 * k, 0)
+
+## Fundo da arma (menor y) numa fatia estreita, perto da linha central
+static func _bottom_at(pts: PackedVector3Array, z: float, cx: float, hz: float, hx: float) -> float:
+	var b := INF
+	for p in pts:
+		if absf(p.z - z) <= hz and absf(p.x - cx) <= hx and p.y < b:
+			b = p.y
+	return b
+
+static func _fit_underbarrel(a: Node3D, ab: AABB, pts: PackedVector3Array, mag: Dictionary, cx: float, front: float, k: float, gun_front: float, cfg: Dictionary) -> void:
+	# deitar a peça ao longo do cano (os modelos vêm com o comprimento no eixo X)
+	var rot := Basis(Vector3.UP, PI * 0.5)
+	a.basis = rot * Basis.from_scale(Vector3.ONE * k)
+	# eixo do cano: centro da boca
+	var ys := []
+	for p in pts:
+		if absf(p.z - gun_front) < 0.015 * k and absf(p.x - cx) < 0.03 * k:
+			ys.append(p.y)
+	ys.sort()
+	var bore: float = float(ys[ys.size() / 2]) if ys.size() > 0 else 0.0
+	# guarda-mão: da boca para trás, primeiro trecho em que o fundo fica bem abaixo do cano
+	var step := 0.01 * k
+	var hg_front := INF; var hg_bot := INF; var hg_rear := INF
+	var limit_u: float = (minf(mag["zlo"], mag["zhi"]) if front < 0 else maxf(mag["zlo"], mag["zhi"])) if not mag.is_empty() else gun_front - front * 0.4 * k
+	var z := gun_front - front * step
+	for i in 80:
+		if (z - limit_u) * front <= 0.0:
+			break
+		var bt := _bottom_at(pts, z, cx, step * 0.5, 0.02 * k)
+		if bt != INF:
+			if hg_front == INF:
+				if bt < bore - 0.022 * k and bt > bore - float(cfg.get("ub_max_drop", 0.12)) * k:
+					hg_front = z; hg_bot = bt
+			else:
+				if absf(bt - hg_bot) > 0.03 * k:
+					break
+				hg_rear = z
+		z -= front * step
+	var zp: float
+	if hg_front != INF and hg_rear != INF and absf(hg_front - hg_rear) > 0.04 * k:
+		var length := absf(hg_front - hg_rear)
+		zp = hg_front - front * maxf(0.3 * length, 0.03 * k)
+	else:
+		zp = (cfg.get("socket_underbarrel", Vector3(0, 0, -0.13)) as Vector3).z * k
+	# recalcula a caixa com a rotação nova e encosta o topo no fundo do guarda-mão (sem fresta)
+	a.position = Vector3.ZERO
+	var nb := _node_aabb_local(a)
+	var bt2 := _bottom_at(pts, zp, cx, maxf(nb.size.z * 0.35, 0.006 * k), 0.015 * k)
+	if bt2 == INF or bt2 < bore - float(cfg.get("ub_max_drop", 0.12)) * k:
+		bt2 = bore - 0.03 * k
+	a.position = Vector3(cx - nb.get_center().x, bt2 + 0.002 * k - nb.end.y, zp - nb.get_center().z)
+
+## Caixa das malhas de um acessório no espaço do pai dele (com a transformação atual do acessório)
+static func _node_aabb_local(a: Node3D) -> AABB:
+	var ab := AABB(); var first := true
+	for m in a.find_children("*", "MeshInstance3D", true, false):
+		if m.mesh == null: continue
+		var xf := a.transform * _xf_to(m, a)
+		var bb: AABB = xf * m.get_aabb()
+		ab = bb if first else ab.merge(bb); first = false
+	return ab
+
+static func _fit_rear_grip(a: Node3D, pts: PackedVector3Array, mag: Dictionary, cx: float, front: float, k: float, cfg: Dictionary = {}) -> void:
+	if mag.is_empty():
+		return
+	var hi: float = mag["hi"]; var lo: float = mag["lo"]
+	var u0: float = minf(mag["zlo"] * front, mag["zhi"] * front)   # traseira do pente (coordenada "para frente")
+	var u1: float = maxf(mag["zlo"] * front, mag["zhi"] * front)
+	var best := {}
+	# pente dentro do cabo (pistolas, MP7): há carcaça mais larga que o pente em volta da metade de baixo dele
+	var shell := 0
+	var xlo: float = mag["xlo"]; var xhi: float = mag["xhi"]
+	for p in pts:
+		var u := p.z * front
+		if u >= u0 and u <= u1 and p.y < hi - 0.5 * (hi - lo) and p.y > lo and (p.x < xlo - 0.002 * k or p.x > xhi + 0.002 * k):
+			shell += 1
+	# lado do cabo: atrás do pente (padrão) ou na frente (bullpups)
+	var sides := [-1.0] if String(cfg.get("grip_side", "rear")) == "rear" else [1.0]
+	if shell > 30 or String(cfg.get("grip_side", "")) == "mag":
+		sides = []
+		shell = 99
+	for side in sides:
+		var ua: float = (u0 - 0.15 * k) if side < 0 else (u1 + 0.004 * k)
+		var ub: float = (u0 - 0.004 * k) if side < 0 else (u1 + 0.15 * k)
+		var bottom := INF
+		for p in pts:
+			var u := p.z * front
+			if u >= ua and u <= ub and absf(p.x - cx) < 0.03 * k and p.y < bottom:
+				bottom = p.y
+		if bottom != INF and (best.is_empty() or bottom < float(best["bottom"])):
+			best = {"ua": ua, "ub": ub, "bottom": bottom}
+	# cabo que envolve o pente (pistolas, MP7): usa a faixa do próprio pente
+	if best.is_empty() or (shell > 30) or float(best["bottom"]) > lo + 0.5 * (hi - lo):
+		best = {"ua": u0 - 0.01 * k, "ub": u1 + 0.01 * k, "bottom": lo}
+	# eixo medido só na parte de baixo do cabo (o guarda-mato fica em cima e puxaria para a frente)
+	var top_cut: float = float(best["bottom"]) + 0.55 * (hi - float(best["bottom"]))
+	var top_y: float = float(best["bottom"]) + 0.85 * (hi - float(best["bottom"]))
+	var c := Vector2.ZERO; var n := 0
+	var sel := []
+	for p in pts:
+		var u := p.z * front
+		if u >= float(best["ua"]) and u <= float(best["ub"]) and absf(p.x - cx) < 0.03 * k and p.y < top_cut:
+			sel.append(Vector2(p.z, p.y)); c += Vector2(p.z, p.y); n += 1
+	if n < 6:
+		return
+	c /= n
+	var szz := 0.0; var syy := 0.0; var szy := 0.0
+	for q in sel:
+		var dq: Vector2 = q - c
+		szz += dq.x * dq.x; syy += dq.y * dq.y; szy += dq.x * dq.y
+	var ang := 0.5 * atan2(2.0 * szy, szz - syy)
+	var ax := Vector2(cos(ang), sin(ang))
+	if absf(ax.y) < 0.5:   # eixo principal deitado: não é um cabo; assume vertical
+		ax = Vector2(0, -1)
+	if ax.y > 0: ax = -ax  # para baixo
+	var lmin := INF; var lmax := -INF
+	for q in sel:
+		var t: float = (q - c).dot(ax)
+		lmin = minf(lmin, t); lmax = maxf(lmax, t)
+	# estende o topo ao longo do eixo até a altura em que o cabo encontra o corpo
+	if absf(ax.y) > 0.2:
+		lmin = minf(lmin, (top_y - c.y) / ax.y)
+	var length := lmax - lmin
+	var d := Vector3(0, ax.y, ax.x)
+	var s_len := clampf(length / (0.105 * k), 0.75, 1.3)
+	# a malha do cabo vem com a largura no eixo X: gira 90° para o comprimento ficar ao longo da arma
+	var side_scl := 2.1 if shell > 30 else 1.25   # cabo em volta do pente: capa mais grossa por fora
+	_tilt_to(a, d, k, Basis(Vector3.UP, PI * 0.5), Vector3(1.08, s_len, side_scl))
+	var top2: Vector2 = c + ax * lmin
+	a.position = Vector3(cx, top2.y, top2.x)
+
+# ── RECORTE DE PEÇAS FUNDIDAS NA MALHA DO CORPO ─────────────────────────────
+# cfg["cuts"] = [{"slot": "stock", "mesh": "receiver", "min": Vector3, "max": Vector3}, ...] (espaço do mesh "receiver*")
+static func _apply_body_cuts(pivot: Node3D, cfg: Dictionary, active: Array) -> void:
+	if not cfg.has("cuts"):
+		return
+	var ref: MeshInstance3D = null
+	for m in pivot.find_children("*", "MeshInstance3D", true, false):
+		if String(m.name).to_lower().begins_with("receiver") and (m.get_parent() == null or String(m.get_parent().name) != "AttachmentContainer"):
+			ref = m; break
+	if not ref:
+		return
+	var to_ref_base := _xf_to(ref, pivot).affine_inverse()
+	var by_mesh := {}
+	for c in cfg["cuts"]:
+		var mn: String = String(c.get("mesh", "receiver")).to_lower()
+		if not by_mesh.has(mn): by_mesh[mn] = []
+		if String(c["slot"]) in active:
+			by_mesh[mn].append(AABB(c["min"], (c["max"] as Vector3) - (c["min"] as Vector3)))
+	for m in pivot.find_children("*", "MeshInstance3D", true, false):
+		var key := String(m.name).to_lower()
+		var hit := ""
+		for mn in by_mesh.keys():
+			if key.begins_with(mn): hit = mn; break
+		if hit == "":
+			continue
+		if not m.has_meta("_orig_mesh"):
+			m.set_meta("_orig_mesh", m.mesh)
+		m.visible = true   # peça com recorte configurado: o recorte esconde só a parte trocada
+		var orig: Mesh = m.get_meta("_orig_mesh")
+		var boxes: Array = by_mesh[hit]
+		if boxes.is_empty():
+			m.mesh = orig
+			continue
+		var to_ref: Transform3D = to_ref_base * _xf_to(m, pivot)
+		var out := ArrayMesh.new()
+		for s in orig.get_surface_count():
+			var mdt := MeshDataTool.new()
+			if mdt.create_from_surface(orig, s) != OK:
+				continue
+			var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			var kept := 0
+			for f in mdt.get_face_count():
+				var cen := Vector3.ZERO
+				for kk in 3: cen += to_ref * mdt.get_vertex(mdt.get_face_vertex(f, kk))
+				cen /= 3.0
+				var cut := false
+				for bx in boxes:
+					if (bx as AABB).has_point(cen): cut = true; break
+				if cut: continue
+				kept += 1
+				for kk in 3:
+					var vi := mdt.get_face_vertex(f, kk)
+					st.set_normal(mdt.get_vertex_normal(vi))
+					st.set_uv(mdt.get_vertex_uv(vi))
+					st.add_vertex(mdt.get_vertex(vi))
+			if kept > 0:
+				st.commit(out)
+				out.surface_set_material(out.get_surface_count() - 1, orig.surface_get_material(s))
+		m.mesh = out
+
+# ── AJUSTES DAS PEÇAS (modelos com orientação/material errados) ───────────────
+static func _decorate_attachment(node: Node3D, att_id: String) -> void:
+	match att_id:
+		"grip_rubber", "grip_stippled":
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = Color(0.07, 0.07, 0.075) if att_id == "grip_rubber" else Color(0.16, 0.15, 0.13)
+			mat.roughness = 0.85 if att_id == "grip_rubber" else 0.95
+			for m in node.find_children("*", "MeshInstance3D", true, false):
+				(m as MeshInstance3D).material_override = mat
+		"optic_sniper", "sniper":
+			_build_scope(node)
+
+## Luneta montada por código: o modelo original é uma peça de 6 cm que não parece luneta.
+## Eixo da luneta na altura do retículo do jogo (y = 0,018) para a mira continuar exata.
+static func _build_scope(node: Node3D) -> void:
+	for m in node.find_children("*", "MeshInstance3D", true, false):
+		if String(m.name) == "Body":
+			(m as MeshInstance3D).visible = false
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.08, 0.08, 0.085)
+	mat.metallic = 0.55
+	mat.roughness = 0.45
+	var axis_y := 0.018
+	var parts := [
+		# [raio frente, raio trás, z início, z fim]
+		[0.0185, 0.0185, -0.205, -0.165],  # sino da objetiva
+		[0.0185, 0.0125, -0.165, -0.135],  # cone
+		[0.0125, 0.0125, -0.135, 0.045],   # tubo
+		[0.0125, 0.0155, 0.045, 0.065],    # cone da ocular
+		[0.0155, 0.0155, 0.065, 0.100],    # ocular
+	]
+	for pr in parts:
+		var mi := MeshInstance3D.new()
+		var cm := CylinderMesh.new()
+		cm.top_radius = pr[0]; cm.bottom_radius = pr[1]; cm.height = float(pr[3]) - float(pr[2])
+		cm.radial_segments = 24; cm.cap_top = false; cm.cap_bottom = false
+		cm.material = mat
+		mi.mesh = cm
+		mi.rotation = Vector3(-PI * 0.5, 0, 0)   # eixo Y do cilindro -> -Z: topo (top_radius) para a frente
+		mi.position = Vector3(0, axis_y, (float(pr[2]) + float(pr[3])) * 0.5)
+		node.add_child(mi)
+	# torres de elevação e deriva
+	for t in [[Vector3(0, axis_y + 0.017, -0.035), Vector3.ZERO], [Vector3(0.017, axis_y, -0.035), Vector3(0, 0, PI * 0.5)]]:
+		var tm := MeshInstance3D.new()
+		var tc := CylinderMesh.new()
+		tc.top_radius = 0.008; tc.bottom_radius = 0.008; tc.height = 0.012; tc.radial_segments = 16
+		tc.material = mat
+		tm.mesh = tc; tm.position = t[0]; tm.rotation = t[1]
+		node.add_child(tm)
+	# anéis e base no trilho
+	for z in [-0.095, 0.015]:
+		var bm := MeshInstance3D.new()
+		var bx := BoxMesh.new()
+		bx.size = Vector3(0.022, 0.012, 0.014); bx.material = mat
+		bm.mesh = bx; bm.position = Vector3(0, 0.006, z)
+		node.add_child(bm)
+
 # ── APLICAÇÃO DE CAMUFLAGEM PBR E RESTAURAÇÃO BASE ────────────────────────────
 static func apply_camo(wrapper: Node3D, camo_key: String) -> void:
 	if not wrapper:

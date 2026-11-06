@@ -190,13 +190,13 @@ theme_override_font_sizes/font_size = 12
 text = "🎮 CONTROLES (Estilo CoD):
 • WASD: Mover-se
 • Shift: Sprint (Duplo-toque: Tact Sprint)
-• C: Agachar / Deslizar (Slide em sprint)
-• Z ou Segurar C: Deitar (Prone)
-• Espaço: Pular / Escalar (Mantle)
+• C ou Ctrl: Agachar
+• Z: Deitar (Prone)
+• Espaço: Pular / Escalar (perto de bordas)
 • Botão Direito: Mirar (ADS)
 • Botão Esquerdo: Disparar
 • 1 / 2: Trocar Armas (ACR 6.8 / Pistol)
-• R: Recarregar | Q / E: Lean
+• R: Recarregar | Q / E: Inclinar (Lean)
 • Esc: Menu de Pausa"
 
 [node name="PauseMenu" parent="." instance=ExtResource("2_pause")]

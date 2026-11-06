@@ -308,11 +308,6 @@ func _process(delta: float) -> void:
 		equip(secondary_weapon)
 	elif (Input.is_action_just_pressed("weapon_melee") or Input.is_key_pressed(KEY_3)) and melee_weapon and weapon_data != melee_weapon:
 		equip(melee_weapon)
-	elif Input.is_key_pressed(KEY_Q) and not is_reloading:
-		# Pequeno cooldown para não alternar freneticamente ao segurar Q
-		if cooldown_timer <= 0.0:
-			cooldown_timer = 0.3
-			toggle_weapon()
 
 	# Entrada de disparo (bloqueada durante contagem regressiva pré-partida estilo CoD)
 	if _is_countdown_active():
@@ -399,6 +394,7 @@ const SPRINT_TO_FIRE_BASE := {
 	WeaponData.WeaponCategory.LAUNCHER: 0.35,
 }
 var sprint_out_timer := 0.0
+const TAC_SPRINT_TO_FIRE_MULT := 1.6
 var _was_sprinting := false
 var _queued_shot := false
 
@@ -421,7 +417,8 @@ func _sprint_to_fire_time() -> float:
 func _update_sprint_to_fire(delta: float) -> void:
 	var now := _player_is_sprinting()
 	if _was_sprinting and not now:
-		sprint_out_timer = maxf(sprint_out_timer, _sprint_to_fire_time())
+		var tac_pose: float = player.tac_sprint_pose if (player and "tac_sprint_pose" in player) else 0.0
+		sprint_out_timer = maxf(sprint_out_timer, _sprint_to_fire_time() * lerpf(1.0, TAC_SPRINT_TO_FIRE_MULT, tac_pose))
 	_was_sprinting = now
 	if sprint_out_timer > 0.0:
 		sprint_out_timer = maxf(0.0, sprint_out_timer - delta)
@@ -436,15 +433,19 @@ func try_fire() -> void:
 		return
 	if cooldown_timer > 0.0:
 		return
+	# rastejando, indo ao chão ou escalando: a arma está fora de posição (como no CoD)
+	if player and player.has_method("blocks_firing") and player.blocks_firing():
+		return
 	if weapon_data.category == WeaponData.WeaponCategory.MELEE:
 		_execute_melee()
 		return
 	# saída do sprint: o primeiro tiro espera a arma subir (fica guardado, não se perde)
 	if _player_is_sprinting():
-		if player.has_method("_enter_normal_state"):
-			player._enter_normal_state()
+		var was_tac: bool = "tac_sprinting" in player and player.tac_sprinting
+		_stop_player_sprint()
 		_was_sprinting = false
-		sprint_out_timer = maxf(sprint_out_timer, _sprint_to_fire_time())
+		# da corrida tática a arma desce de mais alto: atraso maior
+		sprint_out_timer = maxf(sprint_out_timer, _sprint_to_fire_time() * (TAC_SPRINT_TO_FIRE_MULT if was_tac else 1.0))
 		_queued_shot = true
 		return
 	if sprint_out_timer > 0.0:
@@ -456,10 +457,16 @@ func try_fire() -> void:
 
 	_execute_fire()
 
+## Sai da corrida (e da tática) por causa de uma ação da arma; a corrida só volta com novo toque no Shift
+func _stop_player_sprint() -> void:
+	if player and player.has_method("stop_sprint_for_action"):
+		player.stop_sprint_for_action()
+	elif player and player.has_method("_enter_normal_state"):
+		player._enter_normal_state()
+
 func _execute_fire() -> void:
 	if player and "state" in player and player.state == "sprinting":
-		if player.has_method("_enter_normal_state"):
-			player._enter_normal_state()
+		_stop_player_sprint()
 
 	if not camera:
 		if player:
@@ -497,6 +504,13 @@ func _execute_fire() -> void:
 	params.collide_with_areas = true
 	params.collide_with_bodies = true
 	var result = space.intersect_ray(params)
+
+	# Partida online: o servidor refaz o tiro e é o único que aplica dano em jogadores
+	var net_client := _is_net_client()
+	if net_client:
+		var nm = get_node_or_null("/root/NetworkManager")
+		if nm and nm.has_method("rpc_server_shot"):
+			nm.rpc_id(1, "rpc_server_shot", camera.global_position, direction, String(weapon_data.resource_path), false)
 
 	# 3. Processar impacto e dano
 	var _hit_pos = camera.global_position + direction * 50.0
@@ -536,7 +550,14 @@ func _execute_fire() -> void:
 
 		if not is_friendly:
 			# A. Acerto em Hitbox específica (Head, Chest, Legs)
-			if collider is HitboxComponent:
+			if collider is HitboxComponent and net_client and target_player:
+				# online: só o indicador de acerto (o dano vem do servidor)
+				is_headshot = collider.is_headshot()
+				hit_confirmed.emit(is_headshot, result.position)
+				if gm and gm.has_method("record_shot_hit"):
+					gm.record_shot_hit(is_headshot, dist)
+				damage_dealt = true
+			elif collider is HitboxComponent:
 				collider.receive_hit(direction, weapon_data, dist, player)
 				is_headshot = collider.is_headshot()
 				hit_confirmed.emit(is_headshot, result.position)
@@ -563,12 +584,12 @@ func _execute_fire() -> void:
 					gm.record_shot_hit(false, dist)
 				damage_dealt = true
 
-			# C. Dano em Player Remoto via RPC
-			if target_player and target_player != player:
+			# C. Dano em Player Remoto (partida hospedada por este jogador: ele é o servidor)
+			if target_player and target_player != player and not net_client:
 				var mult = weapon_data.headshot_multiplier if is_headshot else 1.0
 				var dmg = int(weapon_data.get_damage_at_distance(dist) * mult)
 				var my_id = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
-				target_player.rpc("take_damage_rpc", dmg, is_headshot, direction, my_id)
+				_server_apply_player_damage(target_player, dmg, is_headshot, direction, my_id)
 				hit_confirmed.emit(is_headshot, result.position)
 				if gm and gm.has_method("record_shot_hit"):
 					gm.record_shot_hit(is_headshot, dist)
@@ -623,6 +644,10 @@ func is_weapon_suppressed() -> bool:
 func _fire_burst() -> void:
 	if _is_player_dead():
 		return
+	# rajada também respeita a saída do sprint (o primeiro tiro passa por try_fire)
+	if _player_is_sprinting() or sprint_out_timer > 0.0:
+		try_fire()
+		return
 	for i in weapon_data.burst_count:
 		if _is_player_dead() or current_ammo <= 0:
 			break
@@ -667,6 +692,11 @@ func _execute_melee() -> void:
 	params.collide_with_areas = true
 	params.collide_with_bodies = true
 	var result = space.intersect_ray(params)
+	var net_client := _is_net_client()
+	if net_client:
+		var nm = get_node_or_null("/root/NetworkManager")
+		if nm and nm.has_method("rpc_server_shot"):
+			nm.rpc_id(1, "rpc_server_shot", camera.global_position, direction, String(weapon_data.resource_path), true)
 	if result:
 		var collider = result.collider
 		var target_player: PlayerCharacter = null
@@ -696,7 +726,10 @@ func _execute_melee() -> void:
 		var is_friendly = _is_friendly_target(collider) or _is_friendly_target(target_ai) or _is_friendly_target(target_player)
 
 		if not is_friendly:
-			if collider is HitboxComponent:
+			if net_client and target_player:
+				hit_confirmed.emit(false, result.position)   # dano vem do servidor
+				melee_dealt = true
+			elif collider is HitboxComponent:
 				collider.receive_hit(direction, weapon_data, 1.0, player)
 				hit_confirmed.emit(false, result.position)
 				melee_dealt = true
@@ -712,15 +745,28 @@ func _execute_melee() -> void:
 				hit_confirmed.emit(false, result.position)
 				melee_dealt = true
 
-			if target_player and target_player != player:
-				var dmg = 100
+			if target_player and target_player != player and not net_client:
 				var my_id = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
-				target_player.rpc("take_damage_rpc", dmg, false, direction, my_id)
+				_server_apply_player_damage(target_player, 100, false, direction, my_id)
 				hit_confirmed.emit(false, result.position)
 
 		_spawn_hit_spark(result.position, result.normal)
 	
 	fire_event.emit()
+
+## Conectado a um servidor (não é o servidor): o dano em jogadores é decidido lá
+func _is_net_client() -> bool:
+	return multiplayer.has_multiplayer_peer() and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer) \
+		and multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED and not multiplayer.is_server()
+
+## Servidor (ou partida local): aplica o dano e avisa todos
+static func _server_apply_player_damage(target: Node, dmg: int, is_headshot: bool, direction: Vector3, attacker_id: int) -> void:
+	if not is_instance_valid(target):
+		return
+	if target.multiplayer.has_multiplayer_peer() and not (target.multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
+		target.rpc("take_damage_rpc", dmg, is_headshot, direction, attacker_id)
+	else:
+		target.take_damage_rpc(dmg, is_headshot, direction, attacker_id)
 
 # ── RECARGA ───────────────────────────────────────────────────────────────────
 func start_reload() -> void:
@@ -730,6 +776,8 @@ func start_reload() -> void:
 		return
 	if current_ammo == weapon_data.magazine_capacity or reserve_ammo <= 0:
 		return
+	if player and player.has_method("end_tac_sprint"):
+		player.end_tac_sprint(false)
 
 	is_reloading    = true
 	var is_empty    = (current_ammo == 0)

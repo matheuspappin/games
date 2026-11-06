@@ -21,10 +21,10 @@ WORKDIR /app
 
 # Copia script de inicialização e binários
 COPY entrypoint.sh /app/entrypoint.sh
-COPY bin/ /app/bin/
+# O executável exportado (bin/) é montado como volume no docker-compose: a imagem fica pequena
+# e uma nova exportação vale com um simples "docker compose restart".
 
-RUN chmod +x /app/entrypoint.sh && \
-    if [ -f /app/bin/server.x86_64 ]; then chmod +x /app/bin/server.x86_64; fi
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Porta do WebSocket (TCP) - o Caddy faz o TLS (wss://) na frente
 EXPOSE 7777/tcp

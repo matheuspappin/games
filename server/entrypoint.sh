@@ -18,4 +18,11 @@ if [ ! -f /app/bin/server.x86_64 ]; then
     exit 1
 fi
 
-exec /app/bin/server.x86_64 --headless --server --port=${PORT} --max-players=${MAX_PLAYERS} --target-kills=${TARGET_KILLS}
+# volume montado do Windows pode vir sem permissão de execução: roda uma cópia
+BIN=/app/bin/server.x86_64
+if [ ! -x "$BIN" ]; then
+    cp /app/bin/server.x86_64 /tmp/server.x86_64 && chmod +x /tmp/server.x86_64
+    ln -sf /app/bin/server.pck /tmp/server.pck
+    BIN=/tmp/server.x86_64
+fi
+exec "$BIN" --headless --server --port=${PORT} --max-players=${MAX_PLAYERS} --target-kills=${TARGET_KILLS} ${EXTRA_ARGS:-}

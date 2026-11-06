@@ -732,6 +732,7 @@ func _update_one_handed(delta: float) -> void:
 	if fps_hands and fps_hands.state_machine:
 		st = str(fps_hands.state_machine.get_current_node())
 	var want := 1.0 if (_is_one_handed() and not st.begins_with("reload")) else 0.0
+	want *= 1.0 - _swing_amount   # corrida tática: o braço esquerdo aparece balançando
 	# troca de arma e recarga: sem transição lenta para o braço não "crescer" na frente da câmera
 	mod.influence = want if want == 0.0 and st.begins_with("reload") else move_toward(mod.influence, want, delta * 8.0)
 	mod.active = mod.influence > 0.001
@@ -764,8 +765,234 @@ func _update_finger_grip(delta: float) -> void:
 			want = float(WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower()).get("support_fist", 0.0))
 		if _is_one_handed():
 			want = 0.0
+	want *= 1.0 - _swing_amount
 	mod.influence = move_toward(mod.influence, want, delta * 6.0)
 	mod.active = mod.influence > 0.001
+
+# ── CORRIDA TÁTICA: MÃO ESQUERDA SOLTA, BOMBEANDO NO RITMO DA PASSADA (estilo CoD MW/Warzone) ──
+# Um segundo IK do braço esquerdo roda depois do IK de apoio; a força dele acompanha a pose
+# (com mola) do jogador, então a mão sai da arma e volta para ela sem salto.
+# A mão é posicionada a partir do OMBRO (osso L_arm), a uma fração do comprimento do braço:
+# o cotovelo fica sempre dobrado (nada de braço esticado) e o pulso segue o antebraço (sem torção).
+# Direções no espaço da câmera: frente = mão sobe na frente do peito; trás = desce e sai pela parte de baixo da tela.
+const SWING_DIR_FRONT := Vector3(-0.22, 0.22, -1.0)
+const SWING_DIR_BACK  := Vector3(-0.12, -1.0, -0.12)
+const SWING_REACH_FRONT := 0.70   # fração do comprimento do braço
+const SWING_REACH_BACK  := 0.82
+var _swing_amount: float = 0.0
+var _swing_target: Node3D = null
+var _player_ref: Node = null
+
+func _find_player() -> Node:
+	if _player_ref and is_instance_valid(_player_ref):
+		return _player_ref
+	var p := get_parent()
+	while p:
+		if "tac_visual" in p:
+			_player_ref = p
+			return p
+		p = p.get_parent()
+	return null
+
+func _update_left_swing(_delta: float) -> void:
+	_swing_amount = 0.0
+	if not left_hand_ik or not is_instance_valid(left_hand_ik) or not camera:
+		return
+	var sk := left_hand_ik.get_parent() as Skeleton3D
+	if not sk:
+		return
+	var pl := _find_player()
+	var amt: float = clampf(float(pl.tac_visual), 0.0, 1.0) if pl else 0.0
+	var st := ""
+	if fps_hands and fps_hands.state_machine:
+		st = str(fps_hands.state_machine.get_current_node())
+	if st in LEFT_IK_OFF_STATES or st.begins_with("reload"):
+		amt = 0.0
+	var ik = sk.get_node_or_null("LeftSwingIK")
+	if not ik:
+		if amt <= 0.001:
+			return
+		ik = LeftHandIK.new()
+		ik.name = "LeftSwingIK"
+		sk.add_child(ik)
+		sk.move_child(ik, left_hand_ik.get_index() + 1)  # depois do IK de apoio, antes do LeftArmHide
+		ik.root_idx = left_hand_ik.root_idx
+		ik.mid_idx = left_hand_ik.mid_idx
+		ik.end_idx = left_hand_ik.end_idx
+	if not _swing_target or not is_instance_valid(_swing_target):
+		_swing_target = Node3D.new()
+		_swing_target.name = "LeftSwingTarget"
+		add_child(_swing_target)
+	var phase: float = float(pl._bob_phase) if pl else 0.0
+	# 0 = mão atrás/embaixo, 1 = mão na frente/alto; curva suavizada para "bombear" como na corrida
+	var u := 0.5 + 0.5 * sin(phase * 0.5)
+	u = u * u * (3.0 - 2.0 * u)
+	var sh_i: int = left_hand_ik.root_idx
+	var el_i: int = left_hand_ik.mid_idx
+	var wr_i: int = left_hand_ik.end_idx
+	var sh: Vector3 = sk.global_transform * sk.get_bone_global_pose(sh_i).origin
+	# a pose de corrida gira o rig inteiro (e o ombro junto): usa o ombro na posição sem essa rotação,
+	# senão no fuzil a mão esquerda cairia no meio da tela, embaixo da arma
+	var rig := get_parent() as Node3D
+	var is_pistol := current_weapon_data != null and current_weapon_data.category == WeaponData.WeaponCategory.PISTOL
+	if rig and rig.get_parent() == camera and not is_pistol:
+		var sh_cam: Vector3 = camera.global_transform.affine_inverse() * sh
+		sh = camera.global_transform * (rig.transform.affine_inverse() * sh_cam)
+	var arm_len: float = sk.get_bone_global_pose(sh_i).origin.distance_to(sk.get_bone_global_pose(el_i).origin) \
+			+ sk.get_bone_global_pose(el_i).origin.distance_to(sk.get_bone_global_pose(wr_i).origin)
+	arm_len *= sk.global_basis.get_scale().x
+	var cb: Basis = camera.global_basis.orthonormalized()
+	var dir_cam: Vector3 = SWING_DIR_BACK.normalized().lerp(SWING_DIR_FRONT.normalized(), u).normalized()
+	var reach: float = lerpf(SWING_REACH_BACK, SWING_REACH_FRONT, u) * arm_len
+	_swing_target.global_position = sh + cb * dir_cam * reach
+	# mão "de faca": palma virada para dentro (direita da câmera) e um pouco para cima; o pulso fica reto
+	_swing_target.set_meta("palm_dir", cb * Vector3(1.0, 0.25, 0.0).normalized())
+	_swing_target.set_meta("elbow_down", cb * Vector3(-0.3, -1.0, 0.0).normalized())
+	ik.target = _swing_target
+	ik.influence = amt
+	ik.active = amt > 0.001
+	_swing_amount = amt
+
+# ── MIRA DE FERRO REBATÍVEL (BUIS) ───────────────────────────────────────────
+# Armas cujo modelo só tem trilho (ex.: ACR): alça de anel e massa com orelhas montadas no trilho,
+# visíveis só sem ótica. Medidas no espaço do mesh "receiver" (o mesmo de ads_rear/ads_front).
+func _update_buis() -> void:
+	if not current_custom_model_instance or not is_instance_valid(current_custom_model_instance) or current_weapon_data == null:
+		return
+	var cfg = WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower())
+	if not cfg.has("buis") and not cfg.has("sight_dot"):
+		return
+	var ref := _rig_ref_mesh()
+	if not ref:
+		return
+	if cfg.has("sight_glass") and not ref.has_meta("_glass_done"):
+		ref.set_meta("_glass_done", true)
+		_make_sight_glass(ref, cfg["sight_glass"])
+	if cfg.has("sight_dot"):
+		# mira embutida (ex.: janela da Man-o-War): ponto vermelho no centro, só sem ótica
+		var dot := ref.get_node_or_null("SightDot") as MeshInstance3D
+		if not dot:
+			dot = MeshInstance3D.new()
+			dot.name = "SightDot"
+			var sm := SphereMesh.new()
+			sm.radius = 0.0011
+			sm.height = 0.0022
+			dot.mesh = sm
+			var dm := StandardMaterial3D.new()
+			dm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			dm.albedo_color = Color(1.0, 0.12, 0.08)
+			dm.emission_enabled = true
+			dm.emission = Color(1.0, 0.1, 0.05)
+			dm.no_depth_test = true          # sempre por cima do vidro
+			dm.render_priority = 10
+			dot.material_override = dm
+			dot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			dot.position = cfg["sight_dot"]
+			ref.add_child(dot)
+			WeaponManager.set_viewmodel_layers(dot, 2)
+		dot.visible = current_optic_id == "none" or current_optic_id == ""
+	if not cfg.has("buis"):
+		return
+	var root := ref.get_node_or_null("BUIS") as Node3D
+	if not root:
+		root = _build_buis(cfg["buis"])
+		ref.add_child(root)
+		WeaponManager.set_viewmodel_layers(root, 2)
+	root.visible = current_optic_id == "none" or current_optic_id == ""
+
+## Separa o vidro de uma mira embutida (mesma malha da carcaça): triângulos virados para o eixo do cano
+## e totalmente dentro da janela vão para uma superfície própria, translúcida.
+func _make_sight_glass(ref: Node3D, g: Dictionary) -> void:
+	var host: Node = ref.get_parent() if ref.get_parent() else ref
+	var mi := host.find_child(String(g["mesh"]), true, false) as MeshInstance3D
+	if not mi or not mi.mesh:
+		return
+	var to_ref: Transform3D = ref.global_transform.affine_inverse() * mi.global_transform
+	var x0: float = g["x0"]; var x1: float = g["x1"]; var y0: float = g["y0"]; var y1: float = g["y1"]
+	var out := ArrayMesh.new()
+	for s in mi.mesh.get_surface_count():
+		var mdt := MeshDataTool.new()
+		if mdt.create_from_surface(mi.mesh, s) != OK:
+			return
+		var keep := SurfaceTool.new(); keep.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var glass := SurfaceTool.new(); glass.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var n_glass := 0
+		for f in mdt.get_face_count():
+			var inside := true
+			var pts: Array[Vector3] = []
+			for k in 3:
+				var vi := mdt.get_face_vertex(f, k)
+				var pr: Vector3 = to_ref * mdt.get_vertex(vi)
+				pts.append(pr)
+				if pr.x < x0 or pr.x > x1 or pr.y < y0 or pr.y > y1:
+					inside = false
+			var nrm: Vector3 = (to_ref.basis * mdt.get_face_normal(f)).normalized()
+			var is_glass: bool = inside and absf(nrm.z) > 0.85
+			var st: SurfaceTool = glass if is_glass else keep
+			if is_glass:
+				n_glass += 1
+			for k in 3:
+				var vi := mdt.get_face_vertex(f, k)
+				st.set_normal(mdt.get_vertex_normal(vi))
+				st.set_uv(mdt.get_vertex_uv(vi))
+				st.add_vertex(mdt.get_vertex(vi))
+		keep.commit(out)
+		out.surface_set_material(out.get_surface_count() - 1, mi.get_active_material(s))
+		if n_glass > 0:
+			glass.commit(out)
+			var gm := StandardMaterial3D.new()
+			gm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			gm.albedo_color = Color(0.55, 0.75, 0.85, 0.10)
+			gm.metallic = 0.0
+			gm.roughness = 0.05
+			gm.cull_mode = BaseMaterial3D.CULL_DISABLED
+			out.surface_set_material(out.get_surface_count() - 1, gm)
+	mi.mesh = out
+
+func _buis_box(parent: Node3D, mat: Material, size: Vector3, pos: Vector3) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.material_override = mat
+	mi.position = pos
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(mi)
+
+func _build_buis(d: Dictionary) -> Node3D:
+	var root := Node3D.new()
+	root.name = "BUIS"
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.09, 0.09, 0.1)
+	mat.metallic = 0.5
+	mat.roughness = 0.55
+	var x: float = d["x"]
+	var rail: float = d["rail_y"]
+	var line: float = d["line_y"]
+	var rz: float = d["rear_z"]
+	var fz: float = d["front_z"]
+	# alça: base no trilho, haste e anel (o centro do anel fica na linha de mira)
+	_buis_box(root, mat, Vector3(0.022, 0.010, 0.022), Vector3(x, rail + 0.005, rz))
+	_buis_box(root, mat, Vector3(0.008, line - rail - 0.012, 0.006), Vector3(x, rail + 0.010 + (line - rail - 0.012) * 0.5 - 0.004, rz))
+	var ring := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.0034
+	tm.outer_radius = 0.0068
+	tm.rings = 24
+	tm.ring_segments = 8
+	ring.mesh = tm
+	ring.material_override = mat
+	ring.rotation = Vector3(PI * 0.5, 0, 0)   # furo voltado para o olho (eixo do cano)
+	ring.position = Vector3(x, line, rz)
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(ring)
+	# massa: base, poste (ponta exatamente na linha de mira) e orelhas de proteção
+	_buis_box(root, mat, Vector3(0.020, 0.010, 0.016), Vector3(x, rail + 0.005, fz))
+	var post_h: float = line - rail - 0.010
+	_buis_box(root, mat, Vector3(0.0026, post_h, 0.004), Vector3(x, rail + 0.010 + post_h * 0.5, fz))
+	for side in [-1.0, 1.0]:
+		_buis_box(root, mat, Vector3(0.0025, post_h + 0.004, 0.006), Vector3(x + side * 0.0075, rail + 0.010 + (post_h + 0.004) * 0.5, fz))
+	return root
 
 func _rig_ref_mesh() -> Node3D:
 	if not current_custom_model_instance or not is_instance_valid(current_custom_model_instance):
@@ -897,6 +1124,8 @@ func _process(_delta: float) -> void:
 	_update_mag_follower()
 	_place_rig_optic()
 	_update_finger_grip(_delta)
+	_update_left_swing(_delta)
+	_update_buis()
 	_update_one_handed(_delta)
 
 	# ── SINCRONIZAÇÃO E ALINHAMENTO COAXIAL DE MIRA ADS ESTILO CALL OF DUTY ───
@@ -1302,6 +1531,38 @@ class LeftHandIK extends SkeletonModifier3D:
 		var a_pose := Transform3D(Basis(a_local), skel.get_bone_pose_position(root_idx))
 		var b_pose := Transform3D(Basis(b_local), skel.get_bone_pose_position(mid_idx))
 		var mid_g_new := parent_g * a_pose * b_pose
+		if target.has_meta("palm_dir"):
+			# braço livre (corrida tática): pulso reto em relação ao antebraço (sem torção, que amassa a malha)
+			# e a palma é virada girando o braço inteiro em volta da linha ombro->mão (a mão não sai do lugar)
+			var end_rest := skel.get_bone_rest(end_idx).basis.get_rotation_quaternion()
+			var c_pose := Transform3D(Basis(end_rest), skel.get_bone_pose_position(end_idx))
+			var sh_g := parent_g * a_pose
+			var wr_g := sh_g * b_pose * c_pose
+			var axis := wr_g.origin - sh_g.origin
+			if axis.length() > 0.0001:
+				axis = axis.normalized()
+				var want_palm: Vector3 = skel.global_basis.orthonormalized().inverse() * (target.get_meta("palm_dir") as Vector3)
+				var cur_palm: Vector3 = wr_g.basis.y.normalized()
+				var pc := (cur_palm - axis * cur_palm.dot(axis))
+				var pw := (want_palm - axis * want_palm.dot(axis))
+				if pc.length() > 0.001 and pw.length() > 0.001:
+					var ang := pc.normalized().signed_angle_to(pw.normalized(), axis)
+					ang = clampf(ang, -0.9, 0.9)   # giro limitado: virar demais leva o cotovelo para cima, na frente da câmera
+					var pb := parent_g.basis.orthonormalized()
+					# o cotovelo não pode subir acima da linha ombro->mão (sempre "para baixo", como num braço correndo)
+					var down: Vector3 = skel.global_basis.orthonormalized().inverse() * (target.get_meta("elbow_down", Vector3.DOWN) as Vector3)
+					for _i in 3:
+						var trial := Basis(axis, ang)
+						var el_try: Vector3 = sh_g.origin + trial * ((sh_g * b_pose).origin - sh_g.origin)
+						var mid_line: Vector3 = sh_g.origin + axis * (el_try - sh_g.origin).dot(axis)
+						if (el_try - mid_line).dot(down) >= 0.0:
+							break
+						ang *= 0.5
+					var rot_g := Basis(axis, ang)
+					a_local = (pb.inverse() * rot_g * pb * Basis(a_local)).get_rotation_quaternion()
+					skel.set_bone_pose_rotation(root_idx, a_local)
+			skel.set_bone_pose_rotation(end_idx, end_rest)
+			return
 		var hand_g: Basis = rc.basis.orthonormalized()
 		if target.has_meta("hand_basis"):
 			# rotação de mão pedida pelo alvo (ex.: pegada de bomba de escopeta), em espaço do mundo

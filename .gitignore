@@ -37,3 +37,7 @@ _prints/
 
 # Backup do mapa original (ignorado pelo Godot via .gdignore)
 assets/_backup_original/
+
+# Resultados de partidas gerados pelo servidor
+server/results/*
+!server/results/.gitkeep

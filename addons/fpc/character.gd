@@ -121,6 +121,41 @@ class_name Character
 
 #endregion
 
+#region Tactical Sprint Export Group
+
+@export_group("Tactical Sprint")
+## Corrida tática estilo CoD MW: toque duplo no Shift durante a corrida (arma levantada, mais rápido, tempo limitado).
+@export var tac_sprint_enabled : bool = true
+## Multiplicador sobre a velocidade de corrida normal.
+@export var tac_sprint_speed_mult : float = 1.28
+## Duração máxima (s) com a barra cheia.
+@export var tac_sprint_duration : float = 3.0
+## Tempo (s) para a barra recarregar do zero ao cheio.
+@export var tac_sprint_recharge : float = 4.0
+## Carga mínima (0-1) para poder entrar de novo.
+@export_range(0.0, 1.0) var tac_sprint_min_energy : float = 0.35
+## Janela (s) entre soltar e apertar o Shift de novo para contar como toque duplo.
+@export var tac_sprint_double_tap : float = 0.32
+
+#endregion
+
+#region Prone, Lean & Mantle Export Group
+
+@export_group("Prone, Lean & Mantle")
+## Deitar (Z): velocidade rastejando.
+@export var prone_enabled : bool = true
+@export var prone_speed : float = 0.9
+## Inclinar (Q/E): ângulo da cabeça e deslocamento lateral da câmera.
+@export var lean_enabled : bool = true
+@export var lean_angle_deg : float = 13.0
+@export var lean_offset : float = 0.32
+## Escalar (Espaço perto de uma borda): alturas mínima e máxima (m, a partir dos pés).
+@export var mantle_enabled : bool = true
+@export var mantle_min_height : float = 0.45
+@export var mantle_max_height : float = 2.1
+
+#endregion
+
 #region Member Variable Initialization
 
 # These are variables used in this script that don't need to be exposed in the editor.
@@ -150,6 +185,37 @@ var target_tilt : float = 0.0
 
 # Stores horizontal movement input
 var input_dir : Vector2 = Vector2.ZERO
+
+# Corrida tática: estado, barra (0-1) e pose suavizada (0-1) usada pela arma, câmera e FOV
+var tac_sprinting : bool = false
+var tac_sprint_energy : float = 1.0
+var tac_sprint_pose : float = 0.0
+var _sprint_release_time : float = -10.0
+var _sprint_blocked_until_repress : bool = false
+# Alturas de postura (cabeça, centro e altura da cápsula). Em pé/agachado seguem a animação "crouch";
+# deitar (e sair do deitado) é interpolado por código.
+const STANCE_STAND  := Vector3(1.5, 1.0, 2.0)
+const STANCE_CROUCH := Vector3(1.12508, 0.75, 1.5)
+const STANCE_PRONE  := Vector3(0.42, 0.39, 0.78)
+var _stance_lerp_active : bool = false
+var _stance_from : Vector3 = STANCE_STAND
+var _stance_to : Vector3 = STANCE_STAND
+var _stance_t : float = 0.0
+var _stance_dur : float = 0.4
+# Inclinação: -1 (esquerda) .. 1 (direita), suavizada e limitada por paredes
+var lean_amount : float = 0.0
+# Escalada
+var mantling : bool = false
+var _mantle_from : Vector3
+var _mantle_mid : Vector3
+var _mantle_to : Vector3
+var _mantle_t : float = 0.0
+var _mantle_dur : float = 0.4
+# Rotação extra da câmera (pitch, roll) somada pelo jogador (ex.: tranco de dano)
+var cam_extra_rot : Vector2 = Vector2.ZERO
+# Mergulho da câmera (mola) ao entrar/sair da corrida tática
+var _tac_dip : float = 0.0
+var _tac_dip_v : float = 0.0
 # Whether or not the player is moving
 var moving : bool = false
 
@@ -203,6 +269,14 @@ func _ready() -> void:
 	if CAMERA:
 		CAMERA.near = 0.01
 
+	# Cópias próprias da cápsula/malha: os sub-recursos da cena são compartilhados entre jogadores,
+	# e agachar/deitar mudaria a colisão de todos
+	if COLLISION_MESH and COLLISION_MESH.shape:
+		COLLISION_MESH.shape = COLLISION_MESH.shape.duplicate()
+	var body_mesh := get_node_or_null("Mesh") as MeshInstance3D
+	if body_mesh and body_mesh.mesh:
+		body_mesh.mesh = body_mesh.mesh.duplicate()
+
 	_initialize_animations()
 	_check_controls()
 	_enter_normal_state()
@@ -241,6 +315,15 @@ func _physics_process(delta : float) -> void:
 		if velocity.y < 0.0:
 			velocity.y = -0.5 # Força downward para firme aderência ao chão
 
+	if mantling:
+		_update_mantle(delta)
+		current_speed = 0.0
+		if not is_physics_interpolated_and_enabled() or HEAD.is_physics_interpolated():
+			_handle_head_rotation(delta)
+		_update_lean(delta)
+		was_on_floor = true
+		return
+
 	_handle_jumping()
 
 	input_dir = Vector2.ZERO
@@ -272,11 +355,14 @@ func _physics_process(delta : float) -> void:
 		_footstep_timer -= delta
 		if _footstep_timer <= 0.0:
 			_play_footstep()
-			_footstep_timer = 0.32 if state == "sprinting" else 0.52
+			_footstep_timer = (0.27 if tac_sprinting else 0.32) if state == "sprinting" else 0.52
 	else:
 		_footstep_timer = 0.1
 
 	_handle_state(moving)
+	_handle_tac_sprint(delta)
+	_update_stance_lerp(delta)
+	_update_lean(delta)
 	_update_procedural_stride(delta)
 
 	if jump_animation:
@@ -307,6 +393,13 @@ func _play_footstep() -> void:
 #region Input Handling
 
 func _handle_jumping() -> void:
+	if state == "prone" or immobile:
+		return
+	# Escalar: Espaço perto de uma borda à frente (no chão ou no meio do pulo)
+	if mantle_enabled and Input.is_action_just_pressed(controls.JUMP) and _try_mantle():
+		return
+	if mantle_enabled and not is_on_floor() and Input.is_action_pressed(controls.JUMP) and velocity.y < 2.5 and _try_mantle():
+		return
 	if jumping_enabled:
 		if continuous_jumping: # Hold down the jump button
 			if Input.is_action_pressed(controls.JUMP) and is_on_floor() and !low_ceiling and velocity.y <= 0.0: # Not while still rising, so jumps can't stack
@@ -570,8 +663,24 @@ func _check_controls() -> void: # If you add a control, you might want to add a 
 #region State Handling
 
 func _handle_state(moving : bool) -> void:
+	# ── Deitar (Z) ────────────────────────────────────────────────────────────
+	if prone_enabled and InputMap.has_action("prone") and Input.is_action_just_pressed("prone") and not immobile:
+		if state == "prone":
+			if not _try_leave_prone("normal"):
+				_try_leave_prone("crouching")
+		elif is_on_floor():
+			_enter_prone_state()
+	if state == "prone":
+		if Input.is_action_just_pressed(controls.CROUCH) or Input.is_action_just_pressed(controls.JUMP):
+			_try_leave_prone("crouching")
+		elif sprint_enabled and Input.is_action_just_pressed(controls.SPRINT) and moving:
+			if _try_leave_prone("normal"):
+				_enter_sprint_state()
+		return
+	if _sprint_blocked_until_repress and (Input.is_action_just_pressed(controls.SPRINT) or not Input.is_action_pressed(controls.SPRINT)):
+		_sprint_blocked_until_repress = false
 	if sprint_enabled:
-		var can_sprint = state != "crouching" and ads_amount < 0.3
+		var can_sprint = state != "crouching" and ads_amount < 0.3 and not _sprint_blocked_until_repress
 		if sprint_mode == 0:
 			if Input.is_action_pressed(controls.SPRINT) and can_sprint:
 				if moving:
@@ -592,7 +701,10 @@ func _handle_state(moving : bool) -> void:
 						"normal":
 							_enter_sprint_state()
 						"sprinting":
-							_enter_normal_state()
+							if tac_sprint_enabled and not tac_sprinting and input_dir.y < -0.5 and tac_sprint_energy >= tac_sprint_min_energy:
+								_start_tac_sprint()
+							else:
+								_enter_normal_state()
 			elif state == "sprinting":
 				_enter_normal_state()
 
@@ -617,26 +729,280 @@ func _handle_state(moving : bool) -> void:
 func _enter_normal_state() -> void:
 	#print("entering normal state")
 	var prev_state = state
-	if prev_state == "crouching":
+	if prev_state == "prone" or _stance_lerp_active:
+		_start_stance_lerp(STANCE_STAND, 0.38)
+	elif prev_state == "crouching":
 		CROUCH_ANIMATION.play_backwards("crouch")
 	state = "normal"
 	speed = base_speed
+	tac_sprinting = false
 
 func _enter_crouch_state() -> void:
 	#print("entering crouch state")
+	var prev_state = state
 	state = "crouching"
 	speed = crouch_speed
-	CROUCH_ANIMATION.play("crouch")
+	tac_sprinting = false
+	if prev_state == "prone" or _stance_lerp_active:
+		_start_stance_lerp(STANCE_CROUCH, 0.3)
+	else:
+		CROUCH_ANIMATION.play("crouch")
 
 func _enter_sprint_state() -> void:
 	#print("entering sprint state")
 	var prev_state = state
-	if prev_state == "crouching":
+	if prev_state == "prone" or _stance_lerp_active:
+		_start_stance_lerp(STANCE_STAND, 0.38)
+	elif prev_state == "crouching":
 		CROUCH_ANIMATION.play_backwards("crouch")
 	state = "sprinting"
+	speed = sprint_speed * _sprint_perk_mult()
+
+func _sprint_perk_mult() -> float:
 	var pm = get_node_or_null("PerkManager")
-	var mult = pm.get_sprint_speed_multiplier() if (pm and pm.has_method("get_sprint_speed_multiplier")) else 1.0
-	speed = sprint_speed * mult
+	return pm.get_sprint_speed_multiplier() if (pm and pm.has_method("get_sprint_speed_multiplier")) else 1.0
+
+## Corrida tática: entra com toque duplo no Shift correndo para frente; sai ao acabar a barra,
+## soltar o Shift, parar de ir para frente, mirar, atirar ou recarregar (ver end_tac_sprint).
+func _handle_tac_sprint(delta : float) -> void:
+	var now : float = Time.get_ticks_msec() / 1000.0
+	var forward : bool = input_dir.y < -0.5
+	if tac_sprinting:
+		tac_sprint_energy = maxf(0.0, tac_sprint_energy - delta / maxf(tac_sprint_duration, 0.1))
+		var key_ok : bool = sprint_mode == 1 or Input.is_action_pressed(controls.SPRINT)
+		if tac_sprint_energy <= 0.0 or state != "sprinting" or not forward or ads_amount > 0.05 or not key_ok:
+			end_tac_sprint(false)
+	else:
+		tac_sprint_energy = minf(1.0, tac_sprint_energy + delta / maxf(tac_sprint_recharge, 0.1))
+		if sprint_mode == 0 and tac_sprint_enabled and not immobile:
+			if Input.is_action_just_released(controls.SPRINT):
+				_sprint_release_time = now
+			elif Input.is_action_just_pressed(controls.SPRINT):
+				if now - _sprint_release_time <= tac_sprint_double_tap and state == "sprinting" and forward and is_on_floor() and tac_sprint_energy >= tac_sprint_min_energy:
+					_start_tac_sprint()
+				_sprint_release_time = -10.0
+	# Entrada mais rápida que a saída: ao sair, a arma ainda leva um instante para voltar à posição de tiro
+	var target : float = 1.0 if tac_sprinting else 0.0
+	tac_sprint_pose = move_toward(tac_sprint_pose, target, delta * (5.5 if tac_sprinting else 3.2))
+
+func _start_tac_sprint() -> void:
+	tac_sprinting = true
+	_tac_dip_v -= 0.42   # corpo "arranca": a câmera afunda e volta
+	speed = sprint_speed * _sprint_perk_mult() * tac_sprint_speed_mult
+
+## Encerra a corrida tática. stop_sprint = true também sai da corrida (usado ao atirar/recarregar).
+func end_tac_sprint(stop_sprint : bool = false) -> void:
+	if not tac_sprinting:
+		return
+	tac_sprinting = false
+	_tac_dip_v -= 0.18
+	if stop_sprint:
+		_enter_normal_state()
+	elif state == "sprinting":
+		speed = sprint_speed * _sprint_perk_mult()
+
+## Atirar/recarregar tira o jogador da corrida; segurar o Shift não volta a correr, só um novo toque.
+func stop_sprint_for_action() -> void:
+	if tac_sprinting:
+		_tac_dip_v -= 0.18
+	tac_sprinting = false
+	if state == "sprinting":
+		_enter_normal_state()
+	_sprint_blocked_until_repress = Input.is_action_pressed(controls.SPRINT)
+
+# ── DEITAR ────────────────────────────────────────────────────────────────────
+func _enter_prone_state() -> void:
+	if state == "prone":
+		return
+	tac_sprinting = false
+	state = "prone"
+	speed = prone_speed
+	_start_stance_lerp(STANCE_PRONE, 0.45)
+	_tac_dip_v -= 0.25   # o corpo vai ao chão
+
+## Sai do deitado para "normal" ou "crouching" se houver espaço; devolve false se não couber.
+func _try_leave_prone(to_state : String) -> bool:
+	var h : float = STANCE_STAND.z if to_state == "normal" else STANCE_CROUCH.z
+	if not _fits_height_at(global_position, h):
+		return false
+	if to_state == "normal":
+		_enter_normal_state()
+	else:
+		_enter_crouch_state()
+	return true
+
+func _start_stance_lerp(target : Vector3, duration : float) -> void:
+	if CROUCH_ANIMATION and CROUCH_ANIMATION.is_playing():
+		CROUCH_ANIMATION.pause()
+	_stance_from = _read_stance_values()
+	_stance_to = target
+	_stance_t = 0.0
+	_stance_dur = maxf(duration, 0.05)
+	_stance_lerp_active = true
+
+func _read_stance_values() -> Vector3:
+	var cap : CapsuleShape3D = (COLLISION_MESH.shape as CapsuleShape3D) if COLLISION_MESH else null
+	return Vector3(HEAD.position.y, COLLISION_MESH.position.y if COLLISION_MESH else 1.0, cap.height if cap else 2.0)
+
+func _apply_stance_values(v : Vector3) -> void:
+	HEAD.position.y = v.x
+	if COLLISION_MESH:
+		COLLISION_MESH.position.y = v.y
+		var cap := COLLISION_MESH.shape as CapsuleShape3D
+		if cap:
+			cap.height = maxf(v.z, cap.radius * 2.0)
+	var body_mesh := get_node_or_null("Mesh") as MeshInstance3D
+	if body_mesh:
+		body_mesh.position.y = v.y
+		if body_mesh.mesh is CapsuleMesh:
+			(body_mesh.mesh as CapsuleMesh).height = maxf(v.z, (body_mesh.mesh as CapsuleMesh).radius * 2.0)
+
+func _update_stance_lerp(delta : float) -> void:
+	if not _stance_lerp_active:
+		return
+	_stance_t = minf(1.0, _stance_t + delta / _stance_dur)
+	_apply_stance_values(_stance_from.lerp(_stance_to, smoothstep(0.0, 1.0, _stance_t)))
+	if _stance_t >= 1.0:
+		_stance_lerp_active = false
+		# deixa a animação "crouch" no mesmo ponto, para agachar/levantar depois continuar dela
+		if CROUCH_ANIMATION and CROUCH_ANIMATION.has_animation("crouch"):
+			if _stance_to == STANCE_CROUCH:
+				CROUCH_ANIMATION.play("crouch")
+				CROUCH_ANIMATION.seek(CROUCH_ANIMATION.get_animation("crouch").length, true)
+			elif _stance_to == STANCE_STAND:
+				CROUCH_ANIMATION.play("crouch")
+				CROUCH_ANIMATION.seek(0.0, true)
+				CROUCH_ANIMATION.pause()
+
+## Uma cápsula do raio do jogador, com altura h, cabe com os pés em feet?
+func _fits_height_at(feet : Vector3, h : float) -> bool:
+	var cap : CapsuleShape3D = (COLLISION_MESH.shape as CapsuleShape3D) if COLLISION_MESH else null
+	var shape := CapsuleShape3D.new()
+	shape.radius = (cap.radius if cap else 0.38) * 0.92
+	shape.height = maxf(h - 0.06, shape.radius * 2.0)
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = shape
+	q.transform = Transform3D(Basis(), feet + Vector3(0.0, h * 0.5 + 0.04, 0.0))
+	q.collision_mask = collision_mask
+	q.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_shape(q, 1).is_empty()
+
+# ── INCLINAR (Q/E) ────────────────────────────────────────────────────────────
+func _update_lean(delta : float) -> void:
+	var want : float = 0.0
+	if lean_enabled and not immobile and state != "prone" and state != "sprinting" and not mantling \
+			and InputMap.has_action("lean_left") and InputMap.has_action("lean_right"):
+		if Input.is_action_pressed("lean_left"):
+			want -= 1.0
+		if Input.is_action_pressed("lean_right"):
+			want += 1.0
+	if want != 0.0:
+		want *= _lean_free_fraction(signf(want))
+	lean_amount = move_toward(lean_amount, want, delta * 5.5)
+
+## Quanto da inclinação cabe antes de a cabeça entrar na parede (0..1)
+func _lean_free_fraction(side : float) -> float:
+	var from : Vector3 = HEAD.global_position
+	var right : Vector3 = global_transform.basis.x.normalized()
+	var reach : float = lean_offset + 0.22
+	var q := PhysicsRayQueryParameters3D.create(from, from + right * side * reach, collision_mask, [get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty():
+		return 1.0
+	return clampf((from.distance_to(hit.position) - 0.22) / lean_offset, 0.0, 1.0)
+
+# ── ESCALAR (Espaço perto de uma borda) ───────────────────────────────────────
+func _ray(a : Vector3, b : Vector3) -> Dictionary:
+	var q := PhysicsRayQueryParameters3D.create(a, b, collision_mask, [get_rid()])
+	return get_world_3d().direct_space_state.intersect_ray(q)
+
+func _try_mantle() -> bool:
+	if mantling or state == "prone" or input_dir.y > -0.3:
+		return false
+	var fwd : Vector3 = -global_transform.basis.z
+	fwd.y = 0.0
+	if fwd.length() < 0.01:
+		return false
+	fwd = fwd.normalized()
+	var feet : Vector3 = global_position
+	var cap : CapsuleShape3D = (COLLISION_MESH.shape as CapsuleShape3D) if COLLISION_MESH else null
+	var radius : float = cap.radius if cap else 0.38
+	# 1) obstáculo logo à frente (joelho, cintura ou peito)
+	var wall_dist : float = INF
+	for hgt in [0.55, 1.0, 1.45]:
+		var a : Vector3 = feet + Vector3.UP * hgt
+		var hit := _ray(a, a + fwd * (radius + 0.6))
+		if not hit.is_empty() and absf(hit.normal.y) < 0.5:
+			wall_dist = minf(wall_dist, Vector2(hit.position.x - feet.x, hit.position.z - feet.z).length())
+	if wall_dist == INF:
+		return false
+	# 2) topo da borda, logo depois da face da parede (perto, para pegar muretas finas)
+	var probe : Vector3 = feet + fwd * (wall_dist + 0.1)
+	var top := _ray(probe + Vector3.UP * (mantle_max_height + 0.4), probe + Vector3.UP * (mantle_min_height - 0.05))
+	if top.is_empty() or top.normal.y < 0.7:
+		return false
+	var top_y : float = top.position.y
+	var h : float = top_y - feet.y
+	if h < mantle_min_height or h > mantle_max_height:
+		return false
+	# 3) espaço para subir: a cabeça passa por cima, e cabe em pé (ou agachado) lá em cima
+	var up_pos := Vector3(feet.x, top_y + 0.05, feet.z)
+	var land : Vector3 = Vector3(probe.x, top_y + 0.02, probe.z) + fwd * 0.45
+	# Obstáculo fino e baixo (mureta): pula por cima em vez de ficar em cima
+	if h <= 1.25:
+		var far : Vector3 = feet + fwd * (wall_dist + 1.0)
+		var beyond := _ray(Vector3(far.x, top_y + 0.3, far.z), Vector3(far.x, feet.y - 1.2, far.z))
+		if not beyond.is_empty() and beyond.position.y < top_y - 0.35 and beyond.normal.y > 0.7:
+			var vault_land := Vector3(far.x, beyond.position.y + 0.02, far.z)
+			if _fits_height_at(vault_land, STANCE_STAND.z):
+				land = vault_land
+	if not _fits_height_at(up_pos, STANCE_CROUCH.z) or not _fits_height_at(land, STANCE_CROUCH.z):
+		return false
+	mantling = true
+	tac_sprinting = false
+	if state == "sprinting":
+		state = "normal"
+		speed = base_speed
+	_mantle_from = feet
+	_mantle_mid = up_pos
+	_mantle_to = land
+	_mantle_t = 0.0
+	_mantle_dur = 0.30 + h * 0.12
+	velocity = Vector3.ZERO
+	_tac_dip_v -= 0.3
+	return true
+
+func _update_mantle(delta : float) -> void:
+	_mantle_t = minf(1.0, _mantle_t + delta / _mantle_dur)
+	var k : float = _mantle_t
+	var p : Vector3
+	if k < 0.55:
+		var u : float = k / 0.55
+		p = _mantle_from.lerp(_mantle_mid, 1.0 - (1.0 - u) * (1.0 - u))   # sobe rápido e desacelera
+	else:
+		p = _mantle_mid.lerp(_mantle_to, smoothstep(0.0, 1.0, (k - 0.55) / 0.45))
+	global_position = p
+	velocity = Vector3.ZERO
+	if _mantle_t >= 1.0:
+		mantling = false
+		_tac_dip_v -= 0.15
+
+## Ações que impedem atirar: escalando, rastejando ou indo ao chão.
+func blocks_firing() -> bool:
+	return mantling or (state == "prone" and (_stance_lerp_active or (moving and current_speed > 0.15)))
+
+## Postura para rede/hitboxes: 0 em pé, 1 agachado, 2 deitado
+func stance_id() -> int:
+	match state:
+		"crouching":
+			return 1
+		"prone":
+			return 2
+	return 0
+
+## A arma só pode atirar depois que a pose da corrida tática baixou o suficiente.
+func is_weapon_raised_for_sprint() -> bool:
+	return tac_sprinting or tac_sprint_pose > 0.35
 
 #endregion
 
@@ -665,7 +1031,8 @@ func _update_head_bob(delta : float) -> void:
 
 	if is_moving_on_ground:
 		# Frequência da passada: 9.5 Hz no sprint, 6.8 Hz ao andar normal
-		var freq = 9.5 if state == "sprinting" else 6.8
+		var freq = 9.5 if state == "sprinting" else (4.2 if state == "prone" else 6.8)
+		freq = lerpf(freq, 11.0, tac_sprint_pose)
 		var speed_factor = clampf(current_speed / maxf(base_speed, 1.0), 0.5, 1.6)
 		_bob_phase += delta * freq * speed_factor
 
@@ -673,6 +1040,10 @@ func _update_head_bob(delta : float) -> void:
 		var amp_x = 0.007 if state == "sprinting" else 0.0035
 		var amp_y = 0.009 if state == "sprinting" else 0.005
 		var amp_roll = deg_to_rad(0.8) if state == "sprinting" else deg_to_rad(0.35)
+		var tac_amp : float = lerpf(1.0, 1.35, tac_sprint_pose)
+		amp_x *= tac_amp
+		amp_y *= tac_amp
+		amp_roll *= lerpf(1.0, 2.0, tac_sprint_pose)   # corrida tática: ombros jogam mais
 
 		# Amortecimento em ADS (85% mais estável ao mirar)
 		if ads_amount > 0.0:
@@ -696,13 +1067,21 @@ func _update_head_bob(delta : float) -> void:
 		_bob_offset = _bob_offset.lerp(Vector3.ZERO, delta * 12.0)
 		_bob_roll = lerpf(_bob_roll, 0.0, delta * 12.0)
 
+	# Mola do mergulho da corrida tática
+	var dd : float = minf(delta, 0.05)
+	_tac_dip_v += (-140.0 * _tac_dip - 15.0 * _tac_dip_v) * dd
+	_tac_dip += _tac_dip_v * dd
+	var cam_target : Vector3 = _bob_offset + Vector3(0.0, _tac_dip, 0.0)
+	cam_target += Vector3(lean_amount * lean_offset, -absf(lean_amount) * 0.05, 0.0)
+
 	# Se a animação de pulo/pouso estiver ativa, mesclar suavemente
 	if JUMP_ANIMATION and JUMP_ANIMATION.is_playing() and JUMP_ANIMATION.current_animation != "RESET":
-		CAMERA.position = CAMERA.position.lerp(_bob_offset, delta * 6.0)
+		CAMERA.position = CAMERA.position.lerp(cam_target, delta * 6.0)
 	else:
-		CAMERA.position = _bob_offset
+		CAMERA.position = cam_target
 
-	CAMERA.rotation.z = _bob_roll
+	CAMERA.rotation.z = _bob_roll - lean_amount * deg_to_rad(lean_angle_deg) + cam_extra_rot.y
+	CAMERA.rotation.x = cam_extra_rot.x
 
 func _play_headbob_animation(_moving : bool) -> void:
 	# Mantido para retrocompatibilidade
@@ -732,7 +1111,7 @@ func _update_debug_menu_per_frame() -> void:
 	if !$UserInterface/DebugPanel.visible: return
 
 	$UserInterface/DebugPanel.add_property("FPS", Performance.get_monitor(Performance.TIME_FPS), 0)
-	var status : String = state
+	var status : String = ("tactical sprint" if tac_sprinting else state)
 	if !is_on_floor():
 		status += " in the air"
 	$UserInterface/DebugPanel.add_property("State", status, 4)
@@ -814,6 +1193,7 @@ func _update_camera_fov() -> void:
 	var target_fov : float = 75.0
 	if state == "sprinting":
 		target_fov = 85.0
+	target_fov += 6.0 * tac_sprint_pose
 	var weight : float = 1.0 - exp(-10.0 * get_process_delta_time())
 	CAMERA.fov = lerpf(CAMERA.fov, target_fov, weight)
 

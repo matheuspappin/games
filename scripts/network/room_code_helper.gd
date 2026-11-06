@@ -43,6 +43,11 @@ static func decode_room_code(input: String) -> Dictionary:
 	if raw.is_empty():
 		return {"valid": false, "ip": "127.0.0.1", "port": DEFAULT_PORT, "error": "Código vazio."}
 
+	# 0. host:porta explícito (ex.: localhost:8090, jogo.exemplo.com:443) — servidor dedicado via Caddy
+	var hp := raw.rsplit(":", true, 1)
+	if hp.size() == 2 and hp[1].strip_edges().is_valid_int() and not hp[0].is_empty() and not raw.to_upper().begins_with("NK-"):
+		return {"valid": true, "ip": hp[0].strip_edges(), "port": hp[1].strip_edges().to_int(), "error": ""}
+
 	# 1. Se for palavra-chave LOCAL
 	if raw.to_upper().contains("LOCAL") or raw.to_upper().contains("DEV"):
 		var p = DEFAULT_PORT

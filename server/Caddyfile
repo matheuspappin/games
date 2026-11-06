@@ -1,4 +1,56 @@
-# Defina GAME_DOMAIN (ex.: play.seudominio.com) apontando o DNS para este servidor.
+{
+	# Conexão por IP não manda SNI: usa este nome para escolher o certificado (teste na rede local)
+	default_sni {$LAN_SNI:localhost}
+}
+
+# Um único endereço para tudo: a página do jogo (arquivos estáticos) e o WebSocket da partida.
+# GAME_DOMAIN = play.seudominio.com (HTTPS automático) ou http://localhost:8080 (teste local).
+(game) {
+	# WebSocket da partida -> servidor dedicado
+	@ws {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	handle @ws {
+		reverse_proxy nuke-dedicated-server:7777
+	}
+
+	# Resultados assinados das partidas (para o site/oráculo)
+	handle_path /results/* {
+		root * /srv/results
+		header Cache-Control "no-store"
+		file_server
+	}
+
+	# Jogo exportado para Web (web/public/game), comprimido na transferência (o .pck cai ~40-60%)
+	handle {
+		root * /srv/game
+		encode {
+			zstd
+			gzip 6
+			minimum_length 1024
+			match {
+				header Content-Type application/octet-stream*
+				header Content-Type application/wasm*
+				header Content-Type text/*
+				header Content-Type application/javascript*
+				header Content-Type application/json*
+			}
+		}
+		@immutable path *.wasm *.pck
+		header @immutable Cache-Control "public, max-age=86400"
+		header Cross-Origin-Opener-Policy "same-origin-allow-popups"
+		file_server
+	}
+}
+
 {$GAME_DOMAIN} {
-	reverse_proxy nuke-dedicated-server:7777
+	import game
+}
+
+# Teste na rede local (celular/outro PC): navegador exige HTTPS fora de localhost.
+# Certificado próprio do Caddy (aceitar o aviso do navegador uma vez). Porta só publicada no compose local.
+{$LAN_DOMAIN:https://localhost:8443} {
+	tls internal
+	import game
 }

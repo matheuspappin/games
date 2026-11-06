@@ -8,6 +8,8 @@ extends Node
 signal web_event_received(event_name: String, data: Dictionary)
 
 var is_web: bool = false
+## Carteira informada pela página (?wallet=). Declarada, não verificada: a prova de posse é assinatura no site.
+var wallet_address: String = ""
 var js_callback: JavaScriptObject = null
 
 func _ready() -> void:
@@ -70,7 +72,9 @@ func _parse_web_url_arguments() -> void:
 				mode: params.get('mode') || '1v1',
 				map: params.get('map') || 'nuketown_2065',
 				stake: params.get('stake') || '10',
-				player: params.get('player') || 'Operador_Alpha'
+				player: params.get('player') || 'Operador_Alpha',
+				wallet: params.get('wallet') || '',
+				server: params.get('server') || ''
 			});
 		} catch(e) {
 			return '{}';
@@ -82,7 +86,15 @@ func _parse_web_url_arguments() -> void:
 		var json = JSON.new()
 		if json.parse(res_str) == OK and json.data is Dictionary:
 			var cfg = json.data
-			if cfg.get("autostart", false):
+			var w := str(cfg.get("wallet", ""))
+			# endereço Solana: base58, 32-44 caracteres
+			if w.length() >= 32 and w.length() <= 44 and RegEx.create_from_string("^[1-9A-HJ-NP-Za-km-z]+$").search(w) != null:
+				wallet_address = w
+			var srv := str(cfg.get("server", "")).strip_edges()
+			if not srv.is_empty() and RegEx.create_from_string("^[A-Za-z0-9.\\-]+(:[0-9]{1,5})?$").search(srv) != null:
+				# ?server=host:porta -> entra direto no servidor dedicado (lançador do site)
+				call_deferred("_join_server_from_url", srv, str(cfg.get("player", "")))
+			elif cfg.get("autostart", false):
 				var gm = get_node_or_null("/root/GameManager")
 				if gm:
 					print("[WebBridge] Auto-iniciando partida via URL da Web: ", cfg)
@@ -142,6 +154,23 @@ func _parse_desktop_arguments() -> void:
 	if gm and ("--auto-launch" in args):
 		call_deferred("_launch_from_args", gm, mode_arg, map_arg, stake_arg, player_arg)
 
+func _join_server_from_url(addr: String, player_name: String = "") -> void:
+	var gm = get_node_or_null("/root/GameManager")
+	await get_tree().create_timer(0.6).timeout  # deixa o menu principal terminar de carregar
+	if not gm:
+		return
+	if not player_name.is_empty():
+		gm.local_player_name = player_name.left(20)
+	var host := addr
+	var port := 443 if str(JavaScriptBridge.eval("location.protocol", true)) == "https:" else 80
+	var parts := addr.rsplit(":", true, 1)
+	if parts.size() == 2 and parts[1].is_valid_int():
+		host = parts[0]
+		port = parts[1].to_int()
+	print("[WebBridge] Entrando no servidor via URL: %s:%d" % [host, port])
+	gm.configure_online_match("res://scenes/_world/map_nuk3town_bo3.tscn", "NUKETOWN 2065 (BO3 FUTURISTA)", false, "%s:%d" % [host, port], port, false, 0, "6v6")
+	get_tree().change_scene_to_file("res://scenes/ui/lobby_screen.tscn")
+
 func _launch_from_args(gm: Node, mode_arg: String, map_arg: String, stake_arg: float, player_arg: String) -> void:
 	gm.configure_and_launch_game(mode_arg, map_arg, stake_arg, player_arg)
 
@@ -155,3 +184,5 @@ func notify_web(event_name: String, data: Dictionary) -> void:
 		var json_str = JSON.stringify(data)
 		var js_call = "if (window.onNukeGameEvent) { window.onNukeGameEvent('%s', %s); }" % [event_name, json_str]
 		bridge.eval(js_call)
+		# jogo dentro de iframe: avisa também a página do site
+		bridge.eval("try { if (window.parent && window.parent !== window) { window.parent.postMessage({source: 'nuke-game', event: '%s', data: %s}, '*'); } } catch (e) {}" % [event_name, json_str])

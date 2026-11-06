@@ -217,12 +217,19 @@ func apply_environment_settings() -> void:
 		env.volumetric_fog_enabled = settings["volumetric_fog"]
 		if env.volumetric_fog_enabled:
 			env.volumetric_fog_temporal_reprojection_amount = 0.9
+		if OS.has_feature("web"):
+			_apply_web_exposure(env)
 
 	# Configurar Sombras
 	var dir_lights = root.find_children("*", "DirectionalLight3D", true, false)
 	for light in dir_lights:
 		var dl = light as DirectionalLight3D
 		if dl:
+			if OS.has_feature("web"):
+				# WebGL (Compatibility) sem SSAO/glow fica estourado: sol um pouco mais fraco
+				if not dl.has_meta("base_energy"):
+					dl.set_meta("base_energy", dl.light_energy)
+				dl.light_energy = float(dl.get_meta("base_energy")) * WEB_SUN_MULT
 			match settings["shadow_quality"]:
 				0: # Desativado
 					dl.shadow_enabled = false
@@ -238,3 +245,21 @@ func apply_environment_settings() -> void:
 					dl.shadow_enabled = true
 					dl.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 					dl.directional_shadow_max_distance = 80.0
+
+# ── PERFIL DE EXPOSIÇÃO DO NAVEGADOR ──────────────────────────────────────────
+# O renderizador Compatibility (WebGL 2) não tem SSAO/glow e trata a luz ambiente do céu
+# de forma mais forte: sem isso o mapa fica branco/estourado. Valores relativos ao original
+# (guardados em meta) para não acumular quando a função roda de novo.
+const WEB_EXPOSURE_MULT := 0.82
+const WEB_AMBIENT_MULT := 0.6
+const WEB_SUN_MULT := 0.85
+
+func _apply_web_exposure(env: Environment) -> void:
+	if not env.has_meta("web_base"):
+		env.set_meta("web_base", [env.tonemap_exposure, env.ambient_light_energy])
+	var b: Array = env.get_meta("web_base")
+	env.tonemap_exposure = float(b[0]) * WEB_EXPOSURE_MULT
+	env.ambient_light_energy = float(b[1]) * WEB_AMBIENT_MULT
+	env.adjustment_enabled = true
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 1.12

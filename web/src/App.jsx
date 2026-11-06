@@ -107,6 +107,7 @@ export default function App() {
         isOpen={isLauncherOpen}
         onClose={() => setIsLauncherOpen(false)}
         userGamertag={userGamertag}
+        walletAddress={connectedWallet ? walletAddress : ''}
       />
 
     </div>

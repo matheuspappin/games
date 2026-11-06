@@ -1160,8 +1160,8 @@ func _detect_enemies(delta: float) -> void:
 	var forward = -global_transform.basis.z
 
 	for enemy in potential_enemies:
-		var e_eye = enemy.global_position + Vector3.UP * 1.5
-		var e_chest = enemy.global_position + Vector3.UP * 1.1
+		var e_eye = _hitbox_point(enemy, "Hitbox_Head", 1.5)
+		var e_chest = _hitbox_point(enemy, "Hitbox_Chest", 1.1)
 		var dist = global_position.distance_to(enemy.global_position)
 		if dist <= sight_range:
 			var enemy_spd = Vector2(enemy.velocity.x, enemy.velocity.z).length() if "velocity" in enemy else 0.0
@@ -1418,8 +1418,8 @@ func _has_line_of_fire() -> bool:
 
 	# 1. Ponto de origem seguro dentro da cápsula do corpo (NUNCA atravessa paredes)
 	var body_eye = global_position + Vector3.UP * 1.5
-	var target_chest = target_combatant.global_position + Vector3.UP * 1.1
-	var target_head = target_combatant.global_position + Vector3.UP * 1.6
+	var target_chest = _hitbox_point(target_combatant, "Hitbox_Chest", 1.1)
+	var target_head = _hitbox_point(target_combatant, "Hitbox_Head", 1.6)
 
 	# 2. Se a arma possui muzzle projetado, checa se a arma não está enfiada dentro de uma parede/quina
 	var dist_to_tgt = body_eye.distance_to(target_chest)
@@ -2141,6 +2141,13 @@ func _face_target(target_pos: Vector3, delta: float, instant: bool = false) -> v
 	global_transform.basis = Basis(current_quat.slerp(target_quat, clampf(rot_rate * delta, 0.0, 1.0)))
 
 # ── DISPARO DE ARMA (ÁUDIO 3D + BALÍSTICA + VISUAL) ──────────────────────────
+## Ponto real da hitbox do alvo (segue agachar/deitar/inclinar); sem hitbox, altura fixa
+func _hitbox_point(target: Node3D, hb_name: String, fallback_h: float) -> Vector3:
+	var hb: Node = target.get_node_or_null(hb_name) if target else null
+	if hb and hb.get_child_count() > 0 and hb.get_child(0) is Node3D:
+		return (hb.get_child(0) as Node3D).global_position
+	return target.global_position + Vector3.UP * fallback_h
+
 func _fire_at_target() -> void:
 	if not _is_target_valid():
 		return
@@ -2168,8 +2175,8 @@ func _fire_at_target() -> void:
 			# Arma enfiada na parede: impede disparo mágico através de quina
 			return
 
-	var target_y_offset = 1.55 if (randf() < headshot_chance) else 1.10
-	var target_center = target_combatant.global_position + Vector3.UP * target_y_offset
+	var aim_head : bool = randf() < headshot_chance
+	var target_center = _hitbox_point(target_combatant, "Hitbox_Head" if aim_head else "Hitbox_Chest", 1.55 if aim_head else 1.10)
 
 	# Dispersão balística: usa accuracy_aim no combate armado para tiros precisos e letais
 	var cur_accuracy = accuracy_aim if (ai_state == AIState.COMBAT or ai_state == AIState.ALERT) else accuracy_hip
@@ -2232,7 +2239,7 @@ func _fire_at_target() -> void:
 					is_head = true
 				elif col and "head" in col.name.to_lower():
 					is_head = true
-				elif target_y_offset > 1.4 and randf() < (headshot_chance * 0.7):
+				elif aim_head and randf() < (headshot_chance * 0.7):
 					is_head = true
 
 				var dmg = int(damage_per_shot * 1.8) if is_head else damage_per_shot

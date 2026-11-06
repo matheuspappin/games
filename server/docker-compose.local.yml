@@ -1,6 +1,17 @@
-# Teste local (sem dominio/HTTPS): publica o WebSocket direto na porta 7777 do PC.
-# Uso: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build nuke-dedicated-server
+# Teste local no PC (sem domínio/HTTPS): tudo em http://localhost:8090
+# Uso (na pasta server): docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+# Para clientes desktop conectarem direto (ws://IP:7777), descomente as portas do servidor.
 services:
   nuke-dedicated-server:
-    ports:
-      - "7777:7777"
+    environment:
+      - EXTRA_ARGS=-- --shot-log   # loga cada tiro aceito/recusado (só no teste local)
+    # ports:
+    #   - "7777:7777"
+  caddy:
+    environment:
+      - GAME_DOMAIN=:8090   # http no próprio PC (localhost)
+      - LAN_SNI=192.168.15.15
+      - LAN_DOMAIN=https://192.168.15.15:8443, https://localhost:8443   # https para celular/outro PC (troque pelo IP do seu PC)
+    ports: !override
+      - "8090:8090"
+      - "8443:8443"

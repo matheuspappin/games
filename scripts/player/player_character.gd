@@ -29,6 +29,15 @@ var _death_cam_target_rot: Vector3 = Vector3.ZERO
 var _original_head_pos: Vector3 = Vector3(0, 1.5, 0)
 
 var _cam_flinch_rot: Vector3 = Vector3.ZERO
+# Postura e inclinação replicadas (MultiplayerSynchronizer): 0 em pé, 1 agachado, 2 deitado; -1..1
+var stance_sync: int = 0
+var lean_sync: float = 0.0
+var _vis_crouch: float = 0.0
+var _vis_prone: float = 0.0
+var _vis_lean: float = 0.0
+var _shadow_base_xf: Transform3D = Transform3D.IDENTITY
+var _shadow_base_ready: bool = false
+var _stance_legs: StanceLegModifier = null
 var _cam_flinch_vel: Vector3 = Vector3.ZERO
 var sound_flesh_impact: AudioStream = null
 var sound_soldier_grunt: AudioStream = null
@@ -349,6 +358,7 @@ func _process(delta: float) -> void:
 	if not is_local_player() or is_dead or is_queued_for_deletion() or name.begins_with("Player_Old_"):
 		return
 	super._process(delta)
+	_update_tac_sprint_pose()
 
 	if perk_manager and perk_manager.has_perk("high_alert"):
 		_update_high_alert_sensor(delta)
@@ -375,8 +385,9 @@ func _physics_process(delta: float) -> void:
 			var damping = 24.0
 			_cam_flinch_vel += -spring_k * _cam_flinch_rot * delta - damping * _cam_flinch_vel * delta
 			_cam_flinch_rot += _cam_flinch_vel * delta
-			CAMERA.rotation.x = _cam_flinch_rot.x
-			CAMERA.rotation.z = _cam_flinch_rot.z
+			cam_extra_rot = Vector2(_cam_flinch_rot.x, _cam_flinch_rot.z)   # aplicado junto com balanço e inclinação
+		stance_sync = stance_id()
+		lean_sync = lean_amount
 		# Proteção contra queda acidental no vazio / fora do mapa
 		if global_position.y < -15.0 and not is_dead:
 			respawn()
@@ -385,6 +396,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 
 	_update_shadow_animation(delta)
+	_update_stance_body(delta)
 
 func _update_shadow_animation(delta: float) -> void:
 	if not _shadow_anim_player:
@@ -476,6 +488,9 @@ func take_damage(amount: int, direction: Vector3 = Vector3.ZERO, attacker: Node 
 
 @rpc("any_peer", "call_local")
 func take_damage_rpc(amount: int, is_headshot: bool, hit_dir: Vector3, attacker_id: int) -> void:
+	# só o servidor aplica dano (cliente não consegue mandar "tome X de dano")
+	if not _from_server():
+		return
 	if is_dead:
 		return
 	if health_component and health_component.is_dead:
@@ -484,12 +499,37 @@ func take_damage_rpc(amount: int, is_headshot: bool, hit_dir: Vector3, attacker_
 	if health_component:
 		health_component.take_damage(amount, hit_dir, "Head" if is_headshot else "Chest")
 
-	if is_multiplayer_authority() and health_component and health_component.current_health <= 0:
-		_on_death(hit_dir, "Head" if is_headshot else "Chest")
-		rpc("sync_death", attacker_id)
+	# morte decidida pelo servidor, pela vida da cópia dele
+	if _is_server_side() and health_component and health_component.current_health <= 0:
+		if _net_online():
+			rpc("sync_death", attacker_id)
+		else:
+			sync_death(attacker_id)
 
-@rpc("call_local")
+## Chamada veio do servidor (ou é local, sem rede)
+func _from_server() -> bool:
+	if not _net_online():
+		return true
+	var s := multiplayer.get_remote_sender_id()
+	return s == 1 or (s == 0 and multiplayer.is_server())
+
+func _net_online() -> bool:
+	return multiplayer.has_multiplayer_peer() and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
+
+func _is_server_side() -> bool:
+	return (not _net_online()) or multiplayer.is_server()
+
+var _death_reported: bool = false
+var _death_time_ms: int = 0
+
+@rpc("any_peer", "call_local", "reliable")
 func sync_death(killer_id: int) -> void:
+	if not _from_server() or _death_reported:
+		return
+	_death_reported = true
+	_death_time_ms = Time.get_ticks_msec()
+	if is_local_player() and not is_dead:
+		_on_death(Vector3.ZERO, "Chest")
 	is_dead = true
 	respawn_timer = 3.0
 	
@@ -622,6 +662,27 @@ func _on_death(_death_dir: Vector3, _hit_bone: String) -> void:
 
 func respawn() -> void:
 	is_dead = false
+	_death_reported = false
+	tac_sprinting = false
+	tac_sprint_pose = 0.0
+	tac_sprint_energy = 1.0
+	tac_visual = 0.0; _tac_visual_v = 0.0
+	run_visual = 0.0; _run_visual_v = 0.0
+	busy_visual = 0.0; _busy_visual_v = 0.0
+	# volta em pé, sem inclinação nem escalada
+	mantling = false
+	lean_amount = 0.0
+	_stance_lerp_active = false
+	state = "normal"
+	speed = base_speed
+	_apply_stance_values(STANCE_STAND)
+	if CROUCH_ANIMATION and CROUCH_ANIMATION.has_animation("RESET"):
+		CROUCH_ANIMATION.play("RESET")
+	stance_sync = 0
+	lean_sync = 0.0
+	cam_extra_rot = Vector2.ZERO
+	if viewmodel_rig:
+		viewmodel_rig.transform = Transform3D.IDENTITY
 	visible = true
 	
 	if has_node("Collision"):
@@ -691,6 +752,12 @@ func _get_network_manager() -> Node:
 
 @rpc("call_local")
 func sync_respawn(pos: Vector3) -> void:
+	# servidor: não aceita voltar antes do tempo de respawn
+	if _net_online() and multiplayer.is_server() and _death_reported and Time.get_ticks_msec() - _death_time_ms < 2500:
+		return
+	_death_reported = false
+	if health_component and health_component.is_dead:
+		health_component.revive()
 	is_dead = false
 	visible = true
 	global_position = pos
@@ -768,6 +835,185 @@ func apply_remote_loadout(d: Dictionary) -> void:
 
 ## Velocidade do jogador pela arma (como no CoD): mobilidade dos acessórios e mira mais lenta,
 ## ajustada pelas coronhas. Correndo não se mira, então a redução de mira só vale andando/agachado.
+# ── POSE DA ARMA NA CORRIDA (estilo CoD MW/Warzone) ─────────────────────────
+# Move o WeaponRig inteiro (braços + arma, qualquer viewmodel) girando em volta da empunhadura.
+# Corrida normal: arma baixa e virada para a esquerda. Corrida tática: arma erguida, cano para cima.
+# Entrada e saída usam mola (passa um pouco do ponto e assenta), como as animações do CoD.
+# Posição em metros, rotação em graus, tudo no espaço da câmera.
+const TAC_POSE_POS        := Vector3(0.115, -0.045, 0.0)
+const TAC_POSE_ROT        := Vector3(36.0, 4.0, 40.0)
+const TAC_POSE_PIVOT      := Vector3(0.11, -0.17, -0.36)   # empunhadura (gira em torno da mão, não do olho)
+const TAC_POSE_POS_PISTOL := Vector3(0.05, -0.02, 0.02)
+const TAC_POSE_ROT_PISTOL := Vector3(48.0, -6.0, -14.0)
+const TAC_POSE_PIVOT_PISTOL := Vector3(0.03, -0.16, -0.34)
+const RUN_POSE_POS        := Vector3(-0.01, -0.035, 0.02)
+const RUN_POSE_ROT        := Vector3(-12.0, 28.0, -8.0)
+const RUN_POSE_POS_PISTOL := Vector3(0.0, -0.04, 0.02)
+const RUN_POSE_ROT_PISTOL := Vector3(-30.0, 12.0, 4.0)
+const BUSY_POSE_POS        := Vector3(0.02, -0.17, 0.07)    # rastejando/escalando: arma baixa, fora de uso
+const BUSY_POSE_ROT        := Vector3(-38.0, 26.0, -22.0)
+const BUSY_POSE_POS_PISTOL := Vector3(0.0, -0.15, 0.05)
+const BUSY_POSE_ROT_PISTOL := Vector3(-48.0, 10.0, 0.0)
+const POSE_SPRING_K       := 190.0   # rigidez
+const POSE_SPRING_C       := 17.0    # amortecimento (< 2*sqrt(K) = passa um pouco do ponto)
+
+## Pose visual com mola (0 = arma em posição de tiro, 1 = pose completa). Lidas também pelo viewmodel.
+var tac_visual : float = 0.0
+var run_visual : float = 0.0
+var _tac_visual_v : float = 0.0
+var _run_visual_v : float = 0.0
+var busy_visual : float = 0.0
+var _busy_visual_v : float = 0.0
+
+func _spring(x: float, v: float, target: float, dt: float) -> Vector2:
+	v += (POSE_SPRING_K * (target - x) - POSE_SPRING_C * v) * dt
+	x += v * dt
+	return Vector2(x, v)
+
+func _update_tac_sprint_pose() -> void:
+	if not viewmodel_rig:
+		return
+	var dt : float = minf(get_process_delta_time(), 0.05)
+	var tac_t : float = 1.0 if tac_sprinting else 0.0
+	var running : bool = state == "sprinting" and not tac_sprinting and is_on_floor() and moving
+	var run_t : float = 1.0 if running else 0.0
+	var r := _spring(tac_visual, _tac_visual_v, tac_t, dt)
+	tac_visual = r.x; _tac_visual_v = r.y
+	r = _spring(run_visual, _run_visual_v, run_t, dt)
+	run_visual = r.x; _run_visual_v = r.y
+	r = _spring(busy_visual, _busy_visual_v, 1.0 if blocks_firing() else 0.0, dt)
+	busy_visual = r.x; _busy_visual_v = r.y
+	if absf(tac_visual) < 0.0005 and absf(run_visual) < 0.0005 and absf(busy_visual) < 0.0005 \
+			and absf(_tac_visual_v) < 0.001 and absf(_run_visual_v) < 0.001 and absf(_busy_visual_v) < 0.001:
+		tac_visual = 0.0; run_visual = 0.0; busy_visual = 0.0
+		if viewmodel_rig.transform != Transform3D.IDENTITY:
+			viewmodel_rig.transform = Transform3D.IDENTITY
+		return
+	var pistol := false
+	var wd = weapon_manager.weapon_data if weapon_manager and "weapon_data" in weapon_manager else null
+	if wd and wd.category == WeaponData.WeaponCategory.PISTOL:
+		pistol = true
+	var t : float = tac_visual
+	var s : float = run_visual
+	var pos : Vector3 = (TAC_POSE_POS_PISTOL if pistol else TAC_POSE_POS) * t + (RUN_POSE_POS_PISTOL if pistol else RUN_POSE_POS) * s
+	var rot : Vector3 = (TAC_POSE_ROT_PISTOL if pistol else TAC_POSE_ROT) * t + (RUN_POSE_ROT_PISTOL if pistol else RUN_POSE_ROT) * s
+	pos += (BUSY_POSE_POS_PISTOL if pistol else BUSY_POSE_POS) * busy_visual
+	rot += (BUSY_POSE_ROT_PISTOL if pistol else BUSY_POSE_ROT) * busy_visual
+	var pivot : Vector3 = TAC_POSE_PIVOT_PISTOL if pistol else TAC_POSE_PIVOT
+	# balanço no ritmo da passada: lateral a meio ciclo, batida vertical a cada passo
+	var side : float = sin(_bob_phase * 0.5)
+	var step : float = abs(sin(_bob_phase))
+	# corrida normal: balanço moderado; corrida tática: a arma quica forte a cada passo (como no Warzone)
+	var sw : float = clampf(s, 0.0, 1.2) * 0.7
+	var tw : float = clampf(t, 0.0, 1.2)
+	pos += Vector3(side * 0.014, -step * 0.012, 0.0) * sw + Vector3(side * 0.022, -step * 0.032, step * 0.012) * tw
+	rot += Vector3(step * 3.0, side * 2.5, side * 4.0) * sw + Vector3(step * 7.5, side * 3.5, side * 7.0) * tw
+	var basis := Basis.from_euler(Vector3(deg_to_rad(rot.x), deg_to_rad(rot.y), deg_to_rad(rot.z)))
+	# T = mover(pos) * mover(pivot) * girar * mover(-pivot)
+	viewmodel_rig.transform = Transform3D(basis, pos + pivot - basis * pivot)
+
+# ── POSTURA NO CORPO: HITBOXES E MODELO EM 3ª PESSOA (local e remoto) ─────────
+# Hitboxes seguem a postura e a inclinação (balas e bots acertam onde o jogador realmente está).
+# Deitado, o corpo fica atrás da câmera (a câmera é a cabeça). Frente do jogador = -Z.
+const HB_STAND  := {"head": Vector3(0, 1.6, 0),     "chest": Vector3(0, 1.05, 0),   "legs": Vector3(0, 0.35, 0),
+		"chest_size": Vector3(0.5, 0.7, 0.4), "legs_size": Vector3(0.5, 0.7, 0.4)}
+const HB_CROUCH := {"head": Vector3(0, 1.2, -0.05), "chest": Vector3(0, 0.8, 0),    "legs": Vector3(0, 0.3, 0.02),
+		"chest_size": Vector3(0.5, 0.55, 0.45), "legs_size": Vector3(0.5, 0.6, 0.55)}
+const HB_PRONE  := {"head": Vector3(0, 0.3, -0.1),  "chest": Vector3(0, 0.22, 0.45), "legs": Vector3(0, 0.15, 1.2),
+		"chest_size": Vector3(0.5, 0.35, 0.75), "legs_size": Vector3(0.45, 0.3, 0.8)}
+const SHADOW_CROUCH_DROP := 0.42
+const SHADOW_LEAN_DEG    := 12.0
+
+func _hb_mix(key: String) -> Vector3:
+	var st : float = clampf(1.0 - _vis_crouch - _vis_prone, 0.0, 1.0)
+	return (HB_STAND[key] as Vector3) * st + (HB_CROUCH[key] as Vector3) * _vis_crouch + (HB_PRONE[key] as Vector3) * _vis_prone
+
+func _update_stance_body(delta: float) -> void:
+	var sid : int = stance_sync
+	var k : float = clampf(delta * 9.0, 0.0, 1.0)
+	_vis_crouch = lerpf(_vis_crouch, 1.0 if sid == 1 else 0.0, k)
+	_vis_prone = lerpf(_vis_prone, 1.0 if sid == 2 else 0.0, k)
+	_vis_lean = lerpf(_vis_lean, lean_sync, k)
+	# Hitboxes
+	var lean_x : float = _vis_lean * lean_offset
+	var hb := get_node_or_null("Hitbox_Head")
+	if hb and hb.get_child_count() > 0:
+		(hb.get_child(0) as Node3D).position = _hb_mix("head") + Vector3(lean_x, -absf(_vis_lean) * 0.05, 0)
+	var hc := get_node_or_null("Hitbox_Chest")
+	if hc and hc.get_child_count() > 0:
+		var cc := hc.get_child(0) as CollisionShape3D
+		cc.position = _hb_mix("chest") + Vector3(lean_x * 0.45, 0, 0)
+		if cc.shape is BoxShape3D:
+			(cc.shape as BoxShape3D).size = _hb_mix("chest_size")
+	var hl := get_node_or_null("Hitbox_Legs")
+	if hl and hl.get_child_count() > 0:
+		var cl := hl.get_child(0) as CollisionShape3D
+		cl.position = _hb_mix("legs")
+		if cl.shape is BoxShape3D:
+			(cl.shape as BoxShape3D).size = _hb_mix("legs_size")
+	# Modelo em 3ª pessoa (outros jogadores veem; o local projeta a sombra)
+	if not shadow_soldier or not is_instance_valid(shadow_soldier):
+		return
+	if not _shadow_base_ready:
+		_shadow_base_xf = shadow_soldier.transform
+		_shadow_base_ready = true
+	var xf : Transform3D = _shadow_base_xf
+	xf.origin.y -= SHADOW_CROUCH_DROP * _vis_crouch
+	# deitado de bruços: gira -90° no X (cabeça para a frente), corpo para trás da câmera
+	var prone_xf := Transform3D(Basis(Vector3.RIGHT, -PI * 0.5 * _vis_prone), Vector3(0, 0.12, 1.65) * _vis_prone)
+	xf = prone_xf * xf
+	# inclinação: o tronco tomba em volta do quadril
+	var pivot := Vector3(0, 1.0, 0)
+	var lean_b := Basis(Vector3.BACK, -deg_to_rad(SHADOW_LEAN_DEG) * _vis_lean)
+	xf = Transform3D(lean_b, pivot - lean_b * pivot) * xf
+	shadow_soldier.transform = xf
+	_update_stance_legs()
+
+## Agachado: joelhos dobram no modelo em 3ª pessoa (roda depois da animação)
+func _update_stance_legs() -> void:
+	if not _stance_legs or not is_instance_valid(_stance_legs):
+		var sk := shadow_soldier.find_child("Skeleton3D", true, false) as Skeleton3D
+		if not sk:
+			return
+		_stance_legs = StanceLegModifier.new()
+		_stance_legs.name = "StanceLegs"
+		sk.add_child(_stance_legs)
+		_stance_legs.setup(sk)
+	_stance_legs.crouch = _vis_crouch * (1.0 - _vis_prone)
+	_stance_legs.active = _stance_legs.crouch > 0.01
+
+class StanceLegModifier extends SkeletonModifier3D:
+	const HIP_DEG := 80.0     # coxa para a frente
+	const KNEE_DEG := 105.0   # joelho dobrado
+	const HIP_SIGN := 1.0
+	const KNEE_SIGN := -1.0
+	var crouch := 0.0
+	var ups : Array[int] = []
+	var knees : Array[int] = []
+
+	func setup(sk: Skeleton3D) -> void:
+		for i in sk.get_bone_count():
+			var n := sk.get_bone_name(i)
+			if n.contains("UpLeg"):
+				ups.append(i)
+			elif n.contains("Leg") and not n.contains("UpLeg") and (n.contains("LeftLeg") or n.contains("RightLeg")):
+				knees.append(i)
+
+	func _process_modification_with_delta(_delta: float) -> void:
+		_apply()
+
+	func _process_modification() -> void:
+		_apply()
+
+	func _apply() -> void:
+		var sk := get_skeleton()
+		if not sk or crouch <= 0.001:
+			return
+		for i in ups:
+			sk.set_bone_pose_rotation(i, sk.get_bone_pose_rotation(i) * Quaternion(Vector3.RIGHT, HIP_SIGN * deg_to_rad(HIP_DEG) * crouch))
+		for i in knees:
+			sk.set_bone_pose_rotation(i, sk.get_bone_pose_rotation(i) * Quaternion(Vector3.RIGHT, KNEE_SIGN * deg_to_rad(KNEE_DEG) * crouch))
+
 func _speed_multiplier() -> float:
 	var m := 1.0
 	var wd = weapon_manager.weapon_data if weapon_manager and "weapon_data" in weapon_manager else null

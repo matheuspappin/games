@@ -1,10 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Play, Shield, Wifi, Target, Crosshair, Sparkles, CheckCircle2, 
   RotateCcw, Monitor, Globe, Flame, Volume2, Maximize, AlertCircle, ExternalLink 
 } from 'lucide-react';
 
-export default function GameLauncherModal({ isOpen, onClose, selectedMode = '1v1', userGamertag = 'Operador_Alpha' }) {
+export default function GameLauncherModal({ isOpen, onClose, selectedMode = '1v1', userGamertag = 'Operador_Alpha', walletAddress = '' }) {
   const [map, setMap] = useState('Nuketown 2065');
   const [mode, setMode] = useState(selectedMode);
   const [stake, setStake] = useState('10');
@@ -16,6 +16,18 @@ export default function GameLauncherModal({ isOpen, onClose, selectedMode = '1v1
   const [isLaunchingDesktop, setIsLaunchingDesktop] = useState(false);
   const [sessionKey, setSessionKey] = useState(Date.now());
   const iframeContainerRef = useRef(null);
+  // Resultado oficial da partida (vem do servidor, repassado pelo jogo dentro do iframe)
+  const [matchResult, setMatchResult] = useState(null);
+
+  useEffect(() => {
+    const onMsg = (ev) => {
+      if (ev.origin !== window.location.origin) return;
+      const m = ev.data;
+      if (m && m.source === 'nuke-game' && m.event === 'match_result') setMatchResult(m.data);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -34,7 +46,14 @@ export default function GameLauncherModal({ isOpen, onClose, selectedMode = '1v1
 
   const modeCode = getModeCode();
   const mapCode = getMapCode();
-  const godotUrl = `/game/index.html?autostart=1&mode=${modeCode}&map=${mapCode}&stake=${stake}&player=${encodeURIComponent(userGamertag)}&_s=${sessionKey}`;
+  // Onde está o jogo e o servidor da partida:
+  //  - VITE_GAME_URL: página do jogo (padrão: /game/index.html deste site; no Docker: http://localhost:8090/index.html)
+  //  - VITE_GAME_SERVER: host:porta do servidor dedicado (ex.: localhost:8090 ou play.seudominio.com:443).
+  //    Se definido, os modos online (1v1/6v6) entram direto na partida do servidor; PvE continua local.
+  const gameBase = import.meta.env.VITE_GAME_URL || '/game/index.html';
+  const gameServer = import.meta.env.VITE_GAME_SERVER || '';
+  const joinServer = gameServer && modeCode !== 'pve';
+  const godotUrl = `${gameBase}?autostart=1&mode=${modeCode}&map=${mapCode}&stake=${stake}&player=${encodeURIComponent(userGamertag)}&wallet=${encodeURIComponent(walletAddress || '')}${joinServer ? `&server=${encodeURIComponent(gameServer)}` : ''}&_s=${sessionKey}`;
 
   const handleLaunchDesktop = async () => {
     setIsLaunchingDesktop(true);
@@ -322,6 +341,11 @@ export default function GameLauncherModal({ isOpen, onClose, selectedMode = '1v1
 
             {/* REAL GODOT ENGINE IFRAME VIEWPORT */}
             <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%', background: '#000' }}>
+              {matchResult && matchResult.result && (
+                <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 5, background: 'rgba(10,14,22,0.92)', border: '1px solid var(--gold)', borderRadius: 8, padding: '10px 16px', color: '#fff', fontSize: 13 }}>
+                  Resultado oficial do servidor — partida {matchResult.result.match_id}: vitória do time {matchResult.result.winner_team === 0 ? 'ALPHA' : 'BRAVO'} ({matchResult.result.score.alpha} x {matchResult.result.score.bravo}){matchResult.signature ? ' • assinado' : ' • SEM assinatura'}
+                </div>
+              )}
               <iframe
                 key={sessionKey}
                 src={godotUrl}

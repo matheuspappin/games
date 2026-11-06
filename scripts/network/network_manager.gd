@@ -87,7 +87,11 @@ func _ready() -> void:
 
 	# Navegador: rede liberada via WebSocket (cliente). Argumentos de linha de comando não existem no web.
 	if OS.has_feature("web"):
-		print("[NetworkManager] Plataforma Web detectada. Multiplayer via WebSocket disponível.")
+		# o servidor da partida fica no mesmo endereço da página (o Caddy encaminha o WebSocket)
+		var host := str(JavaScriptBridge.eval("location.host", true))
+		if host != "" and host != "null":
+			dedicated_server_ip = host
+		print("[NetworkManager] Plataforma Web detectada. Servidor da partida: ", dedicated_server_ip)
 		return
 
 	# Suporte a argumentos de linha de comando
@@ -352,7 +356,13 @@ func _peer_create_client(peer: MultiplayerPeer, address: String, port: int) -> E
 		if not (address.begins_with("ws://") or address.begins_with("wss://")):
 			# Página servida por https exige wss://; em LAN/desktop, ws:// direto na porta
 			var secure := OS.has_feature("web") and str(JavaScriptBridge.eval("location.protocol", true)) == "https:"
-			url = ("wss://%s" % address) if secure else ("ws://%s:%d" % [address, port])
+			var same_origin := OS.has_feature("web") and address == str(JavaScriptBridge.eval("location.host", true))
+			if secure:
+				url = "wss://%s" % address
+			elif same_origin or address.contains(":"):
+				url = "ws://%s" % address   # mesmo endereço da página (via Caddy) ou host:porta explícito
+			else:
+				url = "ws://%s:%d" % [address, port]
 		return (peer as WebSocketMultiplayerPeer).create_client(url)
 	return (peer as ENetMultiplayerPeer).create_client(address, port)
 
@@ -378,6 +388,7 @@ func build_local_loadout() -> Dictionary:
 func submit_local_loadout() -> void:
 	if not multiplayer.has_multiplayer_peer() or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
 		return
+	_submit_local_identity()
 	var d := build_local_loadout()
 	if d.is_empty():
 		return
@@ -1050,9 +1061,168 @@ func _spawn_player(peer_id: int, is_alpha: bool, target_parent: Node = null) -> 
 
 	return player
 
-@rpc("any_peer", "call_local")
+# ── IDENTIDADE E RESULTADO DA PARTIDA (base das apostas) ─────────────────────
+# O servidor guarda nome e carteira declarados de cada jogador e, no fim, grava o resultado
+# assinado (HMAC-SHA256 com MATCH_SECRET) em RESULTS_DIR. O site/oráculo lê esse arquivo;
+# o resultado nunca vem do navegador.
+var peer_identity := {}   # peer_id -> {name, wallet}
+var match_id: String = ""
+var _result_written := false
+
+func _submit_local_identity() -> void:
+	var gm = get_node_or_null("/root/GameManager")
+	var wb = get_node_or_null("/root/WebBridge")
+	var d := {
+		"name": str(gm.local_player_name) if gm and not str(gm.local_player_name).is_empty() else "Operador",
+		"wallet": str(wb.wallet_address) if wb and "wallet_address" in wb else "",
+	}
+	if multiplayer.is_server():
+		peer_identity[multiplayer.get_unique_id()] = d
+	else:
+		rpc_id(1, "rpc_submit_identity", d)
+
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_submit_identity(d: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var w := str(d.get("wallet", ""))
+	if not (w.length() >= 32 and w.length() <= 44 and RegEx.create_from_string("^[1-9A-HJ-NP-Za-km-z]+$").search(w) != null):
+		w = ""
+	peer_identity[multiplayer.get_remote_sender_id()] = {"name": str(d.get("name", "Operador")).substr(0, 24), "wallet": w}
+
+func _server_finalize_result(winner_team: int) -> void:
+	if _result_written or not multiplayer.is_server():
+		return
+	_result_written = true
+	if match_id == "":
+		match_id = "%d-%s" % [int(Time.get_unix_time_from_system()), str(randi()).md5_text().substr(0, 8)]
+	var players := []
+	for pid in player_stats:
+		var st: Dictionary = player_stats[pid]
+		var idn: Dictionary = peer_identity.get(pid, {})
+		players.append({
+			"peer_id": int(pid),
+			"name": str(idn.get("name", st.get("name", ""))),
+			"wallet": str(idn.get("wallet", "")),
+			"team": int(st.get("team", 0)),
+			"kills": int(st.get("kills", 0)),
+			"deaths": int(st.get("deaths", 0)),
+		})
+	var result := {
+		"match_id": match_id,
+		"map": dedicated_map_path.get_file().get_basename(),
+		"target_kills": target_kills,
+		"winner_team": winner_team,
+		"score": {"alpha": score_alpha, "bravo": score_bravo},
+		"players": players,
+		"ended_at": Time.get_datetime_string_from_system(true),
+	}
+	var payload := JSON.stringify(result, "", true)
+	var secret := OS.get_environment("MATCH_SECRET")
+	var sig := ""
+	if secret != "":
+		sig = Crypto.new().hmac_digest(HashingContext.HASH_SHA256, secret.to_utf8_buffer(), payload.to_utf8_buffer()).hex_encode()
+	var signed := {"result": result, "payload": payload, "signature": sig, "alg": "HMAC-SHA256"}
+	var dir := OS.get_environment("RESULTS_DIR")
+	if dir == "":
+		dir = "user://results"
+	DirAccess.make_dir_recursive_absolute(dir)
+	var f := FileAccess.open(dir.path_join(match_id + ".json"), FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(signed, "  "))
+		f.close()
+	print("[NetworkManager] RESULTADO DA PARTIDA %s gravado (vencedor: time %d, assinado: %s)" % [match_id, winner_team, str(sig != "")])
+	rpc("rpc_match_result", signed)
+
+@rpc("authority", "call_remote", "reliable")
+func rpc_match_result(signed: Dictionary) -> void:
+	var wb = get_node_or_null("/root/WebBridge")
+	if wb and wb.has_method("notify_web"):
+		wb.notify_web("match_result", signed)
+
+# ── TIRO AUTORITATIVO NO SERVIDOR ─────────────────────────────────────────────
+# O cliente manda só "atirei daqui, nesta direção, com esta arma". O servidor confere
+# (vivo, arma da classe, origem perto da cabeça, cadência) e refaz o raycast na cena dele.
+const SHOT_MAX_ORIGIN_ERR := 2.0   # metros entre a origem informada e a cabeça no servidor (latência)
+var _last_shot_ms := {}
+
+func _find_player_node(pid: int) -> Node:
+	return get_tree().root.find_child("Player_%d" % pid, true, false)
+
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_server_shot(origin: Vector3, dir: Vector3, weapon_path: String, melee: bool) -> void:
+	if not multiplayer.is_server():
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	var shooter = _find_player_node(pid)
+	if not shooter or not is_instance_valid(shooter) or ("is_dead" in shooter and shooter.is_dead):
+		_shot_dbg(pid, "atirador inexistente ou morto"); return
+	if not (weapon_path.begins_with("res://resources/weapons/") and weapon_path.ends_with(".tres") and ResourceLoader.exists(weapon_path)):
+		return
+	var wd := load(weapon_path) as WeaponData
+	if wd == null:
+		return
+	var lo: Dictionary = peer_loadouts.get(pid, {})
+	var is_side := wd.category == WeaponData.WeaponCategory.PISTOL or wd.category == WeaponData.WeaponCategory.MELEE
+	if not lo.is_empty() and weapon_path != str(lo.get("weapon", "")) and not is_side:
+		_shot_dbg(pid, "arma fora da classe (%s)" % weapon_path); return
+	var head: Vector3 = shooter.HEAD.global_position if ("HEAD" in shooter and shooter.HEAD) else shooter.global_position + Vector3.UP * 1.5
+	if origin.distance_to(head) > SHOT_MAX_ORIGIN_ERR:
+		_shot_dbg(pid, "origem longe da cabeça (%.2f m)" % origin.distance_to(head)); return
+	var now := Time.get_ticks_msec()
+	var min_ms := 400 if melee else int(wd.get_fire_interval() * 1000.0 * 0.7)
+	if now - int(_last_shot_ms.get(pid, 0)) < min_ms:
+		_shot_dbg(pid, "cadência"); return
+	_last_shot_ms[pid] = now
+	dir = dir.normalized()
+	if dir.length() < 0.5:
+		return
+	var rng: float = 2.5 if melee else wd.max_range
+	var space = shooter.get_world_3d().direct_space_state
+	var excl: Array[RID] = [shooter.get_rid()]
+	for hb in shooter.find_children("Hitbox_*", "Area3D", false, false):
+		excl.append((hb as Area3D).get_rid())   # as hitboxes do próprio atirador não bloqueiam o tiro
+	var q := PhysicsRayQueryParameters3D.create(origin, origin + dir * rng, 0b1111, excl)
+	q.collide_with_areas = true
+	q.collide_with_bodies = true
+	var hit = space.intersect_ray(q)
+	if hit.is_empty():
+		_shot_dbg(pid, "tiro no vazio"); return
+	var col: Node = hit.collider
+	var target: Node = null
+	var n: Node = col
+	while n:
+		if n is PlayerCharacter:
+			target = n
+			break
+		n = n.get_parent()
+	if target == null or target == shooter or ("is_dead" in target and target.is_dead):
+		_shot_dbg(pid, "acertou %s (%s)" % [str(col.name), "ele mesmo" if target == shooter else "não é jogador vivo"]); return
+	var tid: int = int(target.peer_id) if "peer_id" in target else 0
+	if tid > 0 and is_player_alpha(tid) == is_player_alpha(pid):
+		_shot_dbg(pid, "fogo amigo"); return
+	var dmg := 100
+	var is_head := false
+	if not melee:
+		var mult := wd.chest_multiplier
+		if col is HitboxComponent:
+			mult = (col as HitboxComponent)._get_multiplier((col as HitboxComponent).region, wd)
+			is_head = (col as HitboxComponent).is_headshot()
+		dmg = int(wd.get_damage_at_distance(origin.distance_to(hit.position)) * mult)
+	_shot_dbg(pid, "ACERTO em %s: %d de dano (cabeça=%s)" % [target.name, dmg, str(is_head)])
+	WeaponManager._server_apply_player_damage(target, dmg, is_head, dir, pid)
+
+## Log de tiros recusados/aceitos no servidor (ligar com --shot-log)
+func _shot_dbg(pid: int, msg: String) -> void:
+	if "--shot-log" in OS.get_cmdline_user_args():
+		print("[Tiro] peer %d: %s" % [pid, msg])
+
+## Placar: só o servidor conta, e só a partir da morte que ele mesmo decidiu (sync_death).
+## Não é mais um RPC: um cliente não consegue mandar "eu matei fulano".
 func report_kill(killer_peer_id: int, victim_peer_id: int) -> void:
 	if not multiplayer.is_server():
+		return
+	if killer_peer_id == victim_peer_id or killer_peer_id <= 0:
 		return
 
 	var is_alpha_kill = (killer_peer_id in team_alpha_peers or killer_peer_id == 1)
@@ -1074,11 +1244,16 @@ func report_kill(killer_peer_id: int, victim_peer_id: int) -> void:
 	rpc("sync_player_stats", player_stats)
 
 	if score_alpha >= target_kills:
+		_server_finalize_result(0)
 		rpc("announce_winner", 0)
 	elif score_bravo >= target_kills:
+		_server_finalize_result(1)
 		rpc("announce_winner", 1)
 
 func record_team_score(killer_team: int, victim_team: int, killer_id: int, victim_id: int, is_headshot: bool = false, is_crouch: bool = false) -> void:
+	# partida online: o placar é só o do servidor (report_kill); isto vale para partidas locais com bots
+	if multiplayer.has_multiplayer_peer() and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
+		return
 	if killer_team == 0:
 		score_alpha += 1
 	else:
@@ -1168,6 +1343,8 @@ func announce_winner(winner_team: int) -> void:
 	match_ended.emit(winner_team)
 
 func reset_match_state() -> void:
+	_result_written = false
+	match_id = ""
 	match_active = true
 	score_alpha = 0
 	score_bravo = 0

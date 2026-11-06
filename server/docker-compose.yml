@@ -11,6 +11,11 @@ services:
       - PORT=7777
       - MAX_PLAYERS=12    # Ate 6v6
       - TARGET_KILLS=50
+      - MATCH_SECRET=${MATCH_SECRET:-}      # assina os resultados (defina em produção)
+      - RESULTS_DIR=/app/results
+    volumes:
+      - ./bin:/app/bin:ro                 # servidor exportado (export_server.bat)
+      - ./results:/app/results            # resultados assinados das partidas
     logging:
       driver: "json-file"
       options:
@@ -29,6 +34,8 @@ services:
       - GAME_DOMAIN=${GAME_DOMAIN:-localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../web/public/game:/srv/game:ro   # jogo exportado para Web (export_web.bat)
+      - ./results:/srv/results:ro         # resultados assinados (leitura pública)
       - caddy_data:/data
     depends_on:
       - nuke-dedicated-server
