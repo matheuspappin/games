@@ -188,7 +188,9 @@ func _build_bo1_graph() -> void:
 		NavNode.new(2, Vector3(-4.5, gy, -26.0), "BO1_Alpha_Yard_Center", [0, 1, 5]),
 
 		# --- FLANCO OESTE / DRIVEWAY CASA AMARELA (100% Desobstruído) ---
-		NavNode.new(3, Vector3(-18.0, gy, -15.0), "BO1_Yellow_Driveway_Mid", [0, 1, 6]),
+		# x/z medidos (tools_capture/lane_audit): em (-18,-15) o nó encostava na quina da casa amarela e a
+		# linha até a rua atravessava a parede; aqui tem visão livre para o quintal (1) e para a rua (6)
+		NavNode.new(3, Vector3(-20.0, gy, -12.5), "BO1_Yellow_Driveway_Mid", [0, 1, 6]),
 		NavNode.new(6, Vector3(-16.0, gy, -6.0), "BO1_Yellow_Driveway_Street", [3, 9, 10]),
 
 		# --- CASA AMARELA (Térreo & 2º Andar — Portas e Corredor 100% Desobstruídos) ---
@@ -203,13 +205,13 @@ func _build_bo1_graph() -> void:
 
 		# --- RUA CENTRAL BO1 (Z ~ -6 a +6, ônibus, caminhão e barricada do carro) ---
 		NavNode.new(9, Vector3(-10.0, gy, -5.0), "BO1_Street_NW", [6, 10, 15]),
-		NavNode.new(11, Vector3(8.0, gy, -2.0), "BO1_Street_East", [14, 16, 35]),
+		NavNode.new(11, Vector3(8.0, gy, -2.0), "BO1_Street_East", [14, 16, 35, 19]),
 		NavNode.new(14, Vector3(0.0, gy, -5.0), "BO1_Street_North_Center", [10, 11, 17]),
 		NavNode.new(15, Vector3(-8.0, gy, 0.0), "BO1_Street_West_Lane", [9, 17, 18]),
 		NavNode.new(16, Vector3(5.0, gy, 0.0), "BO1_Street_East_Lane", [11, 17, 19, 35]),
 		NavNode.new(17, Vector3(0.0, gy, 0.0), "BO1_Street_Cross_Mid", [14, 15, 16, 20]),
 		NavNode.new(18, Vector3(-8.0, gy, 5.0), "BO1_Street_SW", [15, 20, 21]),
-		NavNode.new(19, Vector3(5.0, gy, 5.0), "BO1_Street_SE", [16, 20, 23]),
+		NavNode.new(19, Vector3(5.0, gy, 5.0), "BO1_Street_SE", [16, 20, 23, 60, 11]),
 		NavNode.new(20, Vector3(0.0, gy, 5.0), "BO1_Street_South_Center", [17, 18, 19, 23]),
 		# Posição de cobertura no Carro do Cul-de-sac
 		NavNode.new(35, Vector3(13.0, gy, -1.5), "BO1_Street_CulDeSac_Car", [11, 16, 23], false, true, Vector3(-1, 0, 0), 1),
@@ -227,10 +229,17 @@ func _build_bo1_graph() -> void:
 		NavNode.new(28, Vector3(-8.5, gy, 18.0), "BO1_Green_Alley_W_Mid", [21, 29]),
 		NavNode.new(29, Vector3(-7.5, gy, 26.0), "BO1_Green_Alley_W_South", [28, 30, 31]),
 
+		# --- FLANCO LESTE CASA VERDE: entrada da garagem -> faixa de grama a leste da garagem -> atrás da
+		# garagem -> quintal Bravo (antes nenhuma lane passava por aqui: todos os bots iam pelo beco oeste) ---
+		NavNode.new(60, Vector3(6.5, gy, 10.0), "BO1_Green_Driveway", [19, 23, 61]),
+		NavNode.new(61, Vector3(11.5, gy, 16.0), "BO1_Green_East_Strip", [60, 63]),
+		NavNode.new(63, Vector3(11.3, gy, 21.6), "BO1_Green_East_Corner", [61, 62]),
+		NavNode.new(62, Vector3(6.0, gy, 21.6), "BO1_Green_Behind_Garage", [63, 32]),
+
 		# --- BASE BRAVO (Sul / Quintal Casa Verde, Z ~ 30 a 34 — Rota 100% Limpa rumo ao Beco e Meio) ---
 		NavNode.new(30, Vector3(-4.0, gy, 31.0), "BO1_Bravo_Yard_West", [29, 31]),
 		NavNode.new(31, Vector3(0.0, gy, 33.0), "BO1_Bravo_Spawn", [29, 30, 32]),
-		NavNode.new(32, Vector3(4.0, gy, 31.0), "BO1_Bravo_Yard_East", [30, 31]),
+		NavNode.new(32, Vector3(4.0, gy, 31.0), "BO1_Bravo_Yard_East", [30, 31, 62]),
 	]
 
 	for n in raw_nodes:
@@ -243,7 +252,7 @@ func _build_bo1_graph() -> void:
 				"label": n.label,
 				"team_bias": 0 if n.position.z < 0 else 1
 			})
-		if n.id in [0, 1, 2, 3, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 28, 29, 30, 31, 32, 35, 40, 41, 42, 43, 51, 52]:
+		if n.id in [0, 1, 2, 3, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 28, 29, 30, 31, 32, 35, 40, 41, 42, 43, 51, 52, 60, 61, 62, 63]:
 			patrol_waypoints.append(n.position)
 
 	# ── MAPEAMENTO DE 4 LANES TÁTICAS (BO1) ──
@@ -253,8 +262,9 @@ func _build_bo1_graph() -> void:
 	lane_nodes[1] = [0, 1, 2, 6, 10, 11, 14, 16, 17, 18, 19, 20, 23, 35, 21, 28, 29, 30, 31, 32]
 	# Lane 2 (Houses / Interior das Casas & 2º Andar): salas, portas, varandas e janelas superiores de spawn a spawn
 	lane_nodes[2] = [0, 2, 5, 40, 12, 13, 10, 41, 42, 17, 23, 24, 43, 51, 52, 21, 28, 29, 30, 31]
-	# Lane 3 (Cross Flank / Suporte Rápido): transição rápida entre pátios e rua de spawn a spawn
-	lane_nodes[3] = [0, 1, 2, 6, 11, 14, 16, 17, 19, 20, 23, 35, 21, 28, 29, 30, 31, 32]
+	# Lane 3 (Flanco Leste): rua leste e carro do cul-de-sac, entrada da garagem verde, faixa leste e fundo
+	# da garagem até o quintal Bravo. Antes era quase a mesma rota da lane 1 e terminava no beco oeste.
+	lane_nodes[3] = [0, 1, 3, 6, 10, 14, 11, 19, 60, 61, 63, 62, 32, 31]
 
 func get_patrol_waypoints() -> Array[Vector3]:
 	return patrol_waypoints

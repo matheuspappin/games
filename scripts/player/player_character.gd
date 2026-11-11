@@ -5,6 +5,7 @@
 # =============================================================================
 class_name PlayerCharacter
 extends Character
+const TP_ARM_IK = preload("res://scripts/characters/tp_arm_ik.gd")  # pegada da arma em 3ª pessoa
 
 const CharacterRetargeter = preload("res://scripts/characters/character_retargeter.gd")
 
@@ -233,6 +234,11 @@ func _apply_character_skin() -> void:
 					rifle.position = CharacterRetargeter.CS_RIFLE_LOCAL_POS
 					rifle.rotation_degrees = CharacterRetargeter.CS_RIFLE_LOCAL_ROT
 					rifle.visible = true
+					var arm_ik := TP_ARM_IK.new()
+					arm_ik.name = "TpArmIK"
+					skel.add_child(arm_ik)
+					arm_ik.rifle = rifle
+					arm_ik.facing = self
 					# a arma em 3ª pessoa mostra a classe DESTE jogador (antes usava a classe do jogador local)
 					var nm_l = get_node_or_null("/root/NetworkManager")
 					if nm_l and nm_l.peer_loadouts.has(peer_id):
@@ -840,11 +846,11 @@ func apply_remote_loadout(d: Dictionary) -> void:
 # Corrida normal: arma baixa e virada para a esquerda. Corrida tática: arma erguida, cano para cima.
 # Entrada e saída usam mola (passa um pouco do ponto e assenta), como as animações do CoD.
 # Posição em metros, rotação em graus, tudo no espaço da câmera.
-const TAC_POSE_POS        := Vector3(0.115, -0.045, 0.0)
+const TAC_POSE_POS        := Vector3(0.20, 0.01, -0.01)   # arma erguida no canto superior direito, quase saindo da tela (CoD)
 const TAC_POSE_ROT        := Vector3(36.0, 4.0, 40.0)
 const TAC_POSE_PIVOT      := Vector3(0.11, -0.17, -0.36)   # empunhadura (gira em torno da mão, não do olho)
-const TAC_POSE_POS_PISTOL := Vector3(0.05, -0.02, 0.02)
-const TAC_POSE_ROT_PISTOL := Vector3(48.0, -6.0, -14.0)
+const TAC_POSE_POS_PISTOL := Vector3(0.13, -0.03, -0.03)   # pistola erguida ao lado do rosto, à direita
+const TAC_POSE_ROT_PISTOL := Vector3(44.0, -4.0, 10.0)
 const TAC_POSE_PIVOT_PISTOL := Vector3(0.03, -0.16, -0.34)
 const RUN_POSE_POS        := Vector3(-0.01, -0.035, 0.02)
 const RUN_POSE_ROT        := Vector3(-12.0, 28.0, -8.0)

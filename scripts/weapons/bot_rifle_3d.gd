@@ -95,6 +95,9 @@ func set_weapon_loadout(weapon_path: String, attachments: Dictionary = {}, p_cam
 		_loadout_model = null
 	if weapon_path == "" or not ResourceLoader.exists(weapon_path):
 		if model_root: model_root.visible = true
+		_support_local = Vector3(-0.004, -0.063, -0.55)
+		_support_rear = Vector3(-0.004, -0.063, -0.34)
+		_is_pistol = false
 		return
 	var wrapper := WeaponVisualRegistry.instantiate_weapon_showcase(weapon_path)
 	if not wrapper:
@@ -105,34 +108,122 @@ func set_weapon_loadout(weapon_path: String, attachments: Dictionary = {}, p_cam
 		attachments.get("mag", "none"), attachments.get("underbarrel", "none"), attachments.get("stock", "none"), attachments.get("grip", "none"), attachments.get("barrel", "none"))
 	if p_camo != "default":
 		WeaponVisualRegistry.apply_camo(wrapper, p_camo)
-	var frame := _reference_frame()
-	wrapper.transform = Transform3D.IDENTITY
-	var wf := _frame_from_points(_points_local(wrapper))
-	if not frame.is_empty() and not wf.is_empty():
-		var cfg = WeaponVisualRegistry.get_weapon_config(weapon_path)
-		var ratio: float = float(cfg.get("vm_scale", REF_VM_SCALE)) / REF_VM_SCALE
-		var s: float = (float(frame["length"]) * ratio) / maxf(float(wf["length"]), 0.0001)
-		# giro que leva frente/cima da arma nova na frente/cima do fuzil de referência
-		var b_ref := Basis(frame["right"], frame["up"], -frame["front"])
-		var b_new := Basis(wf["right"], wf["up"], -wf["front"])
-		wrapper.transform = Transform3D((b_ref * b_new.inverse()) * Basis.from_scale(Vector3.ONE * s), Vector3.ZERO)
-		var f: Vector3 = frame["front"]
-		var u: Vector3 = frame["up"]
-		var r: Vector3 = frame["right"]
-		var e_f := _extent(wrapper, f)
-		var e_u := _extent(wrapper, u)
-		var e_r := _extent(wrapper, r)
-		var rr: Vector2 = frame["right_range"]
-		var rear_target: float = float(frame["rear"])
-		if String(cfg.get("category", "")) == "secondary":
-			# pistola não tem coronha: o cabo (~25% do comprimento a partir da traseira) vai onde fica
-			# o cabo do fuzil de referência, ~29 cm da traseira
-			rear_target += REF_GRIP_FROM_REAR - 0.25 * (e_f.y - e_f.x)
-		wrapper.position += f * (rear_target - e_f.x) + u * (float(frame["top"]) - e_u.y) + r * ((rr.x + rr.y) * 0.5 - (e_r.x + e_r.y) * 0.5)
-		if muzzle_flash:
-			muzzle_flash.position = muzzle_flash.position - f * muzzle_flash.position.dot(f) + f * _extent(wrapper, f).y
+	_loadout_path = weapon_path
+	_place_canonical(wrapper, weapon_path)
 	model_root.visible = false
 	_loadout_model = wrapper
+
+## Encaixe por orientação canônica (frente -Z, cima +Y, a mesma da 1ª pessoa e do Gunsmith) e pelo
+## encaixe do cabo de cada arma (socket_rear_grip): o cabo cai sempre na mão direita, inclusive em bullpups
+## e pistolas. Antes a frente era adivinhada pela geometria (escopetas e pistolas ficavam ao contrário e
+## os fuzis tortos ~10°). Resultado guardado por arma: o 2º bot com a mesma arma não varre vértices.
+## Cabo do fuzil de referência (ACR) neste suporte, medido em tools_capture/bot_calib.
+const GRIP_ANCHOR := Vector3(-0.004, -0.080, -0.242)
+const PALM_HALF_THICKNESS := 0.015   # centro da mão (medido no Blender) fica ~1,5 cm abaixo da superfície da palma
+const PISTOL_GRIP_SHIFT := Vector3(0.0, 0.02, 0.07)   # o encaixe das pistolas fica no topo do cabo: puxa a arma para dentro da mão
+static var _place_cache := {}
+var _support_local := Vector3(-0.004, -0.063, -0.55)
+var _is_pistol := false
+var _support_rear := Vector3(-0.004, -0.063, -0.34)
+
+var _palm_anchor := Vector3.INF
+var _loadout_path := ""
+
+## Centro da mão direita no espaço deste suporte (vem do TpArmIK, medido na malha da skin):
+## a arma é reposicionada para o meio do cabo cair nele
+func set_palm_anchor(p: Vector3) -> void:
+	if _palm_anchor.is_equal_approx(p):
+		return
+	_palm_anchor = p
+	if _loadout_model and is_instance_valid(_loadout_model) and _loadout_path != "":
+		_place_canonical(_loadout_model, _loadout_path)
+
+func is_pistol() -> bool:
+	return _is_pistol
+
+## Ponto onde a palma esquerda apoia, no espaço deste suporte (ponta do guarda-mão)
+func get_support_point() -> Vector3:
+	return _support_local
+
+## Ponto mais recuado do guarda-mão (10 cm à frente do cabo): o IK desliza a mão entre a ponta e este
+## ponto até onde o braço do personagem alcança
+func get_support_rear() -> Vector3:
+	return _support_rear
+
+## Face de baixo do guarda-mão numa estação z (espaço canônico da arma): menor y dos vértices numa fatia
+## de ±1,5 cm, centro em x; devolve onde fica o centro da palma (1,5 cm abaixo da face, metade da mão)
+func _under_surface(pts: PackedVector3Array, z: float, sc: float, floor_y: float) -> Vector3:
+	var half: float = 0.015 / sc
+	var ymin := INF
+	var xmin := INF
+	var xmax := -INF
+	for p in pts:
+		if absf(p.z - z) <= half and p.y >= floor_y:
+			ymin = minf(ymin, p.y); xmin = minf(xmin, p.x); xmax = maxf(xmax, p.x)
+	if ymin == INF:
+		return Vector3(0, 0, z)
+	return Vector3((xmin + xmax) * 0.5, ymin - PALM_HALF_THICKNESS / sc, z)
+
+func _place_canonical(wrapper: Node3D, weapon_path: String) -> void:
+	var cfg = WeaponVisualRegistry.get_weapon_config(weapon_path)
+	var pivot := wrapper.get_node_or_null("Pivot") as Node3D
+	if pivot:
+		pivot.transform = Transform3D.IDENTITY   # sem a pose de vitrine: fica na orientação canônica
+	wrapper.transform = Transform3D.IDENTITY
+	_is_pistol = String(cfg.get("category", "")) == "secondary"
+	var data: Dictionary = _place_cache.get(weapon_path, {})
+	if data.is_empty():
+		# a vitrine normaliza o maior eixo da arma (sem acessórios) para cfg.scale: esse é o comprimento
+		var length: float = maxf(float(cfg.get("scale", 0.52)), 0.0001)
+		var ratio: float = float(cfg.get("vm_scale", REF_VM_SCALE)) / REF_VM_SCALE
+		var sc: float = REF_LENGTH * ratio / length
+		var grip: Vector3
+		if cfg.has("socket_rear_grip"):
+			grip = cfg["socket_rear_grip"]
+		else:
+			# sem encaixe: ~25% do comprimento a partir da traseira, no terço de baixo
+			var eu := _extent(wrapper, Vector3.UP)
+			grip = Vector3(0.0, eu.x + (eu.y - eu.x) * 0.3, length * 0.25)
+		var sup: Vector3
+		var rear := Vector3.ZERO
+		if _is_pistol:
+			sup = grip + Vector3(-0.045, -0.012, -0.012) / sc   # mão esquerda envolvendo o cabo pelo lado
+			rear = sup
+		else:
+			# apoio medido na malha: na estação do guarda-mão (encaixe underbarrel) e 10 cm à frente do cabo,
+			# a palma fica sob a face de baixo real do guarda-mão, centrada nele
+			var pts := _points_local(wrapper)
+			var ub: Vector3 = cfg.get("socket_underbarrel", grip + Vector3(0, 0, -length * 0.4))
+			# estação recuada: à frente do cabo E do pente (no fuzil comum o pente fica logo à frente do cabo)
+			var z_rear: float = grip.z - 0.10 / sc
+			if cfg.has("socket_mag") and (cfg["socket_mag"] as Vector3).z < grip.z:
+				z_rear = minf(z_rear, (cfg["socket_mag"] as Vector3).z - 0.07 / sc)
+			# piso da busca: só a face do guarda-mão (bandoleira, pente e acessórios pendurados ficam abaixo)
+			var floor_y: float = ub.y - 0.025 / sc
+			sup = _under_surface(pts, ub.z, sc, floor_y)
+			rear = _under_surface(pts, clampf(z_rear, ub.z, grip.z), sc, floor_y)
+		# meio do cabo medido na malha: caixa dos vértices logo abaixo do encaixe do cabo (o cabo inclina para trás)
+		var gpts := _points_local(wrapper)
+		var gmin := Vector3(INF, INF, INF)
+		var gmax := Vector3(-INF, -INF, -INF)
+		for gp in gpts:
+			if gp.z >= grip.z - 0.02 / sc and gp.z <= grip.z + 0.07 / sc and gp.y <= grip.y - 0.005 / sc and gp.y >= grip.y - 0.08 / sc:
+				gmin = gmin.min(gp); gmax = gmax.max(gp)
+		var grip_mid: Vector3 = (gmin + gmax) * 0.5 if gmin.x != INF else grip
+		data = {"s": sc, "grip": grip, "grip_mid": grip_mid, "sup": sup, "rear": rear, "muzzle": cfg.get("socket_muzzle", Vector3(0, 0, -length * 0.5))}
+		_place_cache[weapon_path] = data
+	var s: float = data["s"]
+	var b := Basis.from_scale(Vector3.ONE * s)
+	if _palm_anchor != Vector3.INF:
+		# meio do cabo exatamente no centro da mão direita (medido na malha da skin pelo TpArmIK)
+		wrapper.transform = Transform3D(b, _palm_anchor - b * (data["grip_mid"] as Vector3))
+	else:
+		var anchor := GRIP_ANCHOR + (PISTOL_GRIP_SHIFT if _is_pistol else Vector3.ZERO)
+		wrapper.transform = Transform3D(b, anchor - b * (data["grip"] as Vector3))
+	_support_local = wrapper.transform * (data["sup"] as Vector3)
+	_support_rear = wrapper.transform * (data["rear"] as Vector3)
+	if muzzle_flash:
+		muzzle_flash.position = wrapper.transform * (data["muzzle"] as Vector3)
 
 func _box_local(root: Node3D) -> AABB:
 	var box := AABB()

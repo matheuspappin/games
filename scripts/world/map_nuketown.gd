@@ -12,6 +12,7 @@ func _ready() -> void:
 	print("[MapNuketown] Inicializando mapa Nuketown BO1...")
 	_setup_materials_and_collisions()
 	await _create_collisions_sliced()
+	_setup_map_boundary()
 	_setup_bot_manager()
 	_setup_player()
 	await _adjust_spawn_heights()
@@ -71,6 +72,20 @@ func _setup_player() -> void:
 		get_tree().quit(0)
 
 const BotManagerScript = preload("res://scripts/ai/bot_manager.gd")
+const MapBoundary = preload("res://scripts/world/map_boundary.gd")
+
+## Limite do mapa onde o chão termina (scripts/world/map_boundary.gd). As paredes invisíveis antigas no
+## meio do mapa (InvisibleWall_East/West) fechavam a lateral oeste — a passagem da direita de quem sai do
+## spawn Alpha — e não fechavam as bordas do gramado, por onde dava para sair do mapa.
+func _setup_map_boundary() -> void:
+	for n in ["InvisibleWall_East", "InvisibleWall_West"]:
+		var w = find_child(n, true, false)
+		if w:
+			w.queue_free()
+	var model = find_child("NuketownModel", true, false)
+	if model:
+		var info := MapBoundary.build(model, self)
+		print("[MapNuketown] Limite do mapa: %s" % str(info))
 
 func _setup_bot_manager() -> void:
 	if not find_child("BotManager", true, false):

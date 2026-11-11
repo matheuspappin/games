@@ -765,7 +765,8 @@ func _update_finger_grip(delta: float) -> void:
 			want = float(WeaponVisualRegistry.get_weapon_config(current_weapon_data.weapon_id.to_lower()).get("support_fist", 0.0))
 		if _is_one_handed():
 			want = 0.0
-	want *= 1.0 - _swing_amount
+	# corrida tática: a mão solta balança fechada (punho), como no CoD
+	want = maxf(want * (1.0 - _swing_amount), _swing_amount * swing_fist)
 	mod.influence = move_toward(mod.influence, want, delta * 6.0)
 	mod.active = mod.influence > 0.001
 
@@ -775,12 +776,16 @@ func _update_finger_grip(delta: float) -> void:
 # A mão é posicionada a partir do OMBRO (osso L_arm), a uma fração do comprimento do braço:
 # o cotovelo fica sempre dobrado (nada de braço esticado) e o pulso segue o antebraço (sem torção).
 # Direções no espaço da câmera: frente = mão sobe na frente do peito; trás = desce e sai pela parte de baixo da tela.
-const SWING_DIR_FRONT := Vector3(-0.22, 0.22, -1.0)
+const SWING_DIR_FRONT := Vector3(-0.30, 0.08, -1.0)   # no auge a mão (fechada) sobe só até o terço de baixo, à esquerda
 const SWING_DIR_BACK  := Vector3(-0.12, -1.0, -0.12)
 const SWING_REACH_FRONT := 0.70   # fração do comprimento do braço
 const SWING_REACH_BACK  := 0.82
 var _swing_amount: float = 0.0
 var _swing_target: Node3D = null
+## Palma da mão solta no espaço da câmera e giro máximo do braço (ajustáveis pelas sondas)
+var swing_palm_cam := Vector3(1.0, 0.25, 0.0)
+var swing_twist_limit := 0.9
+var swing_fist := 0.9
 var _player_ref: Node = null
 
 func _find_player() -> Node:
@@ -846,7 +851,8 @@ func _update_left_swing(_delta: float) -> void:
 	var reach: float = lerpf(SWING_REACH_BACK, SWING_REACH_FRONT, u) * arm_len
 	_swing_target.global_position = sh + cb * dir_cam * reach
 	# mão "de faca": palma virada para dentro (direita da câmera) e um pouco para cima; o pulso fica reto
-	_swing_target.set_meta("palm_dir", cb * Vector3(1.0, 0.25, 0.0).normalized())
+	_swing_target.set_meta("palm_dir", cb * swing_palm_cam.normalized())
+	_swing_target.set_meta("twist_limit", swing_twist_limit)
 	_swing_target.set_meta("elbow_down", cb * Vector3(-0.3, -1.0, 0.0).normalized())
 	ik.target = _swing_target
 	ik.influence = amt
@@ -1120,6 +1126,7 @@ func _update_weapon_silencer() -> void:
 func _process(_delta: float) -> void:
 	if fps_hands and is_instance_valid(fps_hands):
 		fps_hands.rotation = Vector3(0, PI, 0)
+	_update_anim_rate(_delta)
 	_update_left_hand_ik(_delta)
 	_update_mag_follower()
 	_place_rig_optic()
@@ -1420,8 +1427,38 @@ func play_shoot() -> void:
 	if fps_hands and is_instance_valid(fps_hands) and fps_hands.state_machine:
 		fps_hands.state_machine.start("fire")
 
+# ── RECARGA NO TEMPO DA ARMA ─────────────────────────────────────────────────
+# A animação de recarga do pacote de mãos tem duração fixa por família; o tempo real de cada arma vem do
+# WeaponData (LMG ~6 s, fuzil ~2 s). A árvore de animação passa a ser avançada aqui, e durante a recarga
+# na velocidade "duração da animação / tempo da arma": o pente sai e entra junto com a munição.
+var _reload_time_target := 0.0
+
+func set_reload_time(t: float) -> void:
+	_reload_time_target = t
+
+func _update_anim_rate(delta: float) -> void:
+	if not fps_hands or not is_instance_valid(fps_hands) or not fps_hands.animation or not fps_hands.state_machine:
+		return
+	var tree: AnimationTree = fps_hands.animation
+	var st := str(fps_hands.state_machine.get_current_node())
+	var rate := 1.0
+	if (st == "reload" or st == "reload_full") and _reload_time_target > 0.0:
+		var anim_len: float = fps_hands.state_machine.get_current_length()
+		if anim_len > 0.05:
+			rate = clampf(anim_len / _reload_time_target, 0.25, 1.6)
+	if tree.callback_mode_process != AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL:
+		if is_equal_approx(rate, 1.0):
+			return   # fora da recarga a árvore segue no modo normal até a 1ª recarga
+		tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	tree.advance(delta * rate)
+
 func play_reload() -> void:
 	if fps_hands and is_instance_valid(fps_hands):
+		# a munição de verdade é do WeaponManager; o inventário interno do pacote de mãos só decide se a
+		# animação toca. Ele se esgotava depois de algumas recargas e a arma "recarregava" sem animação.
+		if fps_hands.weapon and "inventory" in fps_hands:
+			var at = fps_hands.weapon.get_meta("ammo_type", "none")
+			fps_hands.inventory["ammo"][at] = 9999
 		fps_hands.reload()
 
 func play_draw() -> void:
@@ -1547,7 +1584,8 @@ class LeftHandIK extends SkeletonModifier3D:
 				var pw := (want_palm - axis * want_palm.dot(axis))
 				if pc.length() > 0.001 and pw.length() > 0.001:
 					var ang := pc.normalized().signed_angle_to(pw.normalized(), axis)
-					ang = clampf(ang, -0.9, 0.9)   # giro limitado: virar demais leva o cotovelo para cima, na frente da câmera
+					var lim: float = float(target.get_meta("twist_limit", 0.9))
+					ang = clampf(ang, -lim, lim)   # giro limitado: virar demais leva o cotovelo para cima, na frente da câmera
 					var pb := parent_g.basis.orthonormalized()
 					# o cotovelo não pode subir acima da linha ombro->mão (sempre "para baixo", como num braço correndo)
 					var down: Vector3 = skel.global_basis.orthonormalized().inverse() * (target.get_meta("elbow_down", Vector3.DOWN) as Vector3)

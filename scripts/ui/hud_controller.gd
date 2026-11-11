@@ -60,28 +60,59 @@ func _process(delta: float) -> void:
 	_update_hitmarker(delta)
 	_update_stance()
 
+# ── MIRA DO QUADRIL ESTILO CoD ──────────────────────────────────────────────
+# Quatro traços SEM ponto central, com contorno escuro, e o vão desenhado do tamanho REAL do cone de
+# dispersão da arma (weapon_manager.get_spread_rad projetado pela FOV da câmera): parado é pequeno,
+# andando/pulando abre, agachado fecha. Some ao mirar (ADS), correndo e na corrida tática, como no CoD.
+const CROSS_LEN_1080 := 11.0     # comprimento do traço em 1080p
+const CROSS_THICK_1080 := 2.0
+var _cross_styled := false
+
+func _style_crosshair() -> void:
+	_cross_styled = true
+	var dot := crosshair_root.get_node_or_null("CenterDot") as CanvasItem
+	if dot:
+		dot.visible = false
+	for l in [crosshair_top, crosshair_bottom, crosshair_left, crosshair_right]:
+		if l and not l.get_node_or_null("Outline"):
+			var o := ColorRect.new()
+			o.name = "Outline"
+			o.color = Color(0, 0, 0, 0.55)
+			o.show_behind_parent = true
+			o.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			o.set_anchors_preset(Control.PRESET_FULL_RECT)
+			o.offset_left = -1; o.offset_top = -1; o.offset_right = 1; o.offset_bottom = 1
+			l.add_child(o)
+
 func _update_crosshair(delta: float) -> void:
 	if not player or not crosshair_root:
 		return
+	if not _cross_styled:
+		_style_crosshair()
 
-	# Ocultar crosshair no ADS
-	var ads = player.ads_amount if "ads_amount" in player else 0.0
-	crosshair_root.modulate.a = lerp(crosshair_root.modulate.a, 1.0 - ads, delta * 15.0)
+	var ads: float = player.ads_amount if "ads_amount" in player else 0.0
+	var sprint: bool = ("state" in player and player.state == "sprinting") or ("tac_sprinting" in player and player.tac_sprinting)
+	var want: float = 0.0 if sprint else 1.0 - ads
+	crosshair_root.modulate.a = lerp(crosshair_root.modulate.a, want, clampf(delta * 15.0, 0.0, 1.0))
 
-	# Calcular expansão com base no bloom e velocidade
-	var base_spread = 8.0
-	var vel_spread = Vector2(player.velocity.x, player.velocity.z).length() * 2.5
-	var bloom_spread = (weapon_manager.current_bloom * 400.0) if weapon_manager else 0.0
-	var total_spread = base_spread + vel_spread + bloom_spread
-
+	var vp_h: float = get_viewport().get_visible_rect().size.y
+	var k: float = vp_h / 1080.0
+	var gap := 4.0 * k
+	var cam := get_viewport().get_camera_3d()
+	if weapon_manager and cam:
+		# FOV do Godot é vertical: vão (px) = tan(cone) / tan(fov/2) * meia altura da tela
+		var cone: float = weapon_manager.get_spread_rad()
+		gap = maxf(tan(cone) / tan(deg_to_rad(cam.fov) * 0.5) * vp_h * 0.5, 3.0 * k)
+	var ln := CROSS_LEN_1080 * k
+	var th := maxf(1.0, round(CROSS_THICK_1080 * k))
 	if crosshair_top:
-		crosshair_top.position.y = -total_spread - 8.0
+		crosshair_top.size = Vector2(th, ln); crosshair_top.position = Vector2(-th * 0.5, -gap - ln)
 	if crosshair_bottom:
-		crosshair_bottom.position.y = total_spread
+		crosshair_bottom.size = Vector2(th, ln); crosshair_bottom.position = Vector2(-th * 0.5, gap)
 	if crosshair_left:
-		crosshair_left.position.x = -total_spread - 8.0
+		crosshair_left.size = Vector2(ln, th); crosshair_left.position = Vector2(-gap - ln, -th * 0.5)
 	if crosshair_right:
-		crosshair_right.position.x = total_spread
+		crosshair_right.size = Vector2(ln, th); crosshair_right.position = Vector2(gap, -th * 0.5)
 
 func _update_hitmarker(delta: float) -> void:
 	if hitmarker_timer > 0.0:

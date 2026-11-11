@@ -26,7 +26,11 @@ var current_ammo             : int        = 0
 var reserve_ammo             : int        = 0
 var is_reloading             : bool       = false
 var cooldown_timer           : float      = 0.0
-var current_bloom            : float      = 0.0
+var current_bloom            : float      = 0.0   # abertura extra do cone do quadril, em GRAUS (cresce por tiro)
+var _since_last_shot         : float      = 99.0
+var _shots_in_string         : int        = 0      # disparos seguidos (recoil sobe nos primeiros, estilo CoD)
+var _recoil_pending          : Vector2    = Vector2.ZERO  # (pitch, yaw) em graus ainda a aplicar na câmera
+var _recoil_h_drift          : float      = 0.0
 var fire_mode_state          : int        = 0
 
 # Posições de repouso e mira
@@ -50,6 +54,7 @@ func on_player_died() -> void:
 	is_reloading = false
 	cooldown_timer = 0.0
 	current_bloom = 0.0
+	_recoil_pending = Vector2.ZERO
 	if _muzzle_light:
 		_muzzle_light.visible = false
 	if weapon_rig:
@@ -61,6 +66,7 @@ func reset_on_respawn() -> void:
 	is_reloading = false
 	cooldown_timer = 0.0
 	current_bloom = 0.0
+	_recoil_pending = Vector2.ZERO
 	var gm = get_node_or_null("/root/GameManager")
 	if gm:
 		if gm.has_method("get_primary_weapon") and gm.get_primary_weapon():
@@ -246,8 +252,12 @@ func _process(delta: float) -> void:
 	if cooldown_timer > 0.0:
 		cooldown_timer -= delta
 
-	# Recuperação contínua de dispersão (bloom)
-	current_bloom = max(0.0, current_bloom - weapon_data.bloom_recovery_rate * delta)
+	# Cone do quadril só fecha depois de parar de atirar (spread per shot do CoD)
+	_since_last_shot += delta
+	if _since_last_shot > WeaponData.HIP_BLOOM_DECAY_DELAY:
+		current_bloom = maxf(0.0, current_bloom - WeaponData.HIP_BLOOM_DECAY_DEG_S * delta)
+		_shots_in_string = 0
+	_update_recoil(delta)
 
 	# Alinhamento ADS do Viewmodel e Zoom da Câmera (estilo Call of Duty)
 	if player and "ads_amount" in player:
@@ -342,6 +352,7 @@ func equip(data: WeaponData) -> void:
 	is_reloading = false
 	cooldown_timer = 0.0
 	current_bloom  = 0.0
+	_recoil_pending = Vector2.ZERO
 	if data.ads_position != Vector3.ZERO:
 		ads_position = data.ads_position
 
@@ -480,13 +491,16 @@ func _execute_fire() -> void:
 	if not camera:
 		return
 
-	# 1. Direção com dispersão (bloom)
-	var cam_basis = camera.global_transform.basis
+	# 1. Direção dentro do cone de dispersão (quadril/ADS, movimento, postura e bloom — estilo CoD)
+	var cam_basis = camera.global_transform.basis.orthonormalized()
 	var direction = -cam_basis.z
-	var bloom_rad = current_bloom
-	if bloom_rad > 0.0:
-		direction = direction.rotated(cam_basis.x, randf_range(-bloom_rad, bloom_rad))
-		direction = direction.rotated(cam_basis.y, randf_range(-bloom_rad, bloom_rad))
+	var cone := get_spread_rad()
+	if cone > 0.0:
+		# ponto uniforme no disco do cone (sqrt: sem concentrar tudo no centro como o "quadrado" antigo)
+		var r := cone * sqrt(randf())
+		var th := randf() * TAU
+		var axis: Vector3 = (cam_basis.x * cos(th) + cam_basis.y * sin(th)).normalized()
+		direction = direction.rotated(axis, r)
 	direction = direction.normalized()
 
 	# 2. Raycast com suporte a Hitbox Area3D, Bots IA e Players
@@ -597,12 +611,13 @@ func _execute_fire() -> void:
 
 		_spawn_hit_spark(result.position, result.normal)
 
-	# 4. Recoil no controller do jogador
-	if player and player.has_method("apply_recoil"):
-		player.apply_recoil(weapon_data.recoil_kick)
+	# 4. Recoil estilo CoD: a câmera SOBE a cada tiro e não volta sozinha — você puxa o mouse para baixo
+	_add_recoil_kick()
 
-	# 5. Incrementar dispersão (bloom)
-	current_bloom = clampf(current_bloom + weapon_data.bloom_per_shot, 0.0, weapon_data.bloom_max)
+	# 5. Cone do quadril abre a cada disparo (no ADS não há cone; o recoil é o que importa)
+	_since_last_shot = 0.0
+	_shots_in_string += 1
+	current_bloom = clampf(current_bloom + weapon_data.get_hip_bloom_per_shot_deg(), 0.0, weapon_data.get_hip_bloom_max_deg())
 
 	# 6. Atualizar munição
 	current_ammo -= 1
@@ -640,6 +655,62 @@ func is_weapon_suppressed() -> bool:
 	# 9. Auto-reload quando acabar a munição do carregador
 	if current_ammo <= 0 and reserve_ammo > 0:
 		start_reload()
+
+## Meio ângulo (rad) do cone do próximo tiro. Lido também pelo HUD para desenhar a mira do tamanho real.
+## Quadril: cone da classe + movimento + ar, reduzido agachado/deitado, + abertura acumulada dos disparos.
+## ADS: cone zero (1º tiro exato, como no CoD). Durante a transição (ads_amount 0..1) o cone vai fechando,
+## então atirar no meio da animação de mira ainda espalha — não dá para "quick-scope" de quadril.
+func get_spread_rad() -> float:
+	if not weapon_data:
+		return 0.0
+	var hip_deg := weapon_data.get_hip_spread_deg() + current_bloom
+	var ads := 0.0
+	if player:
+		var spd := Vector2(player.velocity.x, player.velocity.z).length()
+		hip_deg += weapon_data.move_spread_deg * clampf(spd / PlayerConstants.WALK_SPEED, 0.0, 1.5)
+		if not player.is_on_floor():
+			hip_deg += weapon_data.air_spread_deg
+		var st: int = int(player.get("stance_sync")) if "stance_sync" in player else 0
+		if st == 1:
+			hip_deg *= lerpf(1.0, weapon_data.crouch_bloom_mult, 0.5)
+		elif st == 2:
+			hip_deg *= lerpf(1.0, weapon_data.prone_bloom_mult, 0.5)
+		ads = clampf(float(player.get("ads_amount")), 0.0, 1.0) if "ads_amount" in player else 0.0
+	# curva: o cone só fica realmente pequeno no fim da transição de mira
+	var t := ads * ads
+	return deg_to_rad(lerpf(hip_deg, 0.0, t))
+
+## Recoil estilo CoD. recoil_kick.y = subida vertical por tiro (graus), recoil_kick.x = amplitude horizontal.
+## Os primeiros tiros sobem um pouco menos e o coice estabiliza; o horizontal segue um "drift" com ruído,
+## não um tremor aleatório. Do quadril o coice é maior. A câmera NÃO recentraliza: o controle é do jogador.
+const RECOIL_VERT_SCALE := 0.55
+const RECOIL_HIP_MULT := 1.3
+func _add_recoil_kick() -> void:
+	if not weapon_data:
+		return
+	var k: Vector3 = weapon_data.recoil_kick
+	var ads := clampf(float(player.get("ads_amount")), 0.0, 1.0) if (player and "ads_amount" in player) else 0.0
+	var mult := lerpf(RECOIL_HIP_MULT, 1.0, ads)
+	if player and "stance_sync" in player:
+		var st := int(player.get("stance_sync"))
+		if st == 1: mult *= 0.85
+		elif st == 2: mult *= 0.7
+	var ramp := lerpf(0.75, 1.1, clampf(float(_shots_in_string) / 6.0, 0.0, 1.0))
+	var vert := k.y * RECOIL_VERT_SCALE * ramp * mult * randf_range(0.9, 1.1)
+	if _shots_in_string == 0:
+		_recoil_h_drift = randf_range(-1.0, 1.0)
+	_recoil_h_drift = clampf(_recoil_h_drift + randf_range(-0.6, 0.6), -1.0, 1.0)
+	var horiz := k.x * mult * (_recoil_h_drift * 0.8 + randf_range(-0.35, 0.35))
+	_recoil_pending += Vector2(vert, horiz)
+
+## Aplica o coice em ~50 ms (sobe rápido mas sem teletransportar a câmera).
+func _update_recoil(delta: float) -> void:
+	if _recoil_pending.length_squared() < 0.000001:
+		return
+	var step := _recoil_pending * (1.0 - exp(-40.0 * delta))
+	_recoil_pending -= step
+	if player and player.has_method("apply_recoil"):
+		player.apply_recoil(Vector3(step.x, step.y, 0.0))
 
 func _fire_burst() -> void:
 	if _is_player_dead():
@@ -789,6 +860,8 @@ func start_reload() -> void:
 
 	var reload_sound = weapon_data.sound_reload_empty if is_empty else weapon_data.sound_reload_tact
 	_play_sound(reload_sound)
+	if current_viewmodel and current_viewmodel.has_method("set_reload_time"):
+		current_viewmodel.set_reload_time(reload_time)
 	if current_viewmodel and current_viewmodel.has_method("play_reload"):
 		current_viewmodel.play_reload()
 

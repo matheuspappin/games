@@ -41,3 +41,9 @@ assets/_backup_original/
 # Resultados de partidas gerados pelo servidor
 server/results/*
 !server/results/.gitkeep
+
+# === Adicionado automaticamente ===
+.next/
+build/
+__pycache__/
+.claude-tmp/

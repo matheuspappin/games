@@ -519,10 +519,11 @@ func _handle_head_rotation(delta : float) -> void:
 	mouse_input = Vector2.ZERO
 	HEAD.rotation_degrees.x = clamp(HEAD.rotation_degrees.x, -89.0, 89.0)
 
+## kick.x = graus para cima (pitch), kick.y = graus para o lado (yaw). Já vem suavizado pelo WeaponManager.
 func apply_recoil(kick: Vector3) -> void:
 	if HEAD:
 		HEAD.rotation_degrees.x += kick.x
-		rotation_degrees.y += randf_range(-kick.y, kick.y)
+		rotation_degrees.y += kick.y
 		HEAD.rotation_degrees.x = clamp(HEAD.rotation_degrees.x, -72.0, 85.0)
 
 func _setup_shadow_soldier(soldier_node: Node) -> void:

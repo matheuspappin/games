@@ -47,7 +47,7 @@ enum FireMode       { AUTO, SEMI, BURST }
 
 # ── RECOIL & DISPERSÃO ────────────────────────────────────────────────────────
 @export_group("Recoil & Dispersão")
-@export var recoil_kick         : Vector3 = Vector3(0.3, 1.8, 0.1)
+@export var recoil_kick         : Vector3 = Vector3(0.3, 1.8, 0.1)  ## x = horizontal (±graus), y = vertical (sobe por tiro), z = coice visual
 @export var recoil_snappiness   : float   = 6.0
 @export var recoil_return_speed : float   = 5.0
 @export var bloom_per_shot      : float   = 0.02
@@ -57,6 +57,38 @@ enum FireMode       { AUTO, SEMI, BURST }
 @export var crouch_bloom_mult   : float   = 0.6
 @export var prone_bloom_mult    : float   = 0.4
 @export var sprint_bloom_mult   : float   = 3.5
+
+# ── TIRO DO QUADRIL (estilo CoD) ─────────────────────────────────────────────
+# No CoD o tiro sem mirar sai num cone aleatório (inclusive o 1º tiro), do tamanho da mira de 4 traços.
+# O cone CRESCE a cada disparo do quadril (spread per shot) e só volta depois que você para de atirar;
+# andando/pulando abre mais, agachado/deitado fecha um pouco. Mirando (ADS) o 1º tiro é exato e não há
+# cone — quem decide é o recoil. Resultado: quadril só funciona colado no inimigo (≈ até 7–10 m com SMG).
+# Valores = meio ângulo do cone, em graus. Ordem por classe igual ao CoD: SMG/pistola melhores, fuzil no
+# meio, LMG e sniper piores.
+@export_group("Tiro do quadril")
+@export var hip_spread_deg      : float   = -1.0   ## -1 = padrão da classe da arma
+@export var move_spread_deg     : float   = 2.4    ## extra andando na velocidade de caminhada
+@export var air_spread_deg      : float   = 4.5    ## extra no ar (pulo/queda)
+
+#                                      AR    SMG   LMG   SNIPER SHOTGUN PISTOL LAUNCHER MELEE
+const HIP_SPREAD_BY_CATEGORY      := {0: 4.0, 1: 3.0, 2: 5.5, 3: 9.0, 4: 3.0, 5: 2.6, 6: 5.0, 7: 0.0}
+const HIP_BLOOM_SHOT_BY_CATEGORY  := {0: 0.55, 1: 0.40, 2: 0.70, 3: 3.0, 4: 1.0, 5: 0.80, 6: 2.0, 7: 0.0}
+const HIP_BLOOM_MAX_BY_CATEGORY   := {0: 5.0, 1: 3.5, 2: 6.5, 3: 4.0, 4: 3.0, 5: 3.5, 6: 3.0, 7: 0.0}
+const HIP_BLOOM_DECAY_DEG_S       := 9.0    ## velocidade com que o cone fecha depois de parar de atirar
+const HIP_BLOOM_DECAY_DELAY       := 0.15   ## segundos sem atirar até o cone começar a fechar
+
+func get_hip_spread_deg() -> float:
+	if hip_spread_deg >= 0.0:
+		return hip_spread_deg
+	return float(HIP_SPREAD_BY_CATEGORY.get(int(category), 4.0))
+
+## Quanto o cone do quadril abre por disparo (graus). Acessórios mexem via bloom_per_shot (0.02 = padrão).
+func get_hip_bloom_per_shot_deg() -> float:
+	var k := clampf(bloom_per_shot / 0.02, 0.5, 2.0)
+	return float(HIP_BLOOM_SHOT_BY_CATEGORY.get(int(category), 0.55)) * k
+
+func get_hip_bloom_max_deg() -> float:
+	return float(HIP_BLOOM_MAX_BY_CATEGORY.get(int(category), 5.0))
 
 # ── ADS ───────────────────────────────────────────────────────────────────────
 @export_group("ADS")

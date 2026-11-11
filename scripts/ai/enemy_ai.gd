@@ -10,6 +10,7 @@
 # =============================================================================
 class_name EnemyAI
 extends CharacterBody3D
+const TP_ARM_IK = preload("res://scripts/characters/tp_arm_ik.gd")  # pegada da arma em 3ª pessoa
 
 const SkinRegistry = preload("res://scripts/characters/skin_registry.gd")
 const CharacterRetargeter = preload("res://scripts/characters/character_retargeter.gd")
@@ -197,6 +198,7 @@ func _ready() -> void:
 	_setup_combat_posture()
 	_cached_gun_holder = find_child("GunHolder", true, false)
 	_cached_bot_rifle = find_child("BotRifle3D", true, false)
+	_apply_bot_weapon()
 	_perception_offset = abs(get_instance_id()) % 3
 
 	# Configurações físicas de locomoção e escadas (Step-Clamping & Suavidade)
@@ -303,8 +305,24 @@ func apply_difficulty(diff: int) -> void:
 			_burst_pause_base = 0.08
 	_fire_interval = 60.0 / fire_rate_rpm
 
+## Arma visual do bot por arquétipo (como no CoD: quem corre usa SMG/escopeta, quem segura posição usa LMG).
+## Só a aparência; o dano do bot continua vindo da dificuldade. Poucas armas para não pesar a memória.
+const BOT_WEAPONS := {
+	0: ["acr68", "m4a1"],          # BALANCED
+	1: ["mp7", "krm262"],          # RUSHER
+	2: ["mp7", "m4a1"],            # FLANKER
+	3: ["rpk", "acr68"],           # ANCHOR
+}
+func _apply_bot_weapon() -> void:
+	var rifle = _cached_bot_rifle if _cached_bot_rifle and is_instance_valid(_cached_bot_rifle) else find_child("BotRifle3D", true, false)
+	if not rifle or not rifle.has_method("set_weapon_loadout") or not rifle.is_node_ready():
+		return   # antes do _ready do bot: o próprio _ready aplica com o arquétipo já definido
+	var pool: Array = BOT_WEAPONS.get(int(archetype), BOT_WEAPONS[0])
+	rifle.set_weapon_loadout("res://resources/weapons/%s.tres" % pool[abs(bot_id) % pool.size()], {})
+
 func apply_archetype(arch: BotArchetype, forced_lane: int = -1) -> void:
 	archetype = arch
+	_apply_bot_weapon()
 	if forced_lane >= 0:
 		assigned_lane = forced_lane
 	else:
@@ -691,6 +709,15 @@ func _setup_weapon_attachment() -> void:
 					rifle.position = CharacterRetargeter.XBOT_RIFLE_LOCAL_POS
 					rifle.rotation_degrees = CharacterRetargeter.XBOT_RIFLE_LOCAL_ROT
 				rifle.visible = true
+				# mão esquerda no guarda-mão da arma (e braços estendidos com pistola), depois da animação
+				var arm_ik = _skeleton.get_node_or_null("TpArmIK")
+				if not arm_ik:
+					arm_ik = TP_ARM_IK.new()
+					arm_ik.name = "TpArmIK"
+					_skeleton.add_child(arm_ik)
+				arm_ik.rifle = rifle
+				arm_ik.facing = self
+				arm_ik.weight = 1.0
 
 			var old_holder = vis_root.get_node_or_null("GunHolder")
 			if old_holder:
@@ -2447,6 +2474,9 @@ func _die(_direction: Vector3, hit_bone: String = "Chest") -> void:
 	if _nameplate:
 		_nameplate.visible = false
 
+	# morrendo: a animação comanda os braços (sem IK da pegada)
+	if _skeleton and _skeleton.get_node_or_null("TpArmIK"):
+		_skeleton.get_node("TpArmIK").weight = 0.0
 	# Animação cinematográfica de morte do Mixamo
 	if _anim_player and _anim_player.has_animation("die"):
 		_anim_player.play("die", 0.15)
